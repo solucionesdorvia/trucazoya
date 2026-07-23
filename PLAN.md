@@ -5,6 +5,7 @@
 Construir desde cero una plataforma web completa y profesional para jugar Truco Argentino online: partidas en tiempo real 1v1 y 2v2, salas privadas/públicas, matchmaking, apuestas con monedas virtuales, torneos, rankings, bots, sistema social, panel admin y deploy a producción.
 
 **Cambios clave respecto del prompt maestro** (decisiones del usuario):
+
 - **Sin pasarela de pagos.** La carga de monedas se hace vía **cajeros**: usuarios con rol especial que acreditan/debitan monedas manualmente. El contacto usuario↔cajero es por **WhatsApp** (links `wa.me`).
 - Los cajeros procesan **cargas y retiros** (el jugador solicita retiro, el cajero lo aprueba y paga por fuera de la plataforma).
 - Alcance: **plataforma completa** (todas las fases del prompt maestro), no solo un MVP.
@@ -16,18 +17,18 @@ Construir desde cero una plataforma web completa y profesional para jugar Truco 
 
 Reutiliza patrones ya probados en proyectos del usuario (branded-docs, superplataforma): Postgres en Docker con puerto custom, Prisma v6, auth con scrypt, deploy en Railway.
 
-| Capa | Tecnología | Por qué |
-|---|---|---|
-| Monorepo | pnpm workspaces + Turborepo | Motor/tipos compartidos entre web y game server |
-| Lenguaje | TypeScript estricto en todo | Tipado de punta a punta, contratos de eventos tipados |
-| Frontend | Next.js 15 (App Router) + Tailwind | SSR para landing/perfiles/rankings, mobile-first, ecosistema estable |
-| Tiempo real | Node + Fastify + **Socket.IO** | Rooms nativas, reconexión con buffer, adapter Redis para escalar horizontal |
-| DB | PostgreSQL 16 (Docker local, puerto **54341**) + Prisma v6 | Transacciones para ledger, patrón ya conocido |
-| Cache/escala | Redis (adapter Socket.IO, presencia, colas de matchmaking) | Se introduce en Fase 6; antes, single-node en memoria + snapshots en PG |
-| Auth | Sesiones con cookie httpOnly + scrypt; JWT corto firmado para handshake del socket | Patrón ya usado; sin dependencia de terceros |
-| Validación | Zod (compartido en `packages/shared`) | Mismo schema valida cliente y servidor |
-| Tests | Vitest (unit/integración) + Playwright (E2E, dos browsers) | Simulador de miles de partidas contra el motor |
-| Deploy | Railway (web + game-server + PG + Redis como servicios) | Ya lo usa el usuario; entornos dev/staging/prod |
+| Capa         | Tecnología                                                                         | Por qué                                                                     |
+| ------------ | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Monorepo     | pnpm workspaces + Turborepo                                                        | Motor/tipos compartidos entre web y game server                             |
+| Lenguaje     | TypeScript estricto en todo                                                        | Tipado de punta a punta, contratos de eventos tipados                       |
+| Frontend     | Next.js 15 (App Router) + Tailwind                                                 | SSR para landing/perfiles/rankings, mobile-first, ecosistema estable        |
+| Tiempo real  | Node + Fastify + **Socket.IO**                                                     | Rooms nativas, reconexión con buffer, adapter Redis para escalar horizontal |
+| DB           | PostgreSQL 16 (Docker local, puerto **54341**) + Prisma v6                         | Transacciones para ledger, patrón ya conocido                               |
+| Cache/escala | Redis (adapter Socket.IO, presencia, colas de matchmaking)                         | Se introduce en Fase 6; antes, single-node en memoria + snapshots en PG     |
+| Auth         | Sesiones con cookie httpOnly + scrypt; JWT corto firmado para handshake del socket | Patrón ya usado; sin dependencia de terceros                                |
+| Validación   | Zod (compartido en `packages/shared`)                                              | Mismo schema valida cliente y servidor                                      |
+| Tests        | Vitest (unit/integración) + Playwright (E2E, dos browsers)                         | Simulador de miles de partidas contra el motor                              |
+| Deploy       | Railway (web + game-server + PG + Redis como servicios)                            | Ya lo usa el usuario; entornos dev/staging/prod                             |
 
 ## Arquitectura
 
@@ -40,6 +41,7 @@ packages/db       → Prisma schema + client + migraciones + seeds
 ```
 
 **Principios innegociables:**
+
 - **Servidor = única fuente de verdad.** El cliente solo envía intenciones (`action.requested`) y renderiza estado confirmado. Nunca recibe cartas ajenas: el game server proyecta una **vista por jugador** (`redactStateFor(playerId)`).
 - **Motor determinista y puro:** `applyAction(state, action) → { state', events }`. Sin `Math.random` dentro: el mazo se baraja con `crypto` (Fisher–Yates + `crypto.randomInt`) fuera del motor y entra como input. Esto habilita tests, replays y el simulador.
 - **Partida en memoria + event log en PG:** cada acción validada se persiste (`GameEvent` con número de secuencia); snapshots periódicos (`MatchSnapshot`) para reconexión y recuperación ante caída del nodo.
@@ -58,11 +60,13 @@ Reglas completas: jerarquía de 40 cartas, mano/pie, bazas y pardas (todas las c
 **Roles:** `USER`, `CASHIER`, `MODERATOR`, `ADMIN` (tabla de roles/permisos).
 
 **Flujo de carga:**
+
 1. Usuario toca "Cargar monedas" → ve lista de cajeros online/disponibles con botón WhatsApp (`wa.me/<tel>?text=` prellenado con su username y código de usuario).
 2. Acuerdan por WhatsApp (fuera de la plataforma). El cajero, desde su **panel de cajero**, busca al usuario por username/código y acredita el monto → transacción `CASHIER_DEPOSIT` en el ledger con idempotency key, referencia y nota.
 3. El usuario recibe notificación in-app y ve el movimiento en su billetera.
 
 **Flujo de retiro:**
+
 1. Usuario crea una **solicitud de retiro** (monto, cajero elegido). El monto se **reserva** (bloqueado, no apostable).
 2. El cajero ve la cola de solicitudes en su panel, contacta por WhatsApp, paga por fuera, y marca la solicitud como **pagada** → transacción `CASHIER_WITHDRAWAL`. Puede rechazarla → se libera la reserva.
 3. Estados del ticket: `PENDING → RESERVED → PAID | REJECTED | CANCELLED_BY_USER`.
@@ -92,13 +96,13 @@ Tipos de transacción del ledger: `CASHIER_DEPOSIT, CASHIER_WITHDRAWAL, BET_RESE
 
 Al cerrar cada fase: format + lint + typecheck + tests + build en verde, documentar lo hecho.
 
-**Fase 1 — Fundaciones** *(repo + infra)*
+**Fase 1 — Fundaciones** _(repo + infra)_
 Monorepo pnpm/turbo, `packages/shared`, `packages/db` (schema completo + migración inicial + seeds), Docker compose PG :54341, ESLint/Prettier/Vitest config, CI básico.
 
 **Fase 2 — Auth, usuarios y diseño base**
 Registro/login/verificación email/recuperación (scrypt + sesiones), cuenta invitado → conversión, perfiles, roles, layout mobile-first con identidad Trucazo (modo claro/oscuro), pantallas base.
 
-**Fase 3 — Motor de Truco completo** *(la fase más crítica)*
+**Fase 3 — Motor de Truco completo** _(la fase más crítica)_
 `packages/engine`: cartas, jerarquía, máquina de estados, envido/flor/truco completos, pardas, 1v1 y 2v2, config de reglas (flor on/off, 15/30, tiempos). **Tests unitarios exhaustivos** (jerarquía, envido, todas las pardas, cadenas de cantos) + **simulador de 10.000+ partidas con acciones aleatorias legales** verificando invariantes (sin estados imposibles, puntajes válidos, siempre termina).
 
 **Fase 4 — Salas y lobby**

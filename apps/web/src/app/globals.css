@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Trucazo — sistema de diseño
+   Identidad: mesa de truco de noche. Paño verde profundo, oro gastado,
+   rojo de canto. Sin celeste/blanco de bandera: la argentinidad está en el
+   lenguaje, la tipografía y el ritmo, no en el cliché.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Superficies */
+  --color-noche-950: #08090c;
+  --color-noche-900: #0b0d12;
+  --color-noche-850: #10131a;
+  --color-noche-800: #161a23;
+  --color-noche-700: #1f2531;
+  --color-noche-600: #2c3444;
+
+  /* Paño de mesa */
+  --color-pano-900: #06251d;
+  --color-pano-800: #0a3a2c;
+  --color-pano-700: #0e4d3c;
+  --color-pano-600: #14654f;
+
+  /* Oro (acento primario: puntaje, premios, CTA) */
+  --color-oro-400: #f2cd7a;
+  --color-oro-500: #e8b04b;
+  --color-oro-600: #cf922e;
+  --color-oro-700: #a06f1f;
+
+  /* Rojo de canto (truco, acciones fuertes, peligro) */
+  --color-canto-400: #e2545e;
+  --color-canto-500: #c8323c;
+  --color-canto-600: #a3242d;
+
+  /* Texto */
+  --color-tinta-50: #f5f6f8;
+  --color-tinta-200: #c9ced8;
+  --color-tinta-400: #8b93a3;
+  --color-tinta-600: #5b6373;
+
+  --font-display:
+    'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --radius-card: 0.875rem;
+
+  --shadow-elevado: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --shadow-carta: 0 2px 4px rgb(0 0 0 / 0.3), 0 12px 28px -12px rgb(0 0 0 / 0.7);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+  --fondo: var(--color-noche-900);
+  --superficie: var(--color-noche-850);
+  --borde: color-mix(in oklab, var(--color-noche-600) 60%, transparent);
+  --texto: var(--color-tinta-50);
+  --texto-suave: var(--color-tinta-400);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --fondo: #f4f2ed;
+  --superficie: #ffffff;
+  --borde: #e0dcd3;
+  --texto: #16181d;
+  --texto-suave: #5b6373;
+}
+
+* {
+  border-color: var(--borde);
+}
+
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* Textura sutil de paño en el fondo, sin costo de imagen. */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(14 77 60 / 0.28), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgb(232 176 75 / 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+
+:root[data-theme='light'] body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(14 77 60 / 0.1), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgb(207 146 46 / 0.08), transparent 60%);
+}
+
+/* Accesibilidad: foco visible y consistente. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-oro-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respeta la preferencia de movimiento reducido. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Utilidades propias ────────────────────────────────────────────────── */
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+/* Superficie de panel estándar. */
+@utility panel {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elevado);
+}
+
+/* Brillo dorado para elementos destacados. */
+@utility resplandor-oro {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-oro-500) 40%, transparent),
+    0 8px 32px -8px color-mix(in oklab, var(--color-oro-500) 35%, transparent);
+}
+
+/* Animación de entrada de cartas al repartir. */
+@keyframes repartir {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) rotate(-8deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+@utility animar-reparto {
+  animation: repartir 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animar-aparecer {
+  animation: aparecer 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}

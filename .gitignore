@@ -36,3 +36,4 @@ pnpm-debug.log*
 
 # prisma
 packages/db/prisma/*.db
+.next-build/

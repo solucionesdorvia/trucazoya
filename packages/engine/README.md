@@ -5,7 +5,14 @@ Motor de **Truco Argentino**. Puro, determinista y testeable: sin IO, sin aleato
 ## API
 
 ```ts
-import { createMatch, startRound, applyAction, legalActions, redactStateFor, DEFAULT_RULES } from '@trucazo/engine';
+import {
+  createMatch,
+  startRound,
+  applyAction,
+  legalActions,
+  redactStateFor,
+  DEFAULT_RULES,
+} from '@trucazo/engine';
 
 let state = createMatch({ ...DEFAULT_RULES, players: 2 });
 state = startRound(state, dealtHands); // dealtHands: Card[][] ya barajadas
