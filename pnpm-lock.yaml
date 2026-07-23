@@ -35,6 +35,9 @@ importers:
       '@trucazo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@trucazo/economia':
+        specifier: workspace:*
+        version: link:../../packages/economia
       '@trucazo/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -72,6 +75,9 @@ importers:
       '@trucazo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@trucazo/economia':
+        specifier: workspace:*
+        version: link:../../packages/economia
       '@trucazo/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -131,6 +137,28 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
+
+  packages/economia:
+    dependencies:
+      '@trucazo/db':
+        specifier: workspace:*
+        version: link:../db
+      '@trucazo/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.1
+      eslint:
+        specifier: ^9.17.0
+        version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)(lightningcss@1.32.0)
 
   packages/engine:
     devDependencies:

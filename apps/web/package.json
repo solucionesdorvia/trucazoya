@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@trucazo/db": "workspace:*",
+    "@trucazo/economia": "workspace:*",
     "@trucazo/engine": "workspace:*",
     "@trucazo/shared": "workspace:*",
     "next": "^15.1.3",

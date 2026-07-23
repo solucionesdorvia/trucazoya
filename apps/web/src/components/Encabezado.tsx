@@ -28,7 +28,11 @@ export function Encabezado({ user }: { user: SessionUser }) {
             <span className="text-sm text-tinta-200">{user.displayName}</span>
             {user.isGuest && <Pildora>Invitado</Pildora>}
             {user.role === 'ADMIN' && <Pildora tono="rojo">Admin</Pildora>}
-            {user.role === 'CASHIER' && <Pildora tono="verde">Cajero</Pildora>}
+            {user.role === 'CASHIER' && (
+              <Link href="/cajero" aria-label="Panel de cajero">
+                <Pildora tono="verde">Cajero</Pildora>
+              </Link>
+            )}
           </div>
 
           <form action={salir}>

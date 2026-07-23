@@ -32,6 +32,8 @@ export class Sala {
   estado: EstadoSala = 'ESPERANDO';
   participantes: Participante[] = [];
   mesa: Mesa | null = null;
+  /** Apuesta reservada para la partida en curso, si la sala tiene apuesta. */
+  betId: string | null = null;
 
   constructor(readonly config: ConfigSala) {}
 
