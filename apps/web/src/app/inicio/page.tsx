@@ -69,6 +69,12 @@ export default async function Inicio() {
             <p className="mt-2 text-sm text-tinta-400">
               {rating?.games ? `${rating.wins}V · ${rating.losses}D` : 'Todavía sin partidas'}
             </p>
+            <Link
+              href="/ranking"
+              className="mt-2 inline-block text-sm font-medium text-oro-400 hover:text-oro-500"
+            >
+              Ver tabla de posiciones →
+            </Link>
           </Panel>
 
           <Panel>

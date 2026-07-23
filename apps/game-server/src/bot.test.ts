@@ -68,7 +68,7 @@ describe('partida contra bot', () => {
       transports: ['websocket'],
       forceNew: true,
     });
-    await new Promise<void>((r) => s.on("connect", () => r()));
+    await new Promise<void>((r) => s.on('connect', () => r()));
 
     let vista: { phase: string; seat: number; turnSeat: number | null; legales: unknown[] } | null =
       null;

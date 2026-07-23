@@ -12,10 +12,7 @@ export interface EstadoRetiro {
   ok?: string;
 }
 
-export async function pedirRetiro(
-  _prev: EstadoRetiro,
-  formData: FormData,
-): Promise<EstadoRetiro> {
+export async function pedirRetiro(_prev: EstadoRetiro, formData: FormData): Promise<EstadoRetiro> {
   const user = await requireUser();
   const monto = Number(formData.get('monto') ?? 0);
   const cajeroUserId = String(formData.get('cajero') ?? '');

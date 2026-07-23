@@ -1,30 +1,26 @@
 # 🎴 Trucazo
 
-Plataforma web de **Truco Argentino online**: partidas en tiempo real (1v1 y 2v2), salas privadas/públicas, matchmaking, apuestas con monedas virtuales, torneos, rankings, bots, sistema social y panel administrativo.
+Plataforma web de **Truco Argentino online**: partidas en tiempo real (1v1 y 2v2), salas privadas con código, apuestas con monedas virtuales, ranking competitivo, bots y panel administrativo.
 
-La carga y el retiro de monedas se hacen mediante **cajeros** (usuarios con rol especial) que operan por **WhatsApp** — **sin pasarela de pagos**.
+La carga y el retiro de monedas se hacen mediante **cajeros** — usuarios con rol especial que operan por **WhatsApp**. **Sin pasarela de pagos.**
 
-> ⚠️ **Aviso legal.** Trucazo modela una economía de **monedas virtuales** con ledger auditable, límites y herramientas de juego responsable. Si un operador decide canjear esas monedas por dinero real vía cajeros, opera de hecho un juego por dinero real, regulado en Argentina a nivel provincial (Lotería / IPLyC según jurisdicción). El cumplimiento regulatorio es responsabilidad del operador. El dinero real está deshabilitado por diseño (`FEATURE_REAL_MONEY=false`).
+> ⚠️ **Aviso legal.** Trucazo modela una economía de **monedas virtuales** con ledger auditable, límites y herramientas de juego responsable. Si un operador canjea esas monedas por dinero real vía cajeros, opera de hecho un juego por dinero real, regulado en Argentina a nivel provincial (Lotería / IPLyC según jurisdicción). El cumplimiento regulatorio es responsabilidad del operador. El dinero real está deshabilitado por diseño (`FEATURE_REAL_MONEY=false`).
 
 ## Stack
 
-- **Monorepo:** pnpm workspaces + Turborepo · TypeScript estricto.
-- **Frontend:** Next.js 15 (App Router) + Tailwind — mobile-first.
-- **Tiempo real:** Fastify + Socket.IO (adapter Redis para escalar).
-- **DB:** PostgreSQL 16 + Prisma v6. **Cache/colas:** Redis.
-- **Auth:** sesiones cookie httpOnly + scrypt; JWT corto para el handshake del socket.
-- **Tests:** Vitest (unit/integración) + Playwright (E2E). **Deploy:** Railway.
+pnpm workspaces + Turborepo · TypeScript estricto · Next.js 15 + Tailwind v4 · Fastify + Socket.IO · PostgreSQL 16 + Prisma v6 · Redis · Vitest · Railway.
 
 ## Estructura
 
 ```
 apps/
-  web/           → Next.js: UI + REST (auth, perfiles, salas, wallet, admin)   [Fase 2+]
-  game-server/   → Fastify + Socket.IO: partidas en vivo, matchmaking          [Fase 5+]
+  web/            → Next.js: UI, auth, salas, billetera, cajero, admin, ranking
+  game-server/    → Socket.IO: partidas en vivo, salas, bots, reconexión
 packages/
-  engine/        → Motor de Truco PURO: reglas, máquina de estados, bots, sim   ✅
-  shared/        → Tipos, schemas Zod, contratos de eventos                     ✅
-  db/            → Prisma schema + client + migraciones + seeds                 ✅
+  engine/         → Motor de Truco PURO: reglas, máquina de estados, bots, simulador
+  economia/       → Ledger append-only, apuestas, cajeros, Glicko-2
+  shared/         → Tipos, schemas Zod, contratos de eventos, tokens
+  db/             → Prisma schema, migraciones, seeds
 ```
 
 ## Puesta en marcha
@@ -33,39 +29,78 @@ Requisitos: Node ≥ 22, pnpm ≥ 10, Docker.
 
 ```bash
 pnpm install
-cp .env.example .env            # y en packages/db/.env
-pnpm db:up                      # levanta Postgres (:54341) y Redis (:63791)
-pnpm db:generate                # genera el cliente Prisma
-pnpm --filter @trucazo/db migrate   # aplica migraciones
-pnpm db:seed                    # datos de desarrollo
+cp .env.example .env && cp .env.example packages/db/.env
+cp .env.example apps/game-server/.env && cp .env.example apps/web/.env.local
+pnpm db:up
+pnpm db:generate && pnpm --filter @trucazo/db migrate && pnpm db:seed
 ```
 
-Cuentas demo (password `trucazo123`): `admin` (ADMIN), `cajero1` (CASHIER), `pepe`/`juana`/`toto`/`mica` (USER).
-
-## Scripts útiles
+Dos procesos:
 
 ```bash
-pnpm test                       # tests de todos los paquetes
-pnpm --filter @trucazo/engine sim 10000   # simula 10k partidas por escenario
-pnpm typecheck
-pnpm format
-pnpm db:studio                  # Prisma Studio
+pnpm --filter @trucazo/web dev
 ```
+
+```bash
+pnpm --filter @trucazo/game-server dev
+```
+
+Cuentas demo (password `trucazo123`): `admin` (ADMIN) · `cajero1` (CASHIER) · `pepe`/`juana`/`toto`/`mica`.
 
 ## Principios de arquitectura
 
-1. **El servidor es la única fuente de verdad.** El cliente sólo envía intenciones y renderiza estado confirmado. Nunca recibe cartas ajenas (ver `redactStateFor`).
-2. **Motor puro y determinista.** `applyAction(state, action) → { state, events }`. Sin IO ni aleatoriedad interna: el mazo barajado entra como input. Esto habilita tests, replays y el simulador.
-3. **Ledger append-only.** El saldo nunca se edita directo: cada movimiento es una transacción con idempotency key, saldo anterior/posterior y auditoría.
+1. **El servidor es la única fuente de verdad.** El cliente envía intenciones y renderiza estado confirmado. Nunca recibe cartas ajenas: el game-server proyecta `redactStateFor(seat)`. Los botones de canto salen de las acciones legales que calcula el motor **en el servidor**.
+2. **Motor puro y determinista.** `applyAction(state, action) → { state, events }`. Sin IO ni aleatoriedad interna: el mazo barajado entra como input. Eso habilita tests, replays y el simulador.
+3. **Ledger append-only.** El saldo nunca se edita a mano. Cada movimiento es una transacción con bloqueo de fila, idempotency key y saldo anterior/posterior. Invariante auditable: `ledger == disponible + bloqueado`.
+
+## Verificación
+
+```bash
+pnpm -r test
+```
+
+**131 tests.** Además:
+
+```bash
+pnpm --filter @trucazo/engine sim 10000
+```
+
+30.000 partidas simuladas sin invariantes rotos, con victorias ~50/50 (sin sesgo de turnos).
+
+Cobertura destacada:
+
+- **Motor (46):** jerarquía de las 40 cartas, envido en todos sus casos, flor, todas las combinaciones de pardas, cadenas de cantos, fin de partida.
+- **Economía (31):** concurrencia real — 10 débitos simultáneos, doble clic con idempotencia, dos liquidaciones en paralelo, saldo nunca negativo, auditoría de la cadena contable, Glicko-2.
+- **Game server (10):** partida 1v1 completa jugada por **sockets reales** contra la base, suplantación de asiento rechazada, idempotencia de acciones, redacción verificada (auditamos todo lo que recibió cada cliente), bots.
+- **Web (12):** registro/login contra Postgres, sin enumeración de cuentas, contraseñas nunca en claro.
 
 ## Estado del desarrollo
 
 Ver [PLAN.md](PLAN.md) para el detalle de las 11 fases.
 
-- **Fase 1 — Fundaciones:** ✅ monorepo, Docker, Prisma (36 modelos), seeds.
-- **Fase 3 — Motor de Truco:** ✅ reglas completas + 46 tests + simulador (30k partidas sin invariantes rotos).
-- **Fase 2, 4–11:** pendientes.
+| Fase                                      | Estado                                                                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 1 · Fundaciones (monorepo, DB, infra)     | ✅                                                                                                                  |
+| 2 · Auth, perfiles, diseño base           | ✅                                                                                                                  |
+| 3 · Motor de Truco + tests + simulador    | ✅                                                                                                                  |
+| 4 · Salas, códigos, lobby                 | ✅                                                                                                                  |
+| 5 · Tiempo real, mesa jugable, reconexión | ✅                                                                                                                  |
+| 6 · Ranking Glicko-2 + divisiones         | ✅                                                                                                                  |
+| 7 · Billetera, ledger, apuestas, cajeros  | ✅                                                                                                                  |
+| 8 · Torneos, clubes, amigos, espectadores | ⬜ pendiente                                                                                                        |
+| 9 · Misiones, logros, cosméticos, tienda  | ⬜ pendiente                                                                                                        |
+| 10 · Admin y auditoría                    | 🟡 panel de admin con métricas, cajeros, auditoría de ledger y log de acciones. Falta moderación/reportes/sanciones |
+| 11 · Observabilidad, E2E, deploy          | 🟡 health checks y [DEPLOY.md](DEPLOY.md). Falta métricas, E2E Playwright y pruebas de carga                        |
 
-## Reglas implementadas
+**Matchmaking automático** (buscar rival sin código) todavía no está: hoy se juega por código de sala o contra bots.
 
-Ver [packages/engine/README.md](packages/engine/README.md).
+## Documentación
+
+- [PLAN.md](PLAN.md) — plan completo por fases
+- [DEPLOY.md](DEPLOY.md) — deploy, escalado, backups, rollback
+- [packages/engine/README.md](packages/engine/README.md) — reglas implementadas y API del motor
+
+## Límites conocidos
+
+- **El game-server corre en un solo nodo.** El estado vivo está en memoria (con event log en Postgres). Multi-nodo requiere el adapter de Redis — documentado en [DEPLOY.md](DEPLOY.md).
+- El motor no modela el "envido primero" (interrumpir un truco pendiente con envido). No afecta el cálculo de tantos ni la resolución de bazas, que están cubiertos por tests.

@@ -161,7 +161,10 @@ export async function reembolsarApuesta(
   betId: string,
   motivo = 'Partida cancelada',
 ): Promise<ResultadoApuesta> {
-  const bet = await prisma.bet.findUnique({ where: { id: betId }, include: { participants: true } });
+  const bet = await prisma.bet.findUnique({
+    where: { id: betId },
+    include: { participants: true },
+  });
   if (!bet) return { ok: false, error: 'No existe esa apuesta' };
   if (bet.state === 'REFUNDED') return { ok: true, betId: bet.id };
   if (bet.state !== 'RESERVED') return { ok: false, error: `La apuesta está ${bet.state}` };

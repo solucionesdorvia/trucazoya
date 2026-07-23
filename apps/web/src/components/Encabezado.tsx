@@ -27,7 +27,11 @@ export function Encabezado({ user }: { user: SessionUser }) {
           <div className="hidden items-center gap-2 sm:flex">
             <span className="text-sm text-tinta-200">{user.displayName}</span>
             {user.isGuest && <Pildora>Invitado</Pildora>}
-            {user.role === 'ADMIN' && <Pildora tono="rojo">Admin</Pildora>}
+            {user.role === 'ADMIN' && (
+              <Link href="/admin" aria-label="Panel de administración">
+                <Pildora tono="rojo">Admin</Pildora>
+              </Link>
+            )}
             {user.role === 'CASHIER' && (
               <Link href="/cajero" aria-label="Panel de cajero">
                 <Pildora tono="verde">Cajero</Pildora>

@@ -13,7 +13,12 @@ import Fastify from 'fastify';
 import { Server as SocketServer } from 'socket.io';
 import { prisma } from '@trucazo/db';
 import { verificarTokenPartida } from '@trucazo/shared';
-import { liquidarApuesta, reembolsarApuesta, reservarApuesta } from '@trucazo/economia';
+import {
+  aplicarRanking,
+  liquidarApuesta,
+  reembolsarApuesta,
+  reservarApuesta,
+} from '@trucazo/economia';
 import type { Action } from '@trucazo/engine';
 import { RegistroSalas, type ConfigSala, type Sala } from './salas.js';
 
@@ -104,6 +109,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       hostUserId: room.hostUserId,
       apuesta: Number(room.betAmount),
       permiteBots: room.allowBots,
+      modo: room.mode,
       players: room.mode.includes('2V2') ? 4 : 2,
       pointsToWin: room.pointsToWin === 15 ? 15 : 30,
       florEnabled: room.florEnabled,
@@ -275,7 +281,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         data: {
           id: matchId,
           roomId: sala.config.roomId,
-          mode: sala.config.players === 4 ? 'CASUAL_2V2' : 'CASUAL_1V1',
+          mode: sala.config.modo,
           pointsToWin: sala.config.pointsToWin,
           florEnabled: sala.config.florEnabled,
           players: sala.config.players,
@@ -299,29 +305,29 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     }
 
     // Apuesta: se reserva ANTES de repartir. Si a alguien no le alcanza, no
-  // arranca nadie y la sala vuelve a esperar.
-  if (sala.config.apuesta > 0 && humanos.length > 0) {
-    const reserva = await reservarApuesta({
-      matchId,
-      monto: sala.config.apuesta,
-      jugadores: humanos.map((p) => ({ userId: p.userId, seat: p.seat as number })),
-    });
-    if (!reserva.ok) {
-      await prisma.match.delete({ where: { id: matchId } }).catch(() => undefined);
-      await prisma.room
-        .update({ where: { id: sala.config.roomId }, data: { state: 'WAITING' } })
-        .catch(() => undefined);
-      for (const p of sala.participantes) p.listo = false;
-      io.to(`sala:${code}`).emit('error:app', {
-        mensaje: reserva.error ?? 'No se pudo reservar la apuesta',
+    // arranca nadie y la sala vuelve a esperar.
+    if (sala.config.apuesta > 0 && humanos.length > 0) {
+      const reserva = await reservarApuesta({
+        matchId,
+        monto: sala.config.apuesta,
+        jugadores: humanos.map((p) => ({ userId: p.userId, seat: p.seat as number })),
       });
-      io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
-      return;
+      if (!reserva.ok) {
+        await prisma.match.delete({ where: { id: matchId } }).catch(() => undefined);
+        await prisma.room
+          .update({ where: { id: sala.config.roomId }, data: { state: 'WAITING' } })
+          .catch(() => undefined);
+        for (const p of sala.participantes) p.listo = false;
+        io.to(`sala:${code}`).emit('error:app', {
+          mensaje: reserva.error ?? 'No se pudo reservar la apuesta',
+        });
+        io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
+        return;
+      }
+      sala.betId = reserva.betId ?? null;
     }
-    sala.betId = reserva.betId ?? null;
-  }
 
-  const mesa = sala.arrancar(matchId, emitirAUsuario);
+    const mesa = sala.arrancar(matchId, emitirAUsuario);
     io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
     io.to(`sala:${code}`).emit('partida:arrancada', { matchId });
     mesa.difundir([]);
@@ -361,20 +367,31 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       console.error('[partida] no se pudo cerrar en la base', e);
     }
 
-    // Liquidación de la apuesta: el ganador lo decide el SERVIDOR a partir del
-  // estado del motor, nunca el cliente.
-  if (sala.betId) {
-    const ganadores = mesa.jugadores
-      .filter((j) => !j.isBot && j.seat % 2 === ganador)
-      .map((j) => j.userId);
-    const resultado = ganadores.length
-      ? await liquidarApuesta({ betId: sala.betId, ganadoresUserIds: ganadores })
-      : await reembolsarApuesta(sala.betId, 'Sin ganadores humanos');
-    if (!resultado.ok) console.error('[apuesta] liquidación falló', resultado.error);
-    sala.betId = null;
-  }
+    // Ranking: sólo mueve en modos competitivos y sólo cuenta a los humanos.
+    const humanosPartida = mesa.jugadores.filter((j) => !j.isBot);
+    if (humanosPartida.length >= 2) {
+      await aplicarRanking({
+        matchId: mesa.id,
+        mode: sala.config.modo,
+        jugadores: humanosPartida.map((j) => ({ userId: j.userId, equipo: j.seat % 2 })),
+        equipoGanador: ganador,
+      }).catch((e) => console.error('[ranking] falló', e));
+    }
 
-  io.to(`sala:${code}`).emit('partida:terminada', {
+    // Liquidación de la apuesta: el ganador lo decide el SERVIDOR a partir del
+    // estado del motor, nunca el cliente.
+    if (sala.betId) {
+      const ganadores = mesa.jugadores
+        .filter((j) => !j.isBot && j.seat % 2 === ganador)
+        .map((j) => j.userId);
+      const resultado = ganadores.length
+        ? await liquidarApuesta({ betId: sala.betId, ganadoresUserIds: ganadores })
+        : await reembolsarApuesta(sala.betId, 'Sin ganadores humanos');
+      if (!resultado.ok) console.error('[apuesta] liquidación falló', resultado.error);
+      sala.betId = null;
+    }
+
+    io.to(`sala:${code}`).emit('partida:terminada', {
       matchId: mesa.id,
       ganadorEquipo: ganador,
       scores: mesa.state.scores,

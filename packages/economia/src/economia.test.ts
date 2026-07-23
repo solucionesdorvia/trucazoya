@@ -91,7 +91,10 @@ const salasCreadas: string[] = [];
 async function crearPartida() {
   const room = await prisma.room.create({
     data: {
-      code: `${sufijo.slice(-4).toUpperCase()}${(nSalas++).toString().padStart(2, '0')}`.slice(0, 6),
+      code: `${sufijo.slice(-4).toUpperCase()}${(nSalas++).toString().padStart(2, '0')}`.slice(
+        0,
+        6,
+      ),
       name: 'Sala apuesta',
       hostUserId: jugadorA,
       mode: 'CASUAL_1V1',

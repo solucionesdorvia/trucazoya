@@ -19,6 +19,8 @@ export interface Participante {
 
 export type EstadoSala = 'ESPERANDO' | 'EN_PARTIDA' | 'TERMINADA';
 
+export type ModoJuego = 'CASUAL_1V1' | 'RANKED_1V1' | 'CASUAL_2V2' | 'RANKED_2V2';
+
 export interface ConfigSala extends RuleConfig {
   nombre: string;
   code: string;
@@ -26,6 +28,8 @@ export interface ConfigSala extends RuleConfig {
   hostUserId: string;
   apuesta: number;
   permiteBots: boolean;
+  /** Modo real de la sala: define si la partida mueve el ranking. */
+  modo: ModoJuego;
 }
 
 export class Sala {
@@ -144,6 +148,7 @@ export class Sala {
       hostUserId: this.config.hostUserId,
       matchId: this.mesa?.id ?? null,
       config: {
+        modo: this.config.modo,
         players: this.config.players,
         pointsToWin: this.config.pointsToWin,
         florEnabled: this.config.florEnabled,
