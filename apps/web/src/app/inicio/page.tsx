@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@trucazo/db';
 import { Encabezado } from '@/components/Encabezado';
 import { Panel, Pildora } from '@/components/ui';
+import { UnirseConCodigo } from '@/components/UnirseConCodigo';
 import { getSessionUser } from '@/lib/session';
 
 export const metadata = { title: 'Inicio' };
@@ -85,28 +86,8 @@ export default async function Inicio() {
 
           <Panel>
             <h2 className="text-sm font-medium text-tinta-400">Unirse con código</h2>
-            <form action="/salas/unirse" className="mt-3 flex gap-2">
-              <input
-                name="code"
-                placeholder="ABC123"
-                maxLength={6}
-                aria-label="Código de sala"
-                className="h-11 w-full rounded-xl border bg-noche-800/80 px-3.5 text-center font-mono text-lg uppercase tracking-widest text-tinta-50 placeholder:text-tinta-600 focus:border-oro-500"
-              />
-            </form>
+            <UnirseConCodigo />
             <p className="mt-2 text-sm text-tinta-400">Pegá el código que te pasaron.</p>
-          </Panel>
-        </section>
-
-        {/* ─── Estado de construcción (honesto, no botones falsos) ───── */}
-        <section className="mt-8">
-          <Panel className="border-dashed">
-            <h2 className="font-semibold text-tinta-50">🚧 En construcción</h2>
-            <p className="mt-1.5 text-sm leading-relaxed text-tinta-400">
-              El motor de truco está completo y testeado (30.000 partidas simuladas). Las salas y la
-              mesa en tiempo real son la próxima fase — los enlaces de arriba se activan cuando esa
-              parte esté funcionando de verdad, no antes.
-            </p>
           </Panel>
         </section>
       </main>
