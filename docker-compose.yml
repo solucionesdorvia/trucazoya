@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trucazo-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trucazo
+      POSTGRES_PASSWORD: trucazo
+      POSTGRES_DB: trucazo
+    ports:
+      - "54341:5432"
+    volumes:
+      - trucazo-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trucazo -d trucazo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: trucazo-redis
+    restart: unless-stopped
+    ports:
+      - "63791:6379"
+    volumes:
+      - trucazo-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  trucazo-pg-data:
+  trucazo-redis-data:
