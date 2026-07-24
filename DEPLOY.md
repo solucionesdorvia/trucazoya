@@ -33,16 +33,63 @@ Generar secretos:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-## Pasos
+## Deploy en Railway (paso a paso)
+
+El repo tiene **dos apps** (`web` y `game-server`) que se despliegan como **dos servicios**
+separados desde el **mismo repo**, más los plugins de **PostgreSQL** y **Redis**.
+
+### 1. Base de datos y cache
+
+En el proyecto de Railway: **New → Database → PostgreSQL**. Repetí con **Redis** (opcional por
+ahora, hace falta recién para multi-nodo).
+
+### 2. Servicio `web`
+
+**New → GitHub Repo →** este repo. Luego en **Settings** del servicio:
+
+- **Root Directory:** dejar la raíz del repo (es un monorepo pnpm).
+- **Build Command:** `pnpm install --frozen-lockfile && pnpm --filter @trucazo/web build`
+  _(el cliente Prisma se genera solo por el `postinstall` de la raíz)_
+- **Start Command:** `pnpm --filter @trucazo/db exec prisma migrate deploy && pnpm --filter @trucazo/web start`
+  _(las migraciones corren acá, una sola vez, antes de arrancar la web)_
+- **Variables:** `DATABASE_URL` (referenciá la del plugin Postgres), `SESSION_SECRET`,
+  `GAME_TOKEN_SECRET`, `WEB_URL` (la URL pública de este servicio),
+  `NEXT_PUBLIC_GAME_SERVER_URL` (la URL pública del game-server), `NODE_ENV=production`.
+
+### 3. Servicio `game-server`
+
+**New → GitHub Repo →** el mismo repo, como **segundo servicio**. En **Settings**:
+
+- **Root Directory:** la raíz del repo.
+- **Build Command:** `pnpm install --frozen-lockfile`
+- **Start Command:** `pnpm --filter @trucazo/game-server start`
+- **Networking:** exponé un dominio público (el browser se conecta directo por WebSocket).
+- **Variables:** `DATABASE_URL` (la misma del Postgres), `GAME_TOKEN_SECRET`
+  (**el mismo valor que en `web`** — con eso se firman y verifican los tokens del socket),
+  `WEB_URL` (URL pública de la web, para CORS), `NODE_ENV=production`.
+
+### 4. Datos de arranque (una vez)
+
+Para tener las cuentas demo, corré el seed una sola vez (desde tu máquina apuntando a la
+`DATABASE_URL` de producción, o con `railway run`):
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm --filter @trucazo/db generate
-pnpm --filter @trucazo/db migrate:deploy
-pnpm --filter @trucazo/web build
+pnpm --filter @trucazo/db seed
 ```
 
-Arranque: `pnpm --filter @trucazo/web start` y `pnpm --filter @trucazo/game-server start`.
+> ⚠️ El seed crea cuentas con contraseña conocida (`trucazo123`). Está bien para un entorno de
+> prueba; **no lo corras en un entorno real** o cambiá las contraseñas después.
+
+### Resumen de comandos (si deployás a mano o en otro proveedor)
+
+```bash
+pnpm install --frozen-lockfile      # genera el cliente Prisma por postinstall
+pnpm --filter @trucazo/db exec prisma migrate deploy
+pnpm --filter @trucazo/web build
+# arranque:
+pnpm --filter @trucazo/web start          # servicio web
+pnpm --filter @trucazo/game-server start  # servicio game-server
+```
 
 ## Health checks
 
