@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: trucazo
+          POSTGRES_PASSWORD: trucazo
+          POSTGRES_DB: trucazo
+        ports:
+          - 54341:5432
+        options: >-
+          --health-cmd "pg_isready -U trucazo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://trucazo:trucazo@localhost:54341/trucazo?schema=public
+      GAME_TOKEN_SECRET: ci-secreto-de-prueba-suficientemente-largo-1234
+      SESSION_SECRET: ci-secreto-de-sesion-suficientemente-largo-1234
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generar cliente Prisma y migrar
+        run: |
+          pnpm --filter @trucazo/db generate
+          pnpm --filter @trucazo/db exec prisma migrate deploy
+
+      - name: Formato
+        run: pnpm format:check
+
+      - name: Lint
+        run: |
+          pnpm --filter @trucazo/engine lint
+          pnpm --filter @trucazo/shared lint
+          pnpm --filter @trucazo/economia lint
+          pnpm --filter @trucazo/game-server lint
+          pnpm --filter @trucazo/web lint
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Tests
+        run: pnpm -r test
+
+      - name: Simulador del motor (humo)
+        run: pnpm --filter @trucazo/engine sim 2000
+
+      - name: Build
+        run: pnpm --filter @trucazo/web build

@@ -25,6 +25,12 @@ export function Encabezado({ user }: { user: SessionUser }) {
           </Link>
 
           <Link
+            href="/tienda"
+            className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
+          >
+            Tienda
+          </Link>
+          <Link
             href="/amigos"
             className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
           >

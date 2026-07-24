@@ -6,6 +6,7 @@ import { Panel, Pildora } from '@/components/ui';
 import { FormRetiro } from '@/components/billetera/FormRetiro';
 import { getSessionUser } from '@/lib/session';
 import { cancelarRetiro } from './acciones';
+import { reenviarVerificacion } from './verificar-accion';
 
 export const metadata = { title: 'Billetera' };
 
@@ -49,6 +50,21 @@ export default async function Billetera() {
 
       <main id="contenido" className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-3xl font-bold tracking-tight">Billetera</h1>
+
+        {!user.emailVerified && !user.isGuest && (
+          <Panel className="mt-4 border-oro-500/40 bg-oro-500/5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-tinta-200">
+                📧 Verificá tu email para poder <strong>retirar</strong> monedas.
+              </p>
+              <form action={reenviarVerificacion}>
+                <button className="h-9 rounded-lg border border-oro-500/40 px-3 text-sm font-medium text-oro-400">
+                  Reenviar link
+                </button>
+              </form>
+            </div>
+          </Panel>
+        )}
 
         {/* ─── Saldo ─────────────────────────────────────────────────── */}
         <Panel className="mt-5">

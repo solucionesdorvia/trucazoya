@@ -29,6 +29,12 @@ export type Profile = $Result.DefaultSelection<Prisma.$ProfilePayload>
  */
 export type Session = $Result.DefaultSelection<Prisma.$SessionPayload>
 /**
+ * Model VerificationToken
+ * Token de un solo uso: verificación de email y recuperación de contraseña.
+ * Se guarda sólo el HASH del token (si se filtra la DB, no sirve).
+ */
+export type VerificationToken = $Result.DefaultSelection<Prisma.$VerificationTokenPayload>
+/**
  * Model Wallet
  * 
  */
@@ -595,6 +601,16 @@ export class PrismaClient<
     * ```
     */
   get session(): Prisma.SessionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.verificationToken`: Exposes CRUD operations for the **VerificationToken** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more VerificationTokens
+    * const verificationTokens = await prisma.verificationToken.findMany()
+    * ```
+    */
+  get verificationToken(): Prisma.VerificationTokenDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.wallet`: Exposes CRUD operations for the **Wallet** model.
@@ -1379,6 +1395,7 @@ export namespace Prisma {
     User: 'User',
     Profile: 'Profile',
     Session: 'Session',
+    VerificationToken: 'VerificationToken',
     Wallet: 'Wallet',
     LedgerEntry: 'LedgerEntry',
     CashierProfile: 'CashierProfile',
@@ -1431,7 +1448,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "profile" | "session" | "wallet" | "ledgerEntry" | "cashierProfile" | "withdrawalRequest" | "room" | "roomParticipant" | "match" | "matchPlayer" | "gameEvent" | "matchResult" | "bet" | "betParticipant" | "rating" | "ratingHistory" | "season" | "friendship" | "block" | "club" | "clubMember" | "tournament" | "tournamentParticipant" | "tournamentMatch" | "achievement" | "userAchievement" | "mission" | "userMission" | "cosmetic" | "userCosmetic" | "notification" | "report" | "sanction" | "auditLog" | "featureFlag" | "systemSetting"
+      modelProps: "user" | "profile" | "session" | "verificationToken" | "wallet" | "ledgerEntry" | "cashierProfile" | "withdrawalRequest" | "room" | "roomParticipant" | "match" | "matchPlayer" | "gameEvent" | "matchResult" | "bet" | "betParticipant" | "rating" | "ratingHistory" | "season" | "friendship" | "block" | "club" | "clubMember" | "tournament" | "tournamentParticipant" | "tournamentMatch" | "achievement" | "userAchievement" | "mission" | "userMission" | "cosmetic" | "userCosmetic" | "notification" | "report" | "sanction" | "auditLog" | "featureFlag" | "systemSetting"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1654,6 +1671,80 @@ export namespace Prisma {
           count: {
             args: Prisma.SessionCountArgs<ExtArgs>
             result: $Utils.Optional<SessionCountAggregateOutputType> | number
+          }
+        }
+      }
+      VerificationToken: {
+        payload: Prisma.$VerificationTokenPayload<ExtArgs>
+        fields: Prisma.VerificationTokenFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.VerificationTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.VerificationTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>
+          }
+          findFirst: {
+            args: Prisma.VerificationTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.VerificationTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>
+          }
+          findMany: {
+            args: Prisma.VerificationTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>[]
+          }
+          create: {
+            args: Prisma.VerificationTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>
+          }
+          createMany: {
+            args: Prisma.VerificationTokenCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.VerificationTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>[]
+          }
+          delete: {
+            args: Prisma.VerificationTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>
+          }
+          update: {
+            args: Prisma.VerificationTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>
+          }
+          deleteMany: {
+            args: Prisma.VerificationTokenDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.VerificationTokenUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.VerificationTokenUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>[]
+          }
+          upsert: {
+            args: Prisma.VerificationTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VerificationTokenPayload>
+          }
+          aggregate: {
+            args: Prisma.VerificationTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateVerificationToken>
+          }
+          groupBy: {
+            args: Prisma.VerificationTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<VerificationTokenGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.VerificationTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<VerificationTokenCountAggregateOutputType> | number
           }
         }
       }
@@ -4272,6 +4363,7 @@ export namespace Prisma {
     user?: UserOmit
     profile?: ProfileOmit
     session?: SessionOmit
+    verificationToken?: VerificationTokenOmit
     wallet?: WalletOmit
     ledgerEntry?: LedgerEntryOmit
     cashierProfile?: CashierProfileOmit
@@ -4387,6 +4479,7 @@ export namespace Prisma {
 
   export type UserCountOutputType = {
     sessions: number
+    verifyTokens: number
     ledgerEntries: number
     ratings: number
     sanctions: number
@@ -4411,6 +4504,7 @@ export namespace Prisma {
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | UserCountOutputTypeCountSessionsArgs
+    verifyTokens?: boolean | UserCountOutputTypeCountVerifyTokensArgs
     ledgerEntries?: boolean | UserCountOutputTypeCountLedgerEntriesArgs
     ratings?: boolean | UserCountOutputTypeCountRatingsArgs
     sanctions?: boolean | UserCountOutputTypeCountSanctionsArgs
@@ -4449,6 +4543,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SessionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountVerifyTokensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VerificationTokenWhereInput
   }
 
   /**
@@ -5109,6 +5210,7 @@ export namespace Prisma {
     wallet?: boolean | User$walletArgs<ExtArgs>
     cashierProfile?: boolean | User$cashierProfileArgs<ExtArgs>
     sessions?: boolean | User$sessionsArgs<ExtArgs>
+    verifyTokens?: boolean | User$verifyTokensArgs<ExtArgs>
     ledgerEntries?: boolean | User$ledgerEntriesArgs<ExtArgs>
     ratings?: boolean | User$ratingsArgs<ExtArgs>
     sanctions?: boolean | User$sanctionsArgs<ExtArgs>
@@ -5180,6 +5282,7 @@ export namespace Prisma {
     wallet?: boolean | User$walletArgs<ExtArgs>
     cashierProfile?: boolean | User$cashierProfileArgs<ExtArgs>
     sessions?: boolean | User$sessionsArgs<ExtArgs>
+    verifyTokens?: boolean | User$verifyTokensArgs<ExtArgs>
     ledgerEntries?: boolean | User$ledgerEntriesArgs<ExtArgs>
     ratings?: boolean | User$ratingsArgs<ExtArgs>
     sanctions?: boolean | User$sanctionsArgs<ExtArgs>
@@ -5212,6 +5315,7 @@ export namespace Prisma {
       wallet: Prisma.$WalletPayload<ExtArgs> | null
       cashierProfile: Prisma.$CashierProfilePayload<ExtArgs> | null
       sessions: Prisma.$SessionPayload<ExtArgs>[]
+      verifyTokens: Prisma.$VerificationTokenPayload<ExtArgs>[]
       ledgerEntries: Prisma.$LedgerEntryPayload<ExtArgs>[]
       ratings: Prisma.$RatingPayload<ExtArgs>[]
       sanctions: Prisma.$SanctionPayload<ExtArgs>[]
@@ -5643,6 +5747,7 @@ export namespace Prisma {
     wallet<T extends User$walletArgs<ExtArgs> = {}>(args?: Subset<T, User$walletArgs<ExtArgs>>): Prisma__WalletClient<$Result.GetResult<Prisma.$WalletPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     cashierProfile<T extends User$cashierProfileArgs<ExtArgs> = {}>(args?: Subset<T, User$cashierProfileArgs<ExtArgs>>): Prisma__CashierProfileClient<$Result.GetResult<Prisma.$CashierProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     sessions<T extends User$sessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    verifyTokens<T extends User$verifyTokensArgs<ExtArgs> = {}>(args?: Subset<T, User$verifyTokensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ledgerEntries<T extends User$ledgerEntriesArgs<ExtArgs> = {}>(args?: Subset<T, User$ledgerEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ratings<T extends User$ratingsArgs<ExtArgs> = {}>(args?: Subset<T, User$ratingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RatingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sanctions<T extends User$sanctionsArgs<ExtArgs> = {}>(args?: Subset<T, User$sanctionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SanctionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -6169,6 +6274,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: SessionScalarFieldEnum | SessionScalarFieldEnum[]
+  }
+
+  /**
+   * User.verifyTokens
+   */
+  export type User$verifyTokensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    where?: VerificationTokenWhereInput
+    orderBy?: VerificationTokenOrderByWithRelationInput | VerificationTokenOrderByWithRelationInput[]
+    cursor?: VerificationTokenWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: VerificationTokenScalarFieldEnum | VerificationTokenScalarFieldEnum[]
   }
 
   /**
@@ -8947,6 +9076,1090 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: SessionInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model VerificationToken
+   */
+
+  export type AggregateVerificationToken = {
+    _count: VerificationTokenCountAggregateOutputType | null
+    _min: VerificationTokenMinAggregateOutputType | null
+    _max: VerificationTokenMaxAggregateOutputType | null
+  }
+
+  export type VerificationTokenMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    tokenHash: string | null
+    purpose: string | null
+    createdAt: Date | null
+    expiresAt: Date | null
+    usedAt: Date | null
+  }
+
+  export type VerificationTokenMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    tokenHash: string | null
+    purpose: string | null
+    createdAt: Date | null
+    expiresAt: Date | null
+    usedAt: Date | null
+  }
+
+  export type VerificationTokenCountAggregateOutputType = {
+    id: number
+    userId: number
+    tokenHash: number
+    purpose: number
+    createdAt: number
+    expiresAt: number
+    usedAt: number
+    _all: number
+  }
+
+
+  export type VerificationTokenMinAggregateInputType = {
+    id?: true
+    userId?: true
+    tokenHash?: true
+    purpose?: true
+    createdAt?: true
+    expiresAt?: true
+    usedAt?: true
+  }
+
+  export type VerificationTokenMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    tokenHash?: true
+    purpose?: true
+    createdAt?: true
+    expiresAt?: true
+    usedAt?: true
+  }
+
+  export type VerificationTokenCountAggregateInputType = {
+    id?: true
+    userId?: true
+    tokenHash?: true
+    purpose?: true
+    createdAt?: true
+    expiresAt?: true
+    usedAt?: true
+    _all?: true
+  }
+
+  export type VerificationTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which VerificationToken to aggregate.
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VerificationTokens to fetch.
+     */
+    orderBy?: VerificationTokenOrderByWithRelationInput | VerificationTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: VerificationTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VerificationTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VerificationTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned VerificationTokens
+    **/
+    _count?: true | VerificationTokenCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: VerificationTokenMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: VerificationTokenMaxAggregateInputType
+  }
+
+  export type GetVerificationTokenAggregateType<T extends VerificationTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregateVerificationToken]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateVerificationToken[P]>
+      : GetScalarType<T[P], AggregateVerificationToken[P]>
+  }
+
+
+
+
+  export type VerificationTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VerificationTokenWhereInput
+    orderBy?: VerificationTokenOrderByWithAggregationInput | VerificationTokenOrderByWithAggregationInput[]
+    by: VerificationTokenScalarFieldEnum[] | VerificationTokenScalarFieldEnum
+    having?: VerificationTokenScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: VerificationTokenCountAggregateInputType | true
+    _min?: VerificationTokenMinAggregateInputType
+    _max?: VerificationTokenMaxAggregateInputType
+  }
+
+  export type VerificationTokenGroupByOutputType = {
+    id: string
+    userId: string
+    tokenHash: string
+    purpose: string
+    createdAt: Date
+    expiresAt: Date
+    usedAt: Date | null
+    _count: VerificationTokenCountAggregateOutputType | null
+    _min: VerificationTokenMinAggregateOutputType | null
+    _max: VerificationTokenMaxAggregateOutputType | null
+  }
+
+  type GetVerificationTokenGroupByPayload<T extends VerificationTokenGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<VerificationTokenGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof VerificationTokenGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], VerificationTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], VerificationTokenGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type VerificationTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    tokenHash?: boolean
+    purpose?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["verificationToken"]>
+
+  export type VerificationTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    tokenHash?: boolean
+    purpose?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["verificationToken"]>
+
+  export type VerificationTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    tokenHash?: boolean
+    purpose?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["verificationToken"]>
+
+  export type VerificationTokenSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    tokenHash?: boolean
+    purpose?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+  }
+
+  export type VerificationTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "tokenHash" | "purpose" | "createdAt" | "expiresAt" | "usedAt", ExtArgs["result"]["verificationToken"]>
+  export type VerificationTokenInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type VerificationTokenIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type VerificationTokenIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $VerificationTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "VerificationToken"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      tokenHash: string
+      purpose: string
+      createdAt: Date
+      expiresAt: Date
+      usedAt: Date | null
+    }, ExtArgs["result"]["verificationToken"]>
+    composites: {}
+  }
+
+  type VerificationTokenGetPayload<S extends boolean | null | undefined | VerificationTokenDefaultArgs> = $Result.GetResult<Prisma.$VerificationTokenPayload, S>
+
+  type VerificationTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<VerificationTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: VerificationTokenCountAggregateInputType | true
+    }
+
+  export interface VerificationTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['VerificationToken'], meta: { name: 'VerificationToken' } }
+    /**
+     * Find zero or one VerificationToken that matches the filter.
+     * @param {VerificationTokenFindUniqueArgs} args - Arguments to find a VerificationToken
+     * @example
+     * // Get one VerificationToken
+     * const verificationToken = await prisma.verificationToken.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends VerificationTokenFindUniqueArgs>(args: SelectSubset<T, VerificationTokenFindUniqueArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one VerificationToken that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {VerificationTokenFindUniqueOrThrowArgs} args - Arguments to find a VerificationToken
+     * @example
+     * // Get one VerificationToken
+     * const verificationToken = await prisma.verificationToken.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends VerificationTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, VerificationTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first VerificationToken that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenFindFirstArgs} args - Arguments to find a VerificationToken
+     * @example
+     * // Get one VerificationToken
+     * const verificationToken = await prisma.verificationToken.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends VerificationTokenFindFirstArgs>(args?: SelectSubset<T, VerificationTokenFindFirstArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first VerificationToken that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenFindFirstOrThrowArgs} args - Arguments to find a VerificationToken
+     * @example
+     * // Get one VerificationToken
+     * const verificationToken = await prisma.verificationToken.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends VerificationTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, VerificationTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more VerificationTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all VerificationTokens
+     * const verificationTokens = await prisma.verificationToken.findMany()
+     * 
+     * // Get first 10 VerificationTokens
+     * const verificationTokens = await prisma.verificationToken.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const verificationTokenWithIdOnly = await prisma.verificationToken.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends VerificationTokenFindManyArgs>(args?: SelectSubset<T, VerificationTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a VerificationToken.
+     * @param {VerificationTokenCreateArgs} args - Arguments to create a VerificationToken.
+     * @example
+     * // Create one VerificationToken
+     * const VerificationToken = await prisma.verificationToken.create({
+     *   data: {
+     *     // ... data to create a VerificationToken
+     *   }
+     * })
+     * 
+     */
+    create<T extends VerificationTokenCreateArgs>(args: SelectSubset<T, VerificationTokenCreateArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many VerificationTokens.
+     * @param {VerificationTokenCreateManyArgs} args - Arguments to create many VerificationTokens.
+     * @example
+     * // Create many VerificationTokens
+     * const verificationToken = await prisma.verificationToken.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends VerificationTokenCreateManyArgs>(args?: SelectSubset<T, VerificationTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many VerificationTokens and returns the data saved in the database.
+     * @param {VerificationTokenCreateManyAndReturnArgs} args - Arguments to create many VerificationTokens.
+     * @example
+     * // Create many VerificationTokens
+     * const verificationToken = await prisma.verificationToken.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many VerificationTokens and only return the `id`
+     * const verificationTokenWithIdOnly = await prisma.verificationToken.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends VerificationTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, VerificationTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a VerificationToken.
+     * @param {VerificationTokenDeleteArgs} args - Arguments to delete one VerificationToken.
+     * @example
+     * // Delete one VerificationToken
+     * const VerificationToken = await prisma.verificationToken.delete({
+     *   where: {
+     *     // ... filter to delete one VerificationToken
+     *   }
+     * })
+     * 
+     */
+    delete<T extends VerificationTokenDeleteArgs>(args: SelectSubset<T, VerificationTokenDeleteArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one VerificationToken.
+     * @param {VerificationTokenUpdateArgs} args - Arguments to update one VerificationToken.
+     * @example
+     * // Update one VerificationToken
+     * const verificationToken = await prisma.verificationToken.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends VerificationTokenUpdateArgs>(args: SelectSubset<T, VerificationTokenUpdateArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more VerificationTokens.
+     * @param {VerificationTokenDeleteManyArgs} args - Arguments to filter VerificationTokens to delete.
+     * @example
+     * // Delete a few VerificationTokens
+     * const { count } = await prisma.verificationToken.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends VerificationTokenDeleteManyArgs>(args?: SelectSubset<T, VerificationTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more VerificationTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many VerificationTokens
+     * const verificationToken = await prisma.verificationToken.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends VerificationTokenUpdateManyArgs>(args: SelectSubset<T, VerificationTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more VerificationTokens and returns the data updated in the database.
+     * @param {VerificationTokenUpdateManyAndReturnArgs} args - Arguments to update many VerificationTokens.
+     * @example
+     * // Update many VerificationTokens
+     * const verificationToken = await prisma.verificationToken.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more VerificationTokens and only return the `id`
+     * const verificationTokenWithIdOnly = await prisma.verificationToken.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends VerificationTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, VerificationTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one VerificationToken.
+     * @param {VerificationTokenUpsertArgs} args - Arguments to update or create a VerificationToken.
+     * @example
+     * // Update or create a VerificationToken
+     * const verificationToken = await prisma.verificationToken.upsert({
+     *   create: {
+     *     // ... data to create a VerificationToken
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the VerificationToken we want to update
+     *   }
+     * })
+     */
+    upsert<T extends VerificationTokenUpsertArgs>(args: SelectSubset<T, VerificationTokenUpsertArgs<ExtArgs>>): Prisma__VerificationTokenClient<$Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of VerificationTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenCountArgs} args - Arguments to filter VerificationTokens to count.
+     * @example
+     * // Count the number of VerificationTokens
+     * const count = await prisma.verificationToken.count({
+     *   where: {
+     *     // ... the filter for the VerificationTokens we want to count
+     *   }
+     * })
+    **/
+    count<T extends VerificationTokenCountArgs>(
+      args?: Subset<T, VerificationTokenCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], VerificationTokenCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a VerificationToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends VerificationTokenAggregateArgs>(args: Subset<T, VerificationTokenAggregateArgs>): Prisma.PrismaPromise<GetVerificationTokenAggregateType<T>>
+
+    /**
+     * Group by VerificationToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VerificationTokenGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends VerificationTokenGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: VerificationTokenGroupByArgs['orderBy'] }
+        : { orderBy?: VerificationTokenGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, VerificationTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetVerificationTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the VerificationToken model
+   */
+  readonly fields: VerificationTokenFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for VerificationToken.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__VerificationTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the VerificationToken model
+   */
+  interface VerificationTokenFieldRefs {
+    readonly id: FieldRef<"VerificationToken", 'String'>
+    readonly userId: FieldRef<"VerificationToken", 'String'>
+    readonly tokenHash: FieldRef<"VerificationToken", 'String'>
+    readonly purpose: FieldRef<"VerificationToken", 'String'>
+    readonly createdAt: FieldRef<"VerificationToken", 'DateTime'>
+    readonly expiresAt: FieldRef<"VerificationToken", 'DateTime'>
+    readonly usedAt: FieldRef<"VerificationToken", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * VerificationToken findUnique
+   */
+  export type VerificationTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which VerificationToken to fetch.
+     */
+    where: VerificationTokenWhereUniqueInput
+  }
+
+  /**
+   * VerificationToken findUniqueOrThrow
+   */
+  export type VerificationTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which VerificationToken to fetch.
+     */
+    where: VerificationTokenWhereUniqueInput
+  }
+
+  /**
+   * VerificationToken findFirst
+   */
+  export type VerificationTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which VerificationToken to fetch.
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VerificationTokens to fetch.
+     */
+    orderBy?: VerificationTokenOrderByWithRelationInput | VerificationTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for VerificationTokens.
+     */
+    cursor?: VerificationTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VerificationTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VerificationTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of VerificationTokens.
+     */
+    distinct?: VerificationTokenScalarFieldEnum | VerificationTokenScalarFieldEnum[]
+  }
+
+  /**
+   * VerificationToken findFirstOrThrow
+   */
+  export type VerificationTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which VerificationToken to fetch.
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VerificationTokens to fetch.
+     */
+    orderBy?: VerificationTokenOrderByWithRelationInput | VerificationTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for VerificationTokens.
+     */
+    cursor?: VerificationTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VerificationTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VerificationTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of VerificationTokens.
+     */
+    distinct?: VerificationTokenScalarFieldEnum | VerificationTokenScalarFieldEnum[]
+  }
+
+  /**
+   * VerificationToken findMany
+   */
+  export type VerificationTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which VerificationTokens to fetch.
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VerificationTokens to fetch.
+     */
+    orderBy?: VerificationTokenOrderByWithRelationInput | VerificationTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing VerificationTokens.
+     */
+    cursor?: VerificationTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VerificationTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VerificationTokens.
+     */
+    skip?: number
+    distinct?: VerificationTokenScalarFieldEnum | VerificationTokenScalarFieldEnum[]
+  }
+
+  /**
+   * VerificationToken create
+   */
+  export type VerificationTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * The data needed to create a VerificationToken.
+     */
+    data: XOR<VerificationTokenCreateInput, VerificationTokenUncheckedCreateInput>
+  }
+
+  /**
+   * VerificationToken createMany
+   */
+  export type VerificationTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many VerificationTokens.
+     */
+    data: VerificationTokenCreateManyInput | VerificationTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * VerificationToken createManyAndReturn
+   */
+  export type VerificationTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * The data used to create many VerificationTokens.
+     */
+    data: VerificationTokenCreateManyInput | VerificationTokenCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * VerificationToken update
+   */
+  export type VerificationTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * The data needed to update a VerificationToken.
+     */
+    data: XOR<VerificationTokenUpdateInput, VerificationTokenUncheckedUpdateInput>
+    /**
+     * Choose, which VerificationToken to update.
+     */
+    where: VerificationTokenWhereUniqueInput
+  }
+
+  /**
+   * VerificationToken updateMany
+   */
+  export type VerificationTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update VerificationTokens.
+     */
+    data: XOR<VerificationTokenUpdateManyMutationInput, VerificationTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which VerificationTokens to update
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * Limit how many VerificationTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * VerificationToken updateManyAndReturn
+   */
+  export type VerificationTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * The data used to update VerificationTokens.
+     */
+    data: XOR<VerificationTokenUpdateManyMutationInput, VerificationTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which VerificationTokens to update
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * Limit how many VerificationTokens to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * VerificationToken upsert
+   */
+  export type VerificationTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * The filter to search for the VerificationToken to update in case it exists.
+     */
+    where: VerificationTokenWhereUniqueInput
+    /**
+     * In case the VerificationToken found by the `where` argument doesn't exist, create a new VerificationToken with this data.
+     */
+    create: XOR<VerificationTokenCreateInput, VerificationTokenUncheckedCreateInput>
+    /**
+     * In case the VerificationToken was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<VerificationTokenUpdateInput, VerificationTokenUncheckedUpdateInput>
+  }
+
+  /**
+   * VerificationToken delete
+   */
+  export type VerificationTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
+    /**
+     * Filter which VerificationToken to delete.
+     */
+    where: VerificationTokenWhereUniqueInput
+  }
+
+  /**
+   * VerificationToken deleteMany
+   */
+  export type VerificationTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which VerificationTokens to delete
+     */
+    where?: VerificationTokenWhereInput
+    /**
+     * Limit how many VerificationTokens to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * VerificationToken without action
+   */
+  export type VerificationTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VerificationToken
+     */
+    select?: VerificationTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VerificationToken
+     */
+    omit?: VerificationTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VerificationTokenInclude<ExtArgs> | null
   }
 
 
@@ -47068,6 +48281,19 @@ export namespace Prisma {
   export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
 
 
+  export const VerificationTokenScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    tokenHash: 'tokenHash',
+    purpose: 'purpose',
+    createdAt: 'createdAt',
+    expiresAt: 'expiresAt',
+    usedAt: 'usedAt'
+  };
+
+  export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
+
+
   export const WalletScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
@@ -47907,6 +49133,7 @@ export namespace Prisma {
     wallet?: XOR<WalletNullableScalarRelationFilter, WalletWhereInput> | null
     cashierProfile?: XOR<CashierProfileNullableScalarRelationFilter, CashierProfileWhereInput> | null
     sessions?: SessionListRelationFilter
+    verifyTokens?: VerificationTokenListRelationFilter
     ledgerEntries?: LedgerEntryListRelationFilter
     ratings?: RatingListRelationFilter
     sanctions?: SanctionListRelationFilter
@@ -47945,6 +49172,7 @@ export namespace Prisma {
     wallet?: WalletOrderByWithRelationInput
     cashierProfile?: CashierProfileOrderByWithRelationInput
     sessions?: SessionOrderByRelationAggregateInput
+    verifyTokens?: VerificationTokenOrderByRelationAggregateInput
     ledgerEntries?: LedgerEntryOrderByRelationAggregateInput
     ratings?: RatingOrderByRelationAggregateInput
     sanctions?: SanctionOrderByRelationAggregateInput
@@ -47986,6 +49214,7 @@ export namespace Prisma {
     wallet?: XOR<WalletNullableScalarRelationFilter, WalletWhereInput> | null
     cashierProfile?: XOR<CashierProfileNullableScalarRelationFilter, CashierProfileWhereInput> | null
     sessions?: SessionListRelationFilter
+    verifyTokens?: VerificationTokenListRelationFilter
     ledgerEntries?: LedgerEntryListRelationFilter
     ratings?: RatingListRelationFilter
     sanctions?: SanctionListRelationFilter
@@ -48202,6 +49431,71 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Session"> | Date | string
     expiresAt?: DateTimeWithAggregatesFilter<"Session"> | Date | string
     revokedAt?: DateTimeNullableWithAggregatesFilter<"Session"> | Date | string | null
+  }
+
+  export type VerificationTokenWhereInput = {
+    AND?: VerificationTokenWhereInput | VerificationTokenWhereInput[]
+    OR?: VerificationTokenWhereInput[]
+    NOT?: VerificationTokenWhereInput | VerificationTokenWhereInput[]
+    id?: StringFilter<"VerificationToken"> | string
+    userId?: StringFilter<"VerificationToken"> | string
+    tokenHash?: StringFilter<"VerificationToken"> | string
+    purpose?: StringFilter<"VerificationToken"> | string
+    createdAt?: DateTimeFilter<"VerificationToken"> | Date | string
+    expiresAt?: DateTimeFilter<"VerificationToken"> | Date | string
+    usedAt?: DateTimeNullableFilter<"VerificationToken"> | Date | string | null
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type VerificationTokenOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    tokenHash?: SortOrder
+    purpose?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrderInput | SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type VerificationTokenWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    tokenHash?: string
+    AND?: VerificationTokenWhereInput | VerificationTokenWhereInput[]
+    OR?: VerificationTokenWhereInput[]
+    NOT?: VerificationTokenWhereInput | VerificationTokenWhereInput[]
+    userId?: StringFilter<"VerificationToken"> | string
+    purpose?: StringFilter<"VerificationToken"> | string
+    createdAt?: DateTimeFilter<"VerificationToken"> | Date | string
+    expiresAt?: DateTimeFilter<"VerificationToken"> | Date | string
+    usedAt?: DateTimeNullableFilter<"VerificationToken"> | Date | string | null
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "tokenHash">
+
+  export type VerificationTokenOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    tokenHash?: SortOrder
+    purpose?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrderInput | SortOrder
+    _count?: VerificationTokenCountOrderByAggregateInput
+    _max?: VerificationTokenMaxOrderByAggregateInput
+    _min?: VerificationTokenMinOrderByAggregateInput
+  }
+
+  export type VerificationTokenScalarWhereWithAggregatesInput = {
+    AND?: VerificationTokenScalarWhereWithAggregatesInput | VerificationTokenScalarWhereWithAggregatesInput[]
+    OR?: VerificationTokenScalarWhereWithAggregatesInput[]
+    NOT?: VerificationTokenScalarWhereWithAggregatesInput | VerificationTokenScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"VerificationToken"> | string
+    userId?: StringWithAggregatesFilter<"VerificationToken"> | string
+    tokenHash?: StringWithAggregatesFilter<"VerificationToken"> | string
+    purpose?: StringWithAggregatesFilter<"VerificationToken"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"VerificationToken"> | Date | string
+    expiresAt?: DateTimeWithAggregatesFilter<"VerificationToken"> | Date | string
+    usedAt?: DateTimeNullableWithAggregatesFilter<"VerificationToken"> | Date | string | null
   }
 
   export type WalletWhereInput = {
@@ -50606,6 +51900,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -50644,6 +51939,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -50682,6 +51978,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -50720,6 +52017,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -50962,6 +52260,75 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     revokedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VerificationTokenCreateInput = {
+    id?: string
+    tokenHash: string
+    purpose: string
+    createdAt?: Date | string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    user: UserCreateNestedOneWithoutVerifyTokensInput
+  }
+
+  export type VerificationTokenUncheckedCreateInput = {
+    id?: string
+    userId: string
+    tokenHash: string
+    purpose: string
+    createdAt?: Date | string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+  }
+
+  export type VerificationTokenUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    user?: UserUpdateOneRequiredWithoutVerifyTokensNestedInput
+  }
+
+  export type VerificationTokenUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VerificationTokenCreateManyInput = {
+    id?: string
+    userId: string
+    tokenHash: string
+    purpose: string
+    createdAt?: Date | string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+  }
+
+  export type VerificationTokenUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VerificationTokenUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type WalletCreateInput = {
@@ -53543,6 +54910,12 @@ export namespace Prisma {
     none?: SessionWhereInput
   }
 
+  export type VerificationTokenListRelationFilter = {
+    every?: VerificationTokenWhereInput
+    some?: VerificationTokenWhereInput
+    none?: VerificationTokenWhereInput
+  }
+
   export type LedgerEntryListRelationFilter = {
     every?: LedgerEntryWhereInput
     some?: LedgerEntryWhereInput
@@ -53645,6 +55018,10 @@ export namespace Prisma {
   }
 
   export type SessionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type VerificationTokenOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -54012,6 +55389,36 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type VerificationTokenCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    tokenHash?: SortOrder
+    purpose?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrder
+  }
+
+  export type VerificationTokenMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    tokenHash?: SortOrder
+    purpose?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrder
+  }
+
+  export type VerificationTokenMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    tokenHash?: SortOrder
+    purpose?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrder
   }
 
   export type BigIntFilter<$PrismaModel = never> = {
@@ -55833,6 +57240,13 @@ export namespace Prisma {
     connect?: SessionWhereUniqueInput | SessionWhereUniqueInput[]
   }
 
+  export type VerificationTokenCreateNestedManyWithoutUserInput = {
+    create?: XOR<VerificationTokenCreateWithoutUserInput, VerificationTokenUncheckedCreateWithoutUserInput> | VerificationTokenCreateWithoutUserInput[] | VerificationTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: VerificationTokenCreateOrConnectWithoutUserInput | VerificationTokenCreateOrConnectWithoutUserInput[]
+    createMany?: VerificationTokenCreateManyUserInputEnvelope
+    connect?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+  }
+
   export type LedgerEntryCreateNestedManyWithoutUserInput = {
     create?: XOR<LedgerEntryCreateWithoutUserInput, LedgerEntryUncheckedCreateWithoutUserInput> | LedgerEntryCreateWithoutUserInput[] | LedgerEntryUncheckedCreateWithoutUserInput[]
     connectOrCreate?: LedgerEntryCreateOrConnectWithoutUserInput | LedgerEntryCreateOrConnectWithoutUserInput[]
@@ -55996,6 +57410,13 @@ export namespace Prisma {
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
     createMany?: SessionCreateManyUserInputEnvelope
     connect?: SessionWhereUniqueInput | SessionWhereUniqueInput[]
+  }
+
+  export type VerificationTokenUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<VerificationTokenCreateWithoutUserInput, VerificationTokenUncheckedCreateWithoutUserInput> | VerificationTokenCreateWithoutUserInput[] | VerificationTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: VerificationTokenCreateOrConnectWithoutUserInput | VerificationTokenCreateOrConnectWithoutUserInput[]
+    createMany?: VerificationTokenCreateManyUserInputEnvelope
+    connect?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
   }
 
   export type LedgerEntryUncheckedCreateNestedManyWithoutUserInput = {
@@ -56200,6 +57621,20 @@ export namespace Prisma {
     update?: SessionUpdateWithWhereUniqueWithoutUserInput | SessionUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: SessionUpdateManyWithWhereWithoutUserInput | SessionUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: SessionScalarWhereInput | SessionScalarWhereInput[]
+  }
+
+  export type VerificationTokenUpdateManyWithoutUserNestedInput = {
+    create?: XOR<VerificationTokenCreateWithoutUserInput, VerificationTokenUncheckedCreateWithoutUserInput> | VerificationTokenCreateWithoutUserInput[] | VerificationTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: VerificationTokenCreateOrConnectWithoutUserInput | VerificationTokenCreateOrConnectWithoutUserInput[]
+    upsert?: VerificationTokenUpsertWithWhereUniqueWithoutUserInput | VerificationTokenUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: VerificationTokenCreateManyUserInputEnvelope
+    set?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    disconnect?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    delete?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    connect?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    update?: VerificationTokenUpdateWithWhereUniqueWithoutUserInput | VerificationTokenUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: VerificationTokenUpdateManyWithWhereWithoutUserInput | VerificationTokenUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: VerificationTokenScalarWhereInput | VerificationTokenScalarWhereInput[]
   }
 
   export type LedgerEntryUpdateManyWithoutUserNestedInput = {
@@ -56526,6 +57961,20 @@ export namespace Prisma {
     deleteMany?: SessionScalarWhereInput | SessionScalarWhereInput[]
   }
 
+  export type VerificationTokenUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<VerificationTokenCreateWithoutUserInput, VerificationTokenUncheckedCreateWithoutUserInput> | VerificationTokenCreateWithoutUserInput[] | VerificationTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: VerificationTokenCreateOrConnectWithoutUserInput | VerificationTokenCreateOrConnectWithoutUserInput[]
+    upsert?: VerificationTokenUpsertWithWhereUniqueWithoutUserInput | VerificationTokenUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: VerificationTokenCreateManyUserInputEnvelope
+    set?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    disconnect?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    delete?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    connect?: VerificationTokenWhereUniqueInput | VerificationTokenWhereUniqueInput[]
+    update?: VerificationTokenUpdateWithWhereUniqueWithoutUserInput | VerificationTokenUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: VerificationTokenUpdateManyWithWhereWithoutUserInput | VerificationTokenUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: VerificationTokenScalarWhereInput | VerificationTokenScalarWhereInput[]
+  }
+
   export type LedgerEntryUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<LedgerEntryCreateWithoutUserInput, LedgerEntryUncheckedCreateWithoutUserInput> | LedgerEntryCreateWithoutUserInput[] | LedgerEntryUncheckedCreateWithoutUserInput[]
     connectOrCreate?: LedgerEntryCreateOrConnectWithoutUserInput | LedgerEntryCreateOrConnectWithoutUserInput[]
@@ -56844,6 +58293,20 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutSessionsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSessionsInput, UserUpdateWithoutSessionsInput>, UserUncheckedUpdateWithoutSessionsInput>
+  }
+
+  export type UserCreateNestedOneWithoutVerifyTokensInput = {
+    create?: XOR<UserCreateWithoutVerifyTokensInput, UserUncheckedCreateWithoutVerifyTokensInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVerifyTokensInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutVerifyTokensNestedInput = {
+    create?: XOR<UserCreateWithoutVerifyTokensInput, UserUncheckedCreateWithoutVerifyTokensInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVerifyTokensInput
+    upsert?: UserUpsertWithoutVerifyTokensInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutVerifyTokensInput, UserUpdateWithoutVerifyTokensInput>, UserUncheckedUpdateWithoutVerifyTokensInput>
   }
 
   export type UserCreateNestedOneWithoutWalletInput = {
@@ -58665,6 +60128,34 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type VerificationTokenCreateWithoutUserInput = {
+    id?: string
+    tokenHash: string
+    purpose: string
+    createdAt?: Date | string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+  }
+
+  export type VerificationTokenUncheckedCreateWithoutUserInput = {
+    id?: string
+    tokenHash: string
+    purpose: string
+    createdAt?: Date | string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+  }
+
+  export type VerificationTokenCreateOrConnectWithoutUserInput = {
+    where: VerificationTokenWhereUniqueInput
+    create: XOR<VerificationTokenCreateWithoutUserInput, VerificationTokenUncheckedCreateWithoutUserInput>
+  }
+
+  export type VerificationTokenCreateManyUserInputEnvelope = {
+    data: VerificationTokenCreateManyUserInput | VerificationTokenCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type LedgerEntryCreateWithoutUserInput = {
     id?: string
     type: $Enums.LedgerType
@@ -59376,6 +60867,35 @@ export namespace Prisma {
     revokedAt?: DateTimeNullableFilter<"Session"> | Date | string | null
   }
 
+  export type VerificationTokenUpsertWithWhereUniqueWithoutUserInput = {
+    where: VerificationTokenWhereUniqueInput
+    update: XOR<VerificationTokenUpdateWithoutUserInput, VerificationTokenUncheckedUpdateWithoutUserInput>
+    create: XOR<VerificationTokenCreateWithoutUserInput, VerificationTokenUncheckedCreateWithoutUserInput>
+  }
+
+  export type VerificationTokenUpdateWithWhereUniqueWithoutUserInput = {
+    where: VerificationTokenWhereUniqueInput
+    data: XOR<VerificationTokenUpdateWithoutUserInput, VerificationTokenUncheckedUpdateWithoutUserInput>
+  }
+
+  export type VerificationTokenUpdateManyWithWhereWithoutUserInput = {
+    where: VerificationTokenScalarWhereInput
+    data: XOR<VerificationTokenUpdateManyMutationInput, VerificationTokenUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type VerificationTokenScalarWhereInput = {
+    AND?: VerificationTokenScalarWhereInput | VerificationTokenScalarWhereInput[]
+    OR?: VerificationTokenScalarWhereInput[]
+    NOT?: VerificationTokenScalarWhereInput | VerificationTokenScalarWhereInput[]
+    id?: StringFilter<"VerificationToken"> | string
+    userId?: StringFilter<"VerificationToken"> | string
+    tokenHash?: StringFilter<"VerificationToken"> | string
+    purpose?: StringFilter<"VerificationToken"> | string
+    createdAt?: DateTimeFilter<"VerificationToken"> | Date | string
+    expiresAt?: DateTimeFilter<"VerificationToken"> | Date | string
+    usedAt?: DateTimeNullableFilter<"VerificationToken"> | Date | string | null
+  }
+
   export type LedgerEntryUpsertWithWhereUniqueWithoutUserInput = {
     where: LedgerEntryWhereUniqueInput
     update: XOR<LedgerEntryUpdateWithoutUserInput, LedgerEntryUncheckedUpdateWithoutUserInput>
@@ -59925,6 +61445,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -59962,6 +61483,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -60015,6 +61537,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -60052,6 +61575,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -60089,6 +61613,7 @@ export namespace Prisma {
     profile?: ProfileCreateNestedOneWithoutUserInput
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -60126,6 +61651,7 @@ export namespace Prisma {
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -60179,6 +61705,7 @@ export namespace Prisma {
     profile?: ProfileUpdateOneWithoutUserNestedInput
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -60216,6 +61743,175 @@ export namespace Prisma {
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+    ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
+    ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
+    sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
+    roomParticipations?: RoomParticipantUncheckedUpdateManyWithoutUserNestedInput
+    matchPlayers?: MatchPlayerUncheckedUpdateManyWithoutUserNestedInput
+    betParticipants?: BetParticipantUncheckedUpdateManyWithoutUserNestedInput
+    withdrawals?: WithdrawalRequestUncheckedUpdateManyWithoutUserNestedInput
+    cashierWithdrawals?: WithdrawalRequestUncheckedUpdateManyWithoutCashierNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    reportsMade?: ReportUncheckedUpdateManyWithoutReporterNestedInput
+    reportsAgainst?: ReportUncheckedUpdateManyWithoutReportedNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
+    friendsInitiated?: FriendshipUncheckedUpdateManyWithoutFromNestedInput
+    friendsReceived?: FriendshipUncheckedUpdateManyWithoutToNestedInput
+    blocksMade?: BlockUncheckedUpdateManyWithoutBlockerNestedInput
+    blocksReceived?: BlockUncheckedUpdateManyWithoutBlockedNestedInput
+    clubMemberships?: ClubMemberUncheckedUpdateManyWithoutUserNestedInput
+    achievements?: UserAchievementUncheckedUpdateManyWithoutUserNestedInput
+    missions?: UserMissionUncheckedUpdateManyWithoutUserNestedInput
+    cosmetics?: UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutVerifyTokensInput = {
+    id?: string
+    username: string
+    email?: string | null
+    passwordHash?: string | null
+    role?: $Enums.Role
+    emailVerified?: boolean
+    isGuest?: boolean
+    suspended?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    lastSeenAt?: Date | string
+    profile?: ProfileCreateNestedOneWithoutUserInput
+    wallet?: WalletCreateNestedOneWithoutUserInput
+    cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
+    ratings?: RatingCreateNestedManyWithoutUserInput
+    sanctions?: SanctionCreateNestedManyWithoutUserInput
+    roomParticipations?: RoomParticipantCreateNestedManyWithoutUserInput
+    matchPlayers?: MatchPlayerCreateNestedManyWithoutUserInput
+    betParticipants?: BetParticipantCreateNestedManyWithoutUserInput
+    withdrawals?: WithdrawalRequestCreateNestedManyWithoutUserInput
+    cashierWithdrawals?: WithdrawalRequestCreateNestedManyWithoutCashierInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    reportsMade?: ReportCreateNestedManyWithoutReporterInput
+    reportsAgainst?: ReportCreateNestedManyWithoutReportedInput
+    auditLogs?: AuditLogCreateNestedManyWithoutActorInput
+    friendsInitiated?: FriendshipCreateNestedManyWithoutFromInput
+    friendsReceived?: FriendshipCreateNestedManyWithoutToInput
+    blocksMade?: BlockCreateNestedManyWithoutBlockerInput
+    blocksReceived?: BlockCreateNestedManyWithoutBlockedInput
+    clubMemberships?: ClubMemberCreateNestedManyWithoutUserInput
+    achievements?: UserAchievementCreateNestedManyWithoutUserInput
+    missions?: UserMissionCreateNestedManyWithoutUserInput
+    cosmetics?: UserCosmeticCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutVerifyTokensInput = {
+    id?: string
+    username: string
+    email?: string | null
+    passwordHash?: string | null
+    role?: $Enums.Role
+    emailVerified?: boolean
+    isGuest?: boolean
+    suspended?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    lastSeenAt?: Date | string
+    profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
+    wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
+    cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
+    ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
+    sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
+    roomParticipations?: RoomParticipantUncheckedCreateNestedManyWithoutUserInput
+    matchPlayers?: MatchPlayerUncheckedCreateNestedManyWithoutUserInput
+    betParticipants?: BetParticipantUncheckedCreateNestedManyWithoutUserInput
+    withdrawals?: WithdrawalRequestUncheckedCreateNestedManyWithoutUserInput
+    cashierWithdrawals?: WithdrawalRequestUncheckedCreateNestedManyWithoutCashierInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    reportsMade?: ReportUncheckedCreateNestedManyWithoutReporterInput
+    reportsAgainst?: ReportUncheckedCreateNestedManyWithoutReportedInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
+    friendsInitiated?: FriendshipUncheckedCreateNestedManyWithoutFromInput
+    friendsReceived?: FriendshipUncheckedCreateNestedManyWithoutToInput
+    blocksMade?: BlockUncheckedCreateNestedManyWithoutBlockerInput
+    blocksReceived?: BlockUncheckedCreateNestedManyWithoutBlockedInput
+    clubMemberships?: ClubMemberUncheckedCreateNestedManyWithoutUserInput
+    achievements?: UserAchievementUncheckedCreateNestedManyWithoutUserInput
+    missions?: UserMissionUncheckedCreateNestedManyWithoutUserInput
+    cosmetics?: UserCosmeticUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutVerifyTokensInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutVerifyTokensInput, UserUncheckedCreateWithoutVerifyTokensInput>
+  }
+
+  export type UserUpsertWithoutVerifyTokensInput = {
+    update: XOR<UserUpdateWithoutVerifyTokensInput, UserUncheckedUpdateWithoutVerifyTokensInput>
+    create: XOR<UserCreateWithoutVerifyTokensInput, UserUncheckedCreateWithoutVerifyTokensInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutVerifyTokensInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutVerifyTokensInput, UserUncheckedUpdateWithoutVerifyTokensInput>
+  }
+
+  export type UserUpdateWithoutVerifyTokensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    isGuest?: BoolFieldUpdateOperationsInput | boolean
+    suspended?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    profile?: ProfileUpdateOneWithoutUserNestedInput
+    wallet?: WalletUpdateOneWithoutUserNestedInput
+    cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
+    ratings?: RatingUpdateManyWithoutUserNestedInput
+    sanctions?: SanctionUpdateManyWithoutUserNestedInput
+    roomParticipations?: RoomParticipantUpdateManyWithoutUserNestedInput
+    matchPlayers?: MatchPlayerUpdateManyWithoutUserNestedInput
+    betParticipants?: BetParticipantUpdateManyWithoutUserNestedInput
+    withdrawals?: WithdrawalRequestUpdateManyWithoutUserNestedInput
+    cashierWithdrawals?: WithdrawalRequestUpdateManyWithoutCashierNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    reportsMade?: ReportUpdateManyWithoutReporterNestedInput
+    reportsAgainst?: ReportUpdateManyWithoutReportedNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
+    friendsInitiated?: FriendshipUpdateManyWithoutFromNestedInput
+    friendsReceived?: FriendshipUpdateManyWithoutToNestedInput
+    blocksMade?: BlockUpdateManyWithoutBlockerNestedInput
+    blocksReceived?: BlockUpdateManyWithoutBlockedNestedInput
+    clubMemberships?: ClubMemberUpdateManyWithoutUserNestedInput
+    achievements?: UserAchievementUpdateManyWithoutUserNestedInput
+    missions?: UserMissionUpdateManyWithoutUserNestedInput
+    cosmetics?: UserCosmeticUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutVerifyTokensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    isGuest?: BoolFieldUpdateOperationsInput | boolean
+    suspended?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
+    wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
+    cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -60253,6 +61949,7 @@ export namespace Prisma {
     profile?: ProfileCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -60290,6 +61987,7 @@ export namespace Prisma {
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -60343,6 +62041,7 @@ export namespace Prisma {
     profile?: ProfileUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -60380,6 +62079,7 @@ export namespace Prisma {
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -60418,6 +62118,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
     roomParticipations?: RoomParticipantCreateNestedManyWithoutUserInput
@@ -60455,6 +62156,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
     roomParticipations?: RoomParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -60508,6 +62210,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
     roomParticipations?: RoomParticipantUpdateManyWithoutUserNestedInput
@@ -60545,6 +62248,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
     roomParticipations?: RoomParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -60581,6 +62285,7 @@ export namespace Prisma {
     profile?: ProfileCreateNestedOneWithoutUserInput
     wallet?: WalletCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -60618,6 +62323,7 @@ export namespace Prisma {
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -60671,6 +62377,7 @@ export namespace Prisma {
     profile?: ProfileUpdateOneWithoutUserNestedInput
     wallet?: WalletUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -60708,6 +62415,7 @@ export namespace Prisma {
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -60746,6 +62454,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -60783,6 +62492,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -60825,6 +62535,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -60862,6 +62573,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -60915,6 +62627,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -60952,6 +62665,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -61000,6 +62714,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -61037,6 +62752,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -61257,6 +62973,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -61294,6 +63011,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -61404,6 +63122,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -61441,6 +63160,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -61835,6 +63555,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -61872,6 +63593,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -61970,6 +63692,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -62007,6 +63730,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -62367,6 +64091,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -62404,6 +64129,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -62490,6 +64216,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -62527,6 +64254,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -62564,6 +64292,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
     roomParticipations?: RoomParticipantCreateNestedManyWithoutUserInput
@@ -62601,6 +64330,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
     roomParticipations?: RoomParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -62680,6 +64410,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
     roomParticipations?: RoomParticipantUpdateManyWithoutUserNestedInput
@@ -62717,6 +64448,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
     roomParticipations?: RoomParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -62858,6 +64590,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -62895,6 +64628,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -62937,6 +64671,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -62974,6 +64709,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -63027,6 +64763,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -63064,6 +64801,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -63112,6 +64850,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -63149,6 +64888,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -63186,6 +64926,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -63223,6 +64964,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -63265,6 +65007,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -63302,6 +65045,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -63355,6 +65099,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -63392,6 +65137,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -63440,6 +65186,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -63477,6 +65224,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -63577,6 +65325,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -63614,6 +65363,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -63696,6 +65446,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -63733,6 +65484,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -64058,6 +65810,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -64095,6 +65848,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -64169,6 +65923,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -64206,6 +65961,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -64314,6 +66070,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -64351,6 +66108,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -64431,6 +66189,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -64468,6 +66227,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -64578,6 +66338,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -64615,6 +66376,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -64691,6 +66453,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -64728,6 +66491,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -64794,6 +66558,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -64831,6 +66596,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -64884,6 +66650,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -64921,6 +66688,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -64958,6 +66726,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -64995,6 +66764,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -65037,6 +66807,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -65074,6 +66845,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -65127,6 +66899,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -65164,6 +66937,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -65212,6 +66986,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -65249,6 +67024,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -65286,6 +67062,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     roomParticipations?: RoomParticipantCreateNestedManyWithoutUserInput
@@ -65323,6 +67100,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     roomParticipations?: RoomParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -65376,6 +67154,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     roomParticipations?: RoomParticipantUpdateManyWithoutUserNestedInput
@@ -65413,6 +67192,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     roomParticipations?: RoomParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -65450,6 +67230,7 @@ export namespace Prisma {
     wallet?: WalletCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileCreateNestedOneWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryCreateNestedManyWithoutUserInput
     ratings?: RatingCreateNestedManyWithoutUserInput
     sanctions?: SanctionCreateNestedManyWithoutUserInput
@@ -65487,6 +67268,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
     cashierProfile?: CashierProfileUncheckedCreateNestedOneWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    verifyTokens?: VerificationTokenUncheckedCreateNestedManyWithoutUserInput
     ledgerEntries?: LedgerEntryUncheckedCreateNestedManyWithoutUserInput
     ratings?: RatingUncheckedCreateNestedManyWithoutUserInput
     sanctions?: SanctionUncheckedCreateNestedManyWithoutUserInput
@@ -65540,6 +67322,7 @@ export namespace Prisma {
     wallet?: WalletUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUpdateOneWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUpdateManyWithoutUserNestedInput
     ratings?: RatingUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUpdateManyWithoutUserNestedInput
@@ -65577,6 +67360,7 @@ export namespace Prisma {
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
     cashierProfile?: CashierProfileUncheckedUpdateOneWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    verifyTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
     ledgerEntries?: LedgerEntryUncheckedUpdateManyWithoutUserNestedInput
     ratings?: RatingUncheckedUpdateManyWithoutUserNestedInput
     sanctions?: SanctionUncheckedUpdateManyWithoutUserNestedInput
@@ -65606,6 +67390,15 @@ export namespace Prisma {
     createdAt?: Date | string
     expiresAt: Date | string
     revokedAt?: Date | string | null
+  }
+
+  export type VerificationTokenCreateManyUserInput = {
+    id?: string
+    tokenHash: string
+    purpose: string
+    createdAt?: Date | string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
   }
 
   export type LedgerEntryCreateManyUserInput = {
@@ -65823,6 +67616,33 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     revokedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VerificationTokenUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VerificationTokenUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VerificationTokenUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    purpose?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type LedgerEntryUpdateWithoutUserInput = {

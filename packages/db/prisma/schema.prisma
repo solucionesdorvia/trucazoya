@@ -39,6 +39,7 @@ model User {
   wallet         Wallet?
   cashierProfile CashierProfile?
   sessions       Session[]
+  verifyTokens   VerificationToken[]
   ledgerEntries  LedgerEntry[]
   ratings        Rating[]
   sanctions      Sanction[]      @relation("SanctionTarget")
@@ -97,6 +98,22 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+/// Token de un solo uso: verificación de email y recuperación de contraseña.
+/// Se guarda sólo el HASH del token (si se filtra la DB, no sirve).
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  purpose   String // "EMAIL_VERIFY" | "PASSWORD_RESET"
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
 }
 
 // ─── Economía: wallet + ledger append-only ──────────────────────────────────

@@ -59,7 +59,7 @@ Cuentas demo (password `trucazo123`): `admin` (ADMIN) · `cajero1` (CASHIER) · 
 pnpm -r test
 ```
 
-**179 tests.** Además:
+**197 tests.** Además:
 
 ```bash
 pnpm --filter @trucazo/engine sim 10000
@@ -78,22 +78,24 @@ Cobertura destacada:
 
 Ver [PLAN.md](PLAN.md) para el detalle de las 11 fases.
 
-| Fase                                      | Estado                                                                                                            |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 1 · Fundaciones (monorepo, DB, infra)     | ✅                                                                                                                |
-| 2 · Auth, perfiles, diseño base           | ✅                                                                                                                |
-| 3 · Motor de Truco + tests + simulador    | ✅                                                                                                                |
-| 4 · Salas, códigos, lobby                 | ✅                                                                                                                |
-| 5 · Tiempo real, mesa jugable, reconexión | ✅                                                                                                                |
-| 6 · Ranking Glicko-2 + divisiones         | ✅                                                                                                                |
-| 7 · Billetera, ledger, apuestas, cajeros  | ✅                                                                                                                |
-| 6 · Matchmaking automático                | ✅ cola por modo con ventana de rating que se abre con la espera                                                  |
-| 8 · Torneos + amigos + reportes           | ✅ torneos de eliminación (inscripción/llaves/premio), amigos, perfil público. Clubes y espectadores: pendientes  |
-| 9 · Progresión (XP, niveles, misiones)    | ✅ XP, niveles con recompensa, misión diaria, logros. Tienda de cosméticos: pendiente                             |
-| 10 · Admin y moderación                   | ✅ panel con métricas, cajeros, auditoría de ledger, reportes, suspensión y ajuste de saldo                       |
-| 11 · Observabilidad, E2E, deploy          | 🟡 health checks, [DEPLOY.md](DEPLOY.md), E2E de sockets. Falta métricas, E2E Playwright de UI y pruebas de carga |
+| Fase                                      | Estado                                                                                                                                             |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 · Fundaciones (monorepo, DB, infra)     | ✅                                                                                                                                                 |
+| 2 · Auth, perfiles, diseño base           | ✅                                                                                                                                                 |
+| 3 · Motor de Truco + tests + simulador    | ✅                                                                                                                                                 |
+| 4 · Salas, códigos, lobby                 | ✅                                                                                                                                                 |
+| 5 · Tiempo real, mesa jugable, reconexión | ✅                                                                                                                                                 |
+| 6 · Ranking Glicko-2 + divisiones         | ✅                                                                                                                                                 |
+| 7 · Billetera, ledger, apuestas, cajeros  | ✅                                                                                                                                                 |
+| 6 · Matchmaking automático                | ✅ cola por modo con ventana de rating que se abre con la espera                                                                                   |
+| 8 · Torneos + amigos + reportes           | ✅ torneos de eliminación (inscripción/llaves/premio + creación desde admin), amigos, perfil público. Clubes y espectadores: pendientes            |
+| 9 · Progresión + tienda                   | ✅ XP, niveles con recompensa, misión diaria, logros, **tienda de cosméticos** (comprar/equipar, cierra el ciclo de la economía)                   |
+| 10 · Admin y moderación                   | ✅ panel con métricas, cajeros, auditoría de ledger, reportes, suspensión, ajuste de saldo, crear torneos                                          |
+| 11 · Observabilidad, E2E, deploy          | 🟡 health checks, [DEPLOY.md](DEPLOY.md), **CI (GitHub Actions)**, E2E de sockets. Falta métricas/tracing, E2E Playwright de UI y pruebas de carga |
 
-**Pendiente conocido:** clubes, modo espectador, tienda de cosméticos, doble eliminación, métricas/tracing, E2E de UI con Playwright y multi-nodo con Redis.
+**Verificación de email** (token de un solo uso, sólo el hash en la base) — desbloquea los retiros, que la exigen.
+
+**Pendiente conocido:** clubes, modo espectador, doble eliminación, métricas/tracing, E2E de UI con Playwright y multi-nodo con Redis.
 
 ## Documentación
 

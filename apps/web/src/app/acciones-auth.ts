@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { loginSchema, registerSchema } from '@trucazo/shared';
 import { autenticar, crearCuenta, crearInvitado } from '@/lib/cuentas';
 import { createSession, destroySession } from '@/lib/session';
+import { enviarVerificacion } from '@/lib/verificacion';
 
 export interface EstadoForm {
   error?: string;
@@ -29,6 +30,9 @@ export async function registrarse(_prev: EstadoForm, formData: FormData): Promis
 
   const res = await crearCuenta(parsed.data);
   if (!res.ok) return { error: res.error, campo: res.campo };
+
+  // Envía el email de verificación (en dev, se loguea el link a consola).
+  await enviarVerificacion(res.userId).catch(() => undefined);
 
   await createSession(res.userId);
   redirect('/inicio');

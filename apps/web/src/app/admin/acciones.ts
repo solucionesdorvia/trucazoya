@@ -110,3 +110,33 @@ export async function ajustarSaldo(formData: FormData): Promise<void> {
 
   revalidatePath('/admin');
 }
+
+/** Crea un torneo de eliminación simple en estado de inscripción. */
+export async function crearTorneo(formData: FormData): Promise<void> {
+  const admin = await requireUser();
+  if (admin.role !== 'ADMIN') throw new Error('FORBIDDEN');
+
+  const name = String(formData.get('name') ?? '').trim();
+  const entryFee = Number(formData.get('entryFee') ?? 0);
+  const maxPlayers = Number(formData.get('maxPlayers') ?? 8);
+  const modeRaw = String(formData.get('mode') ?? 'CASUAL_1V1');
+  const mode = ['CASUAL_1V1', 'RANKED_1V1', 'CASUAL_2V2', 'RANKED_2V2'].includes(modeRaw)
+    ? (modeRaw as 'CASUAL_1V1' | 'RANKED_1V1' | 'CASUAL_2V2' | 'RANKED_2V2')
+    : 'CASUAL_1V1';
+  if (!name) return;
+
+  await prisma.tournament.create({
+    data: {
+      name,
+      mode,
+      state: 'REGISTRATION',
+      entryFee: BigInt(Math.max(0, entryFee)),
+      maxPlayers: Math.min(64, Math.max(2, maxPlayers)),
+    },
+  });
+  await prisma.auditLog.create({
+    data: { actorId: admin.id, action: 'TOURNAMENT_CREATE', data: { name, mode } },
+  });
+  revalidatePath('/admin');
+  revalidatePath('/torneos');
+}

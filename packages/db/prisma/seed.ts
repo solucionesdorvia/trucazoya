@@ -106,8 +106,13 @@ async function main() {
     data: [
       { code: 'back_clasico', kind: 'CARD_BACK', name: 'Reverso Clásico', priceCoins: 0 },
       { code: 'back_dorado', kind: 'CARD_BACK', name: 'Reverso Dorado', priceCoins: 1000 },
+      { code: 'back_noche', kind: 'CARD_BACK', name: 'Reverso Nocturno', priceCoins: 750 },
       { code: 'mat_verde', kind: 'MAT', name: 'Tapete Verde', priceCoins: 0 },
+      { code: 'mat_bordo', kind: 'MAT', name: 'Tapete Bordó', priceCoins: 600 },
+      { code: 'frame_oro', kind: 'FRAME', name: 'Marco Dorado', priceCoins: 1500 },
       { code: 'title_matador', kind: 'TITLE', name: 'Matador', priceCoins: 2500 },
+      { code: 'title_pieza', kind: 'TITLE', name: 'Pieza', priceCoins: 800 },
+      { code: 'emoji_mate', kind: 'EMOJI', name: 'Mate', priceCoins: 300 },
     ],
     skipDuplicates: true,
   });

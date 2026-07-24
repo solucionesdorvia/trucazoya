@@ -161,6 +161,16 @@ exports.Prisma.SessionScalarFieldEnum = {
   revokedAt: 'revokedAt'
 };
 
+exports.Prisma.VerificationTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  purpose: 'purpose',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt',
+  usedAt: 'usedAt'
+};
+
 exports.Prisma.WalletScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -676,6 +686,7 @@ exports.Prisma.ModelName = {
   User: 'User',
   Profile: 'Profile',
   Session: 'Session',
+  VerificationToken: 'VerificationToken',
   Wallet: 'Wallet',
   LedgerEntry: 'LedgerEntry',
   CashierProfile: 'CashierProfile',

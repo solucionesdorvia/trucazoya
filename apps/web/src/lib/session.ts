@@ -21,6 +21,7 @@ export interface SessionUser {
   role: Role;
   displayName: string;
   isGuest: boolean;
+  emailVerified: boolean;
   balance: number;
 }
 
@@ -65,6 +66,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     role: session.user.role,
     displayName: session.user.profile?.displayName ?? session.user.username,
     isGuest: session.user.isGuest,
+    emailVerified: session.user.emailVerified,
     balance: Number(session.user.wallet?.balance ?? 0n),
   };
 }

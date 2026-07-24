@@ -5,7 +5,7 @@ import { auditarUsuario } from '@trucazo/economia';
 import { Encabezado } from '@/components/Encabezado';
 import { Panel, Pildora } from '@/components/ui';
 import { getSessionUser } from '@/lib/session';
-import { cambiarSuspension, resolverReporte } from './acciones';
+import { cambiarSuspension, crearTorneo, resolverReporte } from './acciones';
 
 export const metadata = { title: 'Administración' };
 
@@ -139,6 +139,48 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
               </div>
             </Panel>
           )}
+        </section>
+
+        {/* ─── Crear torneo ──────────────────────────────────────────── */}
+        <section className="mt-8">
+          <h2 className="text-xl font-bold tracking-tight">Crear torneo</h2>
+          <Panel className="mt-3">
+            <form action={crearTorneo} className="grid gap-3 sm:grid-cols-2">
+              <input
+                name="name"
+                required
+                placeholder="Nombre del torneo"
+                className="h-11 rounded-xl border bg-noche-800/80 px-3.5 text-tinta-50 placeholder:text-tinta-600 focus:border-oro-500 sm:col-span-2"
+              />
+              <select
+                name="mode"
+                className="h-11 rounded-xl border bg-noche-800/80 px-3 text-tinta-50 focus:border-oro-500"
+              >
+                <option value="CASUAL_1V1">1 vs 1</option>
+                <option value="CASUAL_2V2">2 vs 2</option>
+              </select>
+              <select
+                name="maxPlayers"
+                className="h-11 rounded-xl border bg-noche-800/80 px-3 text-tinta-50 focus:border-oro-500"
+              >
+                {[4, 8, 16, 32].map((n) => (
+                  <option key={n} value={n}>
+                    {n} jugadores
+                  </option>
+                ))}
+              </select>
+              <input
+                name="entryFee"
+                type="number"
+                min={0}
+                placeholder="Entrada (monedas)"
+                className="h-11 rounded-xl border bg-noche-800/80 px-3.5 text-tinta-50 placeholder:text-tinta-600 focus:border-oro-500"
+              />
+              <button className="h-11 rounded-xl bg-oro-500 px-5 font-semibold text-noche-950 hover:bg-oro-400">
+                Crear
+              </button>
+            </form>
+          </Panel>
         </section>
 
         {/* ─── Reportes ──────────────────────────────────────────────── */}
