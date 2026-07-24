@@ -39,7 +39,7 @@ export default async function Inicio() {
             destacada
           />
           <AccionPrincipal
-            href="/salas"
+            href="/buscar"
             titulo="Buscar partida"
             desc={
               salasAbiertas > 0
@@ -49,7 +49,7 @@ export default async function Inicio() {
             emoji="🔍"
           />
           <AccionPrincipal
-            href="/practica"
+            href="/buscar"
             titulo="Jugar contra bot"
             desc="Practicá los cantos contra 5 niveles de IA."
             emoji="🤖"

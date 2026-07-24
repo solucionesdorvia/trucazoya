@@ -24,8 +24,19 @@ export function Encabezado({ user }: { user: SessionUser }) {
             </span>
           </Link>
 
+          <Link
+            href="/amigos"
+            className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
+          >
+            Amigos
+          </Link>
           <div className="hidden items-center gap-2 sm:flex">
-            <span className="text-sm text-tinta-200">{user.displayName}</span>
+            <Link
+              href={`/u/${user.username}`}
+              className="text-sm text-tinta-200 hover:text-oro-400"
+            >
+              {user.displayName}
+            </Link>
             {user.isGuest && <Pildora>Invitado</Pildora>}
             {user.role === 'ADMIN' && (
               <Link href="/admin" aria-label="Panel de administración">

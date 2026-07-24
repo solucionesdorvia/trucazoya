@@ -12,15 +12,18 @@ import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
 import { Server as SocketServer } from 'socket.io';
 import { prisma } from '@trucazo/db';
-import { verificarTokenPartida } from '@trucazo/shared';
+import { generarCodigoSala, verificarTokenPartida } from '@trucazo/shared';
 import {
   aplicarRanking,
   liquidarApuesta,
+  otorgarRecompensas,
   reembolsarApuesta,
   reservarApuesta,
 } from '@trucazo/economia';
-import type { Action } from '@trucazo/engine';
+import { cryptoRandomInt, type Action } from '@trucazo/engine';
 import { RegistroSalas, type ConfigSala, type Sala } from './salas.js';
+import { Matchmaker } from './matchmaking.js';
+import type { GameMode } from '@trucazo/db';
 
 export interface OpcionesServidor {
   puerto?: number;
@@ -43,6 +46,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
 
   const app = Fastify({ logger: false });
   const registro = new RegistroSalas();
+  const matchmaker = new Matchmaker();
 
   app.get('/salud', async () => ({
     ok: true,
@@ -65,6 +69,11 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     const ids = socketsPorUsuario.get(userId);
     if (!ids) return;
     for (const sid of ids) io.to(sid).emit(evento, datos);
+  }
+
+  function normalizarModo(mode: string): GameMode {
+    const modos: GameMode[] = ['CASUAL_1V1', 'RANKED_1V1', 'CASUAL_2V2', 'RANKED_2V2'];
+    return modos.includes(mode as GameMode) ? (mode as GameMode) : 'CASUAL_1V1';
   }
 
   // ─── Autenticación del handshake ────────────────────────────────────────────
@@ -237,6 +246,29 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       });
     });
 
+    // ── Matchmaking: buscar rival sin código ─────────────────────────────
+    socket.on('mm:buscar', async ({ mode }: { mode: string }) => {
+      const modo = normalizarModo(mode);
+      // Ranking real del jugador para emparejar por nivel.
+      const rating = await prisma.rating.findUnique({
+        where: { userId_mode: { userId, mode: modo } },
+        select: { rating: true },
+      });
+      matchmaker.entrar(modo, {
+        userId,
+        username,
+        rating: rating?.rating ?? 1500,
+        desde: Date.now(),
+      });
+      const info = matchmaker.enCola(userId);
+      socket.emit('mm:estado', { buscando: true, ...info });
+    });
+
+    socket.on('mm:cancelar', () => {
+      matchmaker.salir(userId);
+      socket.emit('mm:estado', { buscando: false });
+    });
+
     // ── Chat ─────────────────────────────────────────────────────────────
     socket.on('chat:enviar', ({ texto }: { texto: string }) => {
       if (!codeActual || typeof texto !== 'string') return;
@@ -260,12 +292,74 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       if (!sala) return;
       // Sólo se marca desconectado si el usuario no tiene otra pestaña abierta.
       if (!socketsPorUsuario.has(userId)) {
+        matchmaker.salir(userId); // que no lo emparejen si ya no está
         sala.salir(userId);
         sala.mesa?.marcarConexion(userId, false);
         io.to(`sala:${codeActual}`).emit('sala:estado', sala.snapshot());
       }
     });
   });
+
+  // ─── Tick de matchmaking ────────────────────────────────────────────────────
+
+  const tickMatchmaking = setInterval(() => {
+    void procesarMatchmaking();
+  }, 2000);
+
+  async function procesarMatchmaking() {
+    const grupos = matchmaker.emparejar(Date.now());
+    for (const grupo of grupos) {
+      try {
+        const code = await generarCodigoUnico();
+        const room = await prisma.room.create({
+          data: {
+            code,
+            name: 'Partida rápida',
+            hostUserId: grupo.jugadores[0]!.userId,
+            mode: grupo.mode,
+            state: 'WAITING',
+            pointsToWin: 30,
+            florEnabled: true,
+            allowBots: false,
+            participants: {
+              create: grupo.jugadores.map((j, i) => ({ userId: j.userId, seat: i, team: i % 2 })),
+            },
+          },
+        });
+        // Todos los emparejados quedan "listos" de una: es partida rápida.
+        const sala = registro.crear({
+          nombre: room.name,
+          code: room.code,
+          roomId: room.id,
+          hostUserId: room.hostUserId,
+          apuesta: 0,
+          permiteBots: false,
+          modo: grupo.mode,
+          players: grupo.mode.includes('2V2') ? 4 : 2,
+          pointsToWin: 30,
+          florEnabled: true,
+          faltaEnvidoToGame: true,
+        });
+        for (const j of grupo.jugadores) {
+          sala.entrar(j.userId, j.username);
+          sala.marcarListo(j.userId, true);
+          // Avisar a cada jugador a qué sala ir.
+          emitirAUsuario(j.userId, 'mm:encontrado', { code: room.code });
+        }
+      } catch (e) {
+        console.error('[matchmaking] no se pudo crear la partida', e);
+      }
+    }
+  }
+
+  async function generarCodigoUnico(): Promise<string> {
+    for (let i = 0; i < 10; i++) {
+      const code = generarCodigoSala((max) => Math.floor(cryptoRandomInt(max)));
+      const existe = await prisma.room.findUnique({ where: { code }, select: { id: true } });
+      if (!existe) return code;
+    }
+    throw new Error('No se pudo generar código');
+  }
 
   // ─── Arranque y cierre de partida ───────────────────────────────────────────
 
@@ -378,6 +472,15 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       }).catch((e) => console.error('[ranking] falló', e));
     }
 
+    // Progresión: XP, nivel, misiones y logros para cada humano.
+    for (const j of humanosPartida) {
+      await otorgarRecompensas({
+        userId: j.userId,
+        gano: j.seat % 2 === ganador,
+        fecha: new Date(),
+      }).catch((e) => console.error('[progresion] falló', e));
+    }
+
     // Liquidación de la apuesta: el ganador lo decide el SERVIDOR a partir del
     // estado del motor, nunca el cliente.
     if (sala.betId) {
@@ -407,6 +510,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       return puerto;
     },
     async cerrar() {
+      clearInterval(tickMatchmaking);
       io.close();
       await app.close();
     },

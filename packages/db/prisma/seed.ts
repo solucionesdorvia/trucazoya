@@ -112,6 +112,20 @@ async function main() {
     skipDuplicates: true,
   });
 
+  await prisma.mission.upsert({
+    where: { code: 'daily_play_3' },
+    update: {},
+    create: {
+      code: 'daily_play_3',
+      name: 'Tres al hilo',
+      description: 'Jugá 3 partidas hoy',
+      period: 'DAILY',
+      target: 3,
+      rewardCoins: 50,
+      rewardXp: 30,
+    },
+  });
+
   await prisma.achievement.createMany({
     data: [
       { code: 'first_win', name: 'Primera Victoria', description: 'Ganá tu primera partida' },

@@ -5,6 +5,7 @@ import { auditarUsuario } from '@trucazo/economia';
 import { Encabezado } from '@/components/Encabezado';
 import { Panel, Pildora } from '@/components/ui';
 import { getSessionUser } from '@/lib/session';
+import { cambiarSuspension, resolverReporte } from './acciones';
 
 export const metadata = { title: 'Administración' };
 
@@ -16,7 +17,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
 
   const { q } = await searchParams;
 
-  const [usuarios, partidas, salasActivas, cajeros, retiros, movimientos, ultimosLogs] =
+  const [usuarios, partidas, salasActivas, cajeros, retiros, movimientos, ultimosLogs, reportes] =
     await Promise.all([
       prisma.user.count(),
       prisma.match.count(),
@@ -31,6 +32,15 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         orderBy: { createdAt: 'desc' },
         take: 20,
         include: { actor: { select: { username: true } } },
+      }),
+      prisma.report.findMany({
+        where: { state: { in: ['OPEN', 'IN_REVIEW'] } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        include: {
+          reporter: { select: { username: true } },
+          reported: { select: { username: true } },
+        },
       }),
     ]);
 
@@ -128,6 +138,62 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                 )}
               </div>
             </Panel>
+          )}
+        </section>
+
+        {/* ─── Reportes ──────────────────────────────────────────────── */}
+        <section className="mt-8">
+          <h2 className="text-xl font-bold tracking-tight">
+            Reportes abiertos
+            {reportes.length > 0 && (
+              <span className="ml-2 align-middle">
+                <Pildora tono="rojo">{reportes.length}</Pildora>
+              </span>
+            )}
+          </h2>
+          {reportes.length === 0 ? (
+            <Panel className="mt-3 text-tinta-400">No hay reportes pendientes.</Panel>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {reportes.map((r) => (
+                <li key={r.id}>
+                  <Panel>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm">
+                        <span className="font-medium text-canto-400">@{r.reported.username}</span>{' '}
+                        <span className="text-tinta-500">reportado por</span>{' '}
+                        <span className="text-tinta-300">@{r.reporter.username}</span>
+                      </span>
+                      <Pildora>{r.reason}</Pildora>
+                    </div>
+                    {r.detail && <p className="mt-1.5 text-sm text-tinta-400">{r.detail}</p>}
+                    <div className="mt-3 flex gap-2">
+                      <form action={resolverReporte}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <input type="hidden" name="accion" value="sancionar" />
+                        <button className="h-9 rounded-lg bg-canto-500 px-3 text-sm font-semibold text-white">
+                          Advertir
+                        </button>
+                      </form>
+                      <form action={cambiarSuspension}>
+                        <input type="hidden" name="userId" value={r.reportedId} />
+                        <input type="hidden" name="suspender" value="true" />
+                        <button className="h-9 rounded-lg border border-canto-600 px-3 text-sm text-canto-400">
+                          Suspender
+                        </button>
+                      </form>
+                      <form action={resolverReporte}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <input type="hidden" name="accion" value="desestimar" />
+                        <button className="h-9 rounded-lg border border-noche-600 px-3 text-sm text-tinta-300">
+                          Desestimar
+                        </button>
+                      </form>
+                    </div>
+                  </Panel>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 
