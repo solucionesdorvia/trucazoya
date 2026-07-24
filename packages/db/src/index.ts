@@ -3,7 +3,7 @@
  * conexiones con hot-reload).
  */
 
-import { PrismaClient } from './generated/client/index.js';
+import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
@@ -15,4 +15,4 @@ export const prisma: PrismaClient =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-export * from './generated/client/index.js';
+export * from '@prisma/client';

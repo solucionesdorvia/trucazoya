@@ -5,7 +5,9 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  // Salida por defecto (node_modules/@prisma/client). Con `output` custom,
+  // Next.js bundlea el cliente pero no copia el binario del query engine y en
+  // runtime falla ("Prisma Client could not locate the Query Engine").
 }
 
 datasource db {

@@ -3,6 +3,9 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // Prisma no debe bundlearse: se requiere desde node_modules en runtime,
+  // donde vive el binario del query engine.
+  serverExternalPackages: ['@prisma/client', '.prisma/client'],
   // El build de producción usa otro directorio para no pisar el `.next` del dev
   // server (si se pisan, el dev queda con un mapa de chunks corrupto).
   distDir: process.env.NEXT_DIST_DIR ?? '.next',

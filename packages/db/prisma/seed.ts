@@ -4,7 +4,7 @@
  */
 
 import { randomBytes, scryptSync } from 'node:crypto';
-import { PrismaClient } from '../src/generated/client/index.js';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
