@@ -52,6 +52,15 @@ export default function Registro() {
             minLength={8}
             error={estado.campo === 'password' ? estado.error : undefined}
           />
+          <Campo
+            label="Fecha de nacimiento"
+            name="birthdate"
+            type="date"
+            autoComplete="bday"
+            required
+            error={estado.campo === 'birthdate' ? estado.error : undefined}
+          />
+          <p className="-mt-1 text-xs text-tinta-400">Trucazo es solo para mayores de 18 años.</p>
 
           {estado.error && !estado.campo && (
             <p role="alert" className="text-sm text-canto-400">

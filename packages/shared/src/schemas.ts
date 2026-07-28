@@ -13,10 +13,31 @@ export const usernameSchema = z
 
 export const passwordSchema = z.string().min(8, 'Mínimo 8 caracteres').max(128);
 
+/** Edad cumplida (en años) a partir de una fecha de nacimiento. */
+export function edadEnAnios(nacimiento: Date, ahora = new Date()): number {
+  let edad = ahora.getFullYear() - nacimiento.getFullYear();
+  const m = ahora.getMonth() - nacimiento.getMonth();
+  if (m < 0 || (m === 0 && ahora.getDate() < nacimiento.getDate())) edad--;
+  return edad;
+}
+
+export const EDAD_MINIMA = 18;
+
+/** Fecha de nacimiento (YYYY-MM-DD) con barrera de mayoría de edad. */
+export const birthdateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida')
+  .refine((s) => !Number.isNaN(Date.parse(s)), 'Fecha inválida')
+  .refine(
+    (s) => edadEnAnios(new Date(s)) >= EDAD_MINIMA,
+    `Tenés que ser mayor de ${EDAD_MINIMA} años`,
+  );
+
 export const registerSchema = z.object({
   username: usernameSchema,
   email: z.string().email('Email inválido'),
   password: passwordSchema,
+  birthdate: birthdateSchema,
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

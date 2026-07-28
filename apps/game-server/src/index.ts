@@ -133,19 +133,40 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     const mesa = sala?.mesa;
     if (!mesa) return;
     const eventos = mesa.drenarEventos();
-    if (eventos.length === 0) return;
-    try {
-      await prisma.gameEvent.createMany({
-        data: eventos.map((e) => ({
-          matchId,
-          seq: e.seq,
-          type: e.type,
-          payload: JSON.parse(JSON.stringify(e.payload)),
-        })),
-        skipDuplicates: true,
-      });
-    } catch (e) {
-      console.error('[persistencia] no se pudieron guardar eventos', e);
+    if (eventos.length > 0) {
+      try {
+        await prisma.gameEvent.createMany({
+          data: eventos.map((e) => ({
+            matchId,
+            seq: e.seq,
+            type: e.type,
+            payload: JSON.parse(JSON.stringify(e.payload)),
+          })),
+          skipDuplicates: true,
+        });
+      } catch (e) {
+        console.error('[persistencia] no se pudieron guardar eventos', e);
+      }
+    }
+
+    // Compromisos de barajado (commit-reveal): quedan como registro auditable
+    // e inmutable de que el reparto no se manipuló.
+    const repartos = mesa.drenarRepartos();
+    if (repartos.length > 0) {
+      try {
+        await prisma.shuffleCommit.createMany({
+          data: repartos.map((r) => ({
+            matchId,
+            roundNumber: r.roundNumber,
+            commit: r.commit,
+            serverSeed: r.serverSeed,
+            deckOrder: r.deckOrder,
+          })),
+          skipDuplicates: true,
+        });
+      } catch (e) {
+        console.error('[persistencia] no se pudieron guardar compromisos de barajado', e);
+      }
     }
   }
 

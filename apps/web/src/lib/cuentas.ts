@@ -4,11 +4,12 @@
  */
 
 import { prisma } from '@trucazo/db';
+import { EDAD_MINIMA, edadEnAnios } from '@trucazo/shared';
 import { hashPassword, verifyPassword } from './password';
 
 export type ResultadoCuenta =
   | { ok: true; userId: string }
-  | { ok: false; error: string; campo?: 'username' | 'email' | 'password' };
+  | { ok: false; error: string; campo?: 'username' | 'email' | 'password' | 'birthdate' };
 
 const MONEDAS_BIENVENIDA = BigInt(process.env.NEW_USER_COINS ?? '500');
 
@@ -21,7 +22,15 @@ export async function crearCuenta(input: {
   username: string;
   email: string;
   password: string;
+  birthdate: string;
 }): Promise<ResultadoCuenta> {
+  // Barrera de edad +18: se valida acá también (no sólo en el form), porque el
+  // servidor es la única fuente de verdad. `birthdateSchema` ya lo chequeó, pero
+  // esta capa protege si `crearCuenta` se invoca desde otro lado.
+  if (edadEnAnios(new Date(input.birthdate)) < EDAD_MINIMA) {
+    return { ok: false, error: `Tenés que ser mayor de ${EDAD_MINIMA} años`, campo: 'birthdate' };
+  }
+
   const existente = await prisma.user.findFirst({
     where: { OR: [{ username: input.username }, { email: input.email }] },
     select: { username: true },
@@ -40,6 +49,8 @@ export async function crearCuenta(input: {
         username: input.username,
         email: input.email,
         passwordHash,
+        birthdate: new Date(input.birthdate),
+        ageVerifiedAt: new Date(),
         profile: { create: { displayName: input.username } },
         wallet: { create: { balance: MONEDAS_BIENVENIDA } },
         ratings: {

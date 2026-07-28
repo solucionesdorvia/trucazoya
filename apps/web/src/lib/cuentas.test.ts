@@ -40,7 +40,12 @@ describe('hashing de contraseñas', () => {
 
 describe('crearCuenta', () => {
   it('crea usuario, perfil, billetera, ratings y el asiento del ledger', async () => {
-    const res = await crearCuenta({ username: usuario, email, password: clave });
+    const res = await crearCuenta({
+      username: usuario,
+      email,
+      password: clave,
+      birthdate: '1990-01-01',
+    });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     creados.push(res.userId);
@@ -69,15 +74,34 @@ describe('crearCuenta', () => {
       username: usuario,
       email: `otro_${sufijo}@t.local`,
       password: clave,
+      birthdate: '1990-01-01',
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.campo).toBe('username');
   });
 
   it('rechaza email duplicado', async () => {
-    const res = await crearCuenta({ username: `otro_${sufijo}`, email, password: clave });
+    const res = await crearCuenta({
+      username: `otro_${sufijo}`,
+      email,
+      password: clave,
+      birthdate: '1990-01-01',
+    });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.campo).toBe('email');
+  });
+
+  it('rechaza a menores de 18', async () => {
+    const hoy = new Date();
+    const menor = `${hoy.getFullYear() - 10}-01-01`;
+    const res = await crearCuenta({
+      username: `menor_${sufijo}`,
+      email: `menor_${sufijo}@t.local`,
+      password: clave,
+      birthdate: menor,
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.campo).toBe('birthdate');
   });
 
   it('no guarda la contraseña en claro', async () => {

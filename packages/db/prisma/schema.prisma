@@ -33,6 +33,10 @@ model User {
   emailVerified Boolean  @default(false)
   isGuest       Boolean  @default(false)
   suspended     Boolean  @default(false)
+  /// Fecha de nacimiento declarada (juego responsable: barrera de edad +18).
+  birthdate     DateTime?
+  /// Cuándo se verificó que es mayor de edad. null = sin verificar.
+  ageVerifiedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastSeenAt    DateTime @default(now())
@@ -45,6 +49,8 @@ model User {
   ledgerEntries  LedgerEntry[]
   ratings        Rating[]
   sanctions      Sanction[]      @relation("SanctionTarget")
+  rgLimits       ResponsibleGamingLimits?
+  selfExclusions SelfExclusion[]
 
   roomParticipations RoomParticipant[]
   matchPlayers       MatchPlayer[]
@@ -225,6 +231,69 @@ model WithdrawalRequest {
 
   @@index([userId])
   @@index([cashierId, state])
+}
+
+// ─── Juego responsable ──────────────────────────────────────────────────────
+
+/// Límites que el propio jugador se fija. null en un campo = sin límite ahí.
+/// Se aplican en el servidor: depósitos por cajero y apuestas los respetan.
+model ResponsibleGamingLimits {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  /// Máximo a cargar por día / semana (en monedas). null = sin tope.
+  dailyDepositMax   BigInt?
+  weeklyDepositMax  BigInt?
+  /// Máxima pérdida neta diaria antes de bloquear nuevas apuestas.
+  dailyLossMax      BigInt?
+  /// Recordatorio de tiempo de juego (minutos). Informativo/soft.
+  sessionMinutesMax Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum SelfExclusionKind {
+  TEMPORARY
+  PERMANENT
+}
+
+/// Autoexclusión: el jugador se bloquea de depositar y de apostar por un
+/// período (o para siempre). Es un requisito de todo marco de juego regulado.
+model SelfExclusion {
+  id        String            @id @default(cuid())
+  userId    String
+  kind      SelfExclusionKind
+  reason    String?
+  createdAt DateTime          @default(now())
+  /// Fin de la exclusión temporal. null = permanente.
+  until     DateTime?
+  /// Si un admin la levantó (sólo temporales vencidas). null = vigente.
+  liftedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, until])
+}
+
+/// Compromiso verificable del reparto (fair play, esquema commit-reveal).
+/// Al repartir se publica `commit = sha256(serverSeed)`. Al cerrar la ronda se
+/// revela `serverSeed`: cualquiera recomputa el mazo y comprueba que no se
+/// manipuló. Es lo que un auditor/licenciatario exige para certificar el RNG.
+model ShuffleCommit {
+  id          String   @id @default(cuid())
+  matchId     String
+  roundNumber Int
+  /// sha256(serverSeed) en hex, publicado ANTES de que se juegue la ronda.
+  commit      String
+  /// Semilla revelada al cerrar la ronda. null mientras la ronda está en juego.
+  serverSeed  String?
+  /// Orden resultante del mazo (público una vez revelado).
+  deckOrder   Json
+  createdAt   DateTime @default(now())
+
+  @@unique([matchId, roundNumber])
+  @@index([matchId])
 }
 
 // ─── Salas ──────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@
  * reproducir repartos exactos.
  */
 
-import { randomInt } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto';
 import type { Card } from './cards.js';
 
 /** Devuelve un entero uniforme en [0, maxExclusive). */
@@ -42,6 +42,59 @@ export function shuffle<T>(deck: readonly T[], rand: RandomInt = cryptoRandomInt
     arr[j] = tmp;
   }
   return arr;
+}
+
+// ─── Barajado auditable (commit-reveal) ──────────────────────────────────────
+//
+// Para poder CERTIFICAR que el reparto no está trucado usamos commit-reveal:
+//   1. El servidor genera una semilla secreta y publica su hash (el "commit")
+//      ANTES de que se juegue la mano. No puede cambiar la semilla después sin
+//      romper el hash.
+//   2. Al terminar la ronda revela la semilla. Cualquiera recomputa el mazo con
+//      esta misma función y verifica que coincide con lo que se jugó.
+// Así ni el operador puede amañar el reparto ni acusar de amaño sin prueba.
+
+/** Semilla secreta del servidor para una ronda (hex, 256 bits). */
+export function nuevaSemilla(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/** Compromiso público: SHA-256 de la semilla, en hex. */
+export function commitDeSemilla(seedHex: string): string {
+  return createHash('sha256').update(seedHex).digest('hex');
+}
+
+/**
+ * RandomInt determinista y uniforme derivado de una semilla hex. Usa
+ * HMAC-SHA256(seed, contador) como DRBG con muestreo por rechazo (sin sesgo de
+ * módulo). Reproducible: la misma semilla siempre da la misma secuencia.
+ */
+export function randomIntDeSemilla(seedHex: string): RandomInt {
+  let contador = 0;
+  let buffer = Buffer.alloc(0);
+  let pos = 0;
+  const siguienteByte = (): number => {
+    if (pos >= buffer.length) {
+      buffer = createHmac('sha256', seedHex).update(String(contador++)).digest();
+      pos = 0;
+    }
+    return buffer[pos++] as number;
+  };
+  return (maxExclusive: number): number => {
+    if (maxExclusive <= 1) return 0;
+    // Muestreo por rechazo sobre 32 bits para no introducir sesgo.
+    const limite = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+    let x: number;
+    do {
+      x =
+        ((siguienteByte() << 24) |
+          (siguienteByte() << 16) |
+          (siguienteByte() << 8) |
+          siguienteByte()) >>>
+        0;
+    } while (x >= limite);
+    return x % maxExclusive;
+  };
 }
 
 /** Reparte `count` cartas a cada uno de `players` desde el tope del mazo. */

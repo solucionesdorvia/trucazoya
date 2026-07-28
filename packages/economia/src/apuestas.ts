@@ -11,6 +11,7 @@
 
 import { prisma } from '@trucazo/db';
 import { aplicarMovimiento, cuentaPlataforma, ErrorEconomia } from './ledger.js';
+import { puedeApostar } from './juego-responsable.js';
 
 export interface ResultadoApuesta {
   ok: boolean;
@@ -34,6 +35,13 @@ export async function reservarApuesta(input: {
   }
   const monto = BigInt(input.monto);
   const rakeBps = input.rakeBps ?? Number(process.env.PLATFORM_RAKE_BPS ?? 500);
+
+  // Juego responsable: ningún jugador autoexcluido o pasado de su límite de
+  // pérdida entra a una apuesta. Si uno no puede, no se reserva a nadie.
+  for (const j of input.jugadores) {
+    const rg = await puedeApostar(j.userId);
+    if (!rg.ok) return { ok: false, error: rg.error };
+  }
 
   try {
     const bet = await prisma.$transaction(async (tx) => {

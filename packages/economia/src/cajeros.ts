@@ -10,6 +10,7 @@
 import { prisma } from '@trucazo/db';
 import { whatsappLink } from '@trucazo/shared';
 import { aplicarMovimiento, ErrorEconomia } from './ledger.js';
+import { exclusionActiva, puedeDepositar } from './juego-responsable.js';
 
 export interface CajeroPublico {
   userId: string;
@@ -106,6 +107,10 @@ export async function acreditarPorCajero(input: {
     return { ok: false, error: 'No podés acreditarte a vos mismo' };
   }
 
+  // Juego responsable: respetar autoexclusión y límites de carga del jugador.
+  const rg = await puedeDepositar(input.targetUserId, monto);
+  if (!rg.ok) return { ok: false, error: rg.error };
+
   try {
     const res = await prisma.$transaction(async (tx) => {
       const mov = await aplicarMovimiento(tx, {
@@ -166,14 +171,20 @@ export async function solicitarRetiro(input: {
 
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
-    select: { emailVerified: true, isGuest: true, suspended: true },
+    select: { emailVerified: true, isGuest: true, suspended: true, ageVerifiedAt: true },
   });
   if (!user) return { ok: false, error: 'Usuario inexistente' };
   // Retirar exige cuenta real y verificada: es la barrera contra multicuentas
   // que farmean bonos para sacarlos por caja.
   if (user.isGuest) return { ok: false, error: 'Necesitás una cuenta registrada para retirar' };
   if (!user.emailVerified) return { ok: false, error: 'Verificá tu email antes de retirar' };
+  if (!user.ageVerifiedAt) return { ok: false, error: 'Verificá tu edad (+18) antes de retirar' };
   if (user.suspended) return { ok: false, error: 'Tu cuenta está suspendida' };
+
+  // Autoexclusión también corta los retiros por caja durante su vigencia.
+  if (await exclusionActiva(input.userId)) {
+    return { ok: false, error: 'Estás autoexcluido' };
+  }
 
   const cajero = await prisma.cashierProfile.findUnique({ where: { userId: input.cajeroUserId } });
   if (!cajero?.active) return { ok: false, error: 'Ese cajero no está disponible' };
@@ -325,4 +336,87 @@ export function retirosPendientes(cajeroUserId: string) {
     include: { user: { select: { username: true, profile: { select: { displayName: true } } } } },
     orderBy: { createdAt: 'asc' },
   });
+}
+
+export interface FilaReconciliacion {
+  cajeroUserId: string;
+  username: string;
+  nombre: string;
+  activo: boolean;
+  /** Total histórico según el contador del perfil del cajero. */
+  contadorCargado: bigint;
+  contadorPagado: bigint;
+  /** Total real recomputado desde el ledger (fuente de verdad). */
+  ledgerCargado: bigint;
+  ledgerPagado: bigint;
+  /** Cargas de las últimas 24 h (para el cierre de turno). */
+  cargado24h: bigint;
+  pagado24h: bigint;
+  /** true si el contador del perfil coincide con el ledger. */
+  cuadra: boolean;
+}
+
+/**
+ * Reconciliación de cajeros para el panel de admin.
+ *
+ * Cruza dos fuentes: el contador guardado en el perfil del cajero
+ * (`totalDeposited/totalWithdrawn`) contra la suma REAL de asientos del ledger
+ * originados por ese cajero. Si no cuadran, hay una manipulación o un bug: es
+ * exactamente el control de "las fichas cargadas tienen que coincidir con la
+ * plata" que exige operar prolijo. La cifra del ledger es la que manda.
+ */
+export async function reconciliacionCajeros(): Promise<FilaReconciliacion[]> {
+  const desde24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const cajeros = await prisma.cashierProfile.findMany({
+    include: { user: { select: { username: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return Promise.all(
+    cajeros.map(async (c) => {
+      const [depTot, retTot, dep24, ret24] = await Promise.all([
+        prisma.ledgerEntry.aggregate({
+          where: { actorUserId: c.userId, type: 'CASHIER_DEPOSIT' },
+          _sum: { amount: true },
+        }),
+        prisma.ledgerEntry.aggregate({
+          where: { actorUserId: c.userId, type: 'CASHIER_WITHDRAWAL' },
+          _sum: { amount: true },
+        }),
+        prisma.ledgerEntry.aggregate({
+          where: { actorUserId: c.userId, type: 'CASHIER_DEPOSIT', createdAt: { gte: desde24h } },
+          _sum: { amount: true },
+        }),
+        prisma.ledgerEntry.aggregate({
+          where: {
+            actorUserId: c.userId,
+            type: 'CASHIER_WITHDRAWAL',
+            createdAt: { gte: desde24h },
+          },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      // Los retiros se asientan con monto negativo: los normalizamos a positivo.
+      const ledgerCargado = depTot._sum.amount ?? 0n;
+      const ledgerPagado = -(retTot._sum.amount ?? 0n);
+      const cargado24h = dep24._sum.amount ?? 0n;
+      const pagado24h = -(ret24._sum.amount ?? 0n);
+
+      return {
+        cajeroUserId: c.userId,
+        username: c.user.username,
+        nombre: c.displayName,
+        activo: c.active,
+        contadorCargado: c.totalDeposited,
+        contadorPagado: c.totalWithdrawn,
+        ledgerCargado,
+        ledgerPagado,
+        cargado24h,
+        pagado24h,
+        cuadra: c.totalDeposited === ledgerCargado && c.totalWithdrawn === ledgerPagado,
+      };
+    }),
+  );
 }

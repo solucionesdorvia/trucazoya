@@ -22,6 +22,7 @@ export async function registrarse(_prev: EstadoForm, formData: FormData): Promis
     username: String(formData.get('username') ?? ''),
     email: String(formData.get('email') ?? ''),
     password: String(formData.get('password') ?? ''),
+    birthdate: String(formData.get('birthdate') ?? ''),
   });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];

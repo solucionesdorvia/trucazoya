@@ -10,11 +10,14 @@
 import {
   applyAction,
   chooseAction,
+  commitDeSemilla,
   createMatch,
   cryptoRandomInt,
   deal,
   fullDeck,
   legalActions,
+  nuevaSemilla,
+  randomIntDeSemilla,
   redactStateFor,
   shuffle,
   startRound,
@@ -43,12 +46,22 @@ export interface EventoPersistible {
 
 type Emisor = (userId: string, evento: string, datos: unknown) => void;
 
+/** Registro de un reparto para auditoría (commit-reveal). */
+export interface RepartoAuditable {
+  roundNumber: number;
+  commit: string;
+  serverSeed: string;
+  deckOrder: string[];
+}
+
 export class Mesa {
   state: MatchState;
   readonly jugadores: JugadorMesa[];
   /** Acciones ya aplicadas: dedup por actionId (idempotencia ante reintentos). */
   private readonly aplicadas = new Set<string>();
   private readonly pendientesPersistir: EventoPersistible[] = [];
+  /** Compromisos de barajado (commit-reveal) pendientes de volcar a la base. */
+  private readonly repartosPendientes: RepartoAuditable[] = [];
   private timerBot: NodeJS.Timeout | null = null;
 
   constructor(
@@ -68,11 +81,34 @@ export class Mesa {
 
   // ─── Ciclo de ronda ─────────────────────────────────────────────────────
 
-  /** Baraja con CSPRNG y arranca una ronda. El motor nunca baraja por sí mismo. */
+  /**
+   * Baraja con una semilla auditable (commit-reveal) y arranca una ronda. Se
+   * publica el `commit` (hash de la semilla) antes de jugar y se guarda la
+   * semilla para revelarla después: cualquiera puede recomputar el mazo y
+   * verificar que el reparto no se manipuló. El motor nunca baraja por sí mismo.
+   */
   private repartirNuevaRonda(): void {
-    const manos = deal(shuffle(fullDeck(), cryptoRandomInt), this.state.config.players, 3);
+    const semilla = nuevaSemilla();
+    const commit = commitDeSemilla(semilla);
+    const mazo = shuffle(fullDeck(), randomIntDeSemilla(semilla));
+    const manos = deal(mazo, this.state.config.players, 3);
     this.state = startRound(this.state, manos);
-    this.registrar({ type: 'ROUND_STARTED', payload: { round: this.state.roundCount } });
+
+    const ronda = this.state.roundCount;
+    this.repartosPendientes.push({
+      roundNumber: ronda,
+      commit,
+      serverSeed: semilla,
+      deckOrder: mazo.map((c) => `${c.rank}${c.suit[0]}`),
+    });
+    // El commit viaja en el evento (queda en el log público); la semilla NO se
+    // emite hasta la revelación, que hace el panel de auditoría al cerrar la ronda.
+    this.registrar({ type: 'ROUND_STARTED', payload: { round: ronda, commit } });
+  }
+
+  /** Retira los compromisos de barajado pendientes para persistirlos. */
+  drenarRepartos(): RepartoAuditable[] {
+    return this.repartosPendientes.splice(0, this.repartosPendientes.length);
   }
 
   // ─── Acciones ───────────────────────────────────────────────────────────

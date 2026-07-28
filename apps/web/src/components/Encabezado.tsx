@@ -36,6 +36,13 @@ export function Encabezado({ user }: { user: SessionUser }) {
           >
             Amigos
           </Link>
+          <Link
+            href="/juego-responsable"
+            className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
+            title="Juego responsable"
+          >
+            +18
+          </Link>
           <div className="hidden items-center gap-2 sm:flex">
             <Link
               href={`/u/${user.username}`}

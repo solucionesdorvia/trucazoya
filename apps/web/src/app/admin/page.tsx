@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@trucazo/db';
-import { auditarUsuario } from '@trucazo/economia';
+import { auditarUsuario, reconciliacionCajeros } from '@trucazo/economia';
 import { Encabezado } from '@/components/Encabezado';
 import { Panel, Pildora } from '@/components/ui';
 import { getSessionUser } from '@/lib/session';
@@ -22,10 +22,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       prisma.user.count(),
       prisma.match.count(),
       prisma.room.count({ where: { state: { in: ['WAITING', 'IN_PROGRESS'] } } }),
-      prisma.cashierProfile.findMany({
-        include: { user: { select: { username: true, suspended: true } } },
-        orderBy: { totalDeposited: 'desc' },
-      }),
+      reconciliacionCajeros(),
       prisma.withdrawalRequest.count({ where: { state: { in: ['PENDING', 'RESERVED'] } } }),
       prisma.ledgerEntry.count(),
       prisma.auditLog.findMany({
@@ -241,40 +238,65 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
 
         {/* ─── Cajeros ───────────────────────────────────────────────── */}
         <section className="mt-8">
-          <h2 className="text-xl font-bold tracking-tight">Cajeros</h2>
+          <h2 className="text-xl font-bold tracking-tight">Reconciliación de cajeros</h2>
+          <p className="mt-1 text-sm text-tinta-400">
+            Contador del perfil vs. suma real del ledger. Si una fila no cuadra, hay que revisarla:
+            el ledger es la verdad.
+          </p>
           {cajeros.length === 0 ? (
             <Panel className="mt-3 text-tinta-400">No hay cajeros configurados.</Panel>
           ) : (
             <ul className="mt-3 space-y-2">
               {cajeros.map((c) => (
-                <li key={c.id}>
+                <li key={c.cajeroUserId}>
                   <Panel className="flex flex-wrap items-center justify-between gap-3 !p-3.5">
                     <span>
-                      <span className="block font-medium text-tinta-50">{c.displayName}</span>
-                      <span className="block text-xs text-tinta-400">
-                        @{c.user.username} · {c.whatsappE164}
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium text-tinta-50">{c.nombre}</span>
+                        {c.cuadra ? (
+                          <Pildora tono="verde">Cuadra</Pildora>
+                        ) : (
+                          <Pildora tono="rojo">No cuadra</Pildora>
+                        )}
+                        {!c.activo && <Pildora>Inactivo</Pildora>}
+                      </span>
+                      <span className="block text-xs text-tinta-400">@{c.username}</span>
+                      <span className="mt-1 block text-xs text-tinta-500">
+                        últimas 24 h: cargó{' '}
+                        <span className="font-mono text-emerald-400">
+                          {c.cargado24h.toLocaleString('es-AR')}
+                        </span>{' '}
+                        · pagó{' '}
+                        <span className="font-mono text-canto-400">
+                          {c.pagado24h.toLocaleString('es-AR')}
+                        </span>
                       </span>
                     </span>
-                    <span className="flex items-center gap-3 text-right">
-                      <span className="text-xs text-tinta-400">
-                        <span className="block">
-                          cargó{' '}
-                          <span className="font-mono text-emerald-400">
-                            {c.totalDeposited.toLocaleString('es-AR')}
-                          </span>
+                    <span className="text-right text-xs text-tinta-400">
+                      <span className="block">
+                        cargado (ledger){' '}
+                        <span className="font-mono text-emerald-400">
+                          {c.ledgerCargado.toLocaleString('es-AR')}
                         </span>
-                        <span className="block">
-                          pagó{' '}
-                          <span className="font-mono text-canto-400">
-                            {c.totalWithdrawn.toLocaleString('es-AR')}
+                        {!c.cuadra && c.contadorCargado !== c.ledgerCargado && (
+                          <span className="text-canto-400">
+                            {' '}
+                            ≠ contador {c.contadorCargado.toLocaleString('es-AR')}
                           </span>
-                        </span>
+                        )}
                       </span>
-                      {c.active && !c.user.suspended ? (
-                        <Pildora tono="verde">Activo</Pildora>
-                      ) : (
-                        <Pildora tono="rojo">Inactivo</Pildora>
-                      )}
+                      <span className="block">
+                        pagado (ledger){' '}
+                        <span className="font-mono text-canto-400">
+                          {c.ledgerPagado.toLocaleString('es-AR')}
+                        </span>
+                        {!c.cuadra && c.contadorPagado !== c.ledgerPagado && (
+                          <span className="text-canto-400">
+                            {' '}
+                            ≠ contador {c.contadorPagado.toLocaleString('es-AR')}
+                          </span>
+                        )}
+                      </span>
                     </span>
                   </Panel>
                 </li>

@@ -16,18 +16,36 @@ function hashPassword(password: string): string {
 }
 
 async function main() {
-  const password = hashPassword('trucazo123');
+  // Las contraseñas de admin y cajero salen de variables de entorno: en
+  // producción NO puede haber credenciales por defecto. Si no están definidas y
+  // el entorno es productivo, abortamos para no dejar cuentas adivinables.
+  const esProd = process.env.NODE_ENV === 'production';
+  const adminPass = process.env.SEED_ADMIN_PASSWORD;
+  const cajeroPass = process.env.SEED_CASHIER_PASSWORD;
+  if (esProd && (!adminPass || !cajeroPass)) {
+    throw new Error(
+      'En producción definí SEED_ADMIN_PASSWORD y SEED_CASHIER_PASSWORD antes de correr el seed.',
+    );
+  }
+  const password = hashPassword('trucazo123'); // sólo cuentas demo (no prod)
+  const adminHash = hashPassword(adminPass ?? 'trucazo123');
+  const cajeroHash = hashPassword(cajeroPass ?? 'trucazo123');
+  // Cuentas operativas: mayores de edad verificadas.
+  const nacimientoAdulto = new Date('1990-01-01');
+  const edadVerificada = new Date();
 
   // ── Usuarios base ──────────────────────────────────────────────────────
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { passwordHash: adminHash },
     create: {
       username: 'admin',
       email: 'admin@trucazo.local',
-      passwordHash: password,
+      passwordHash: adminHash,
       role: 'ADMIN',
       emailVerified: true,
+      birthdate: nacimientoAdulto,
+      ageVerifiedAt: edadVerificada,
       profile: { create: { displayName: 'Administrador' } },
       wallet: { create: { balance: 0n } },
     },
@@ -35,13 +53,15 @@ async function main() {
 
   const cajero = await prisma.user.upsert({
     where: { username: 'cajero1' },
-    update: {},
+    update: { passwordHash: cajeroHash },
     create: {
       username: 'cajero1',
       email: 'cajero1@trucazo.local',
-      passwordHash: password,
+      passwordHash: cajeroHash,
       role: 'CASHIER',
       emailVerified: true,
+      birthdate: nacimientoAdulto,
+      ageVerifiedAt: edadVerificada,
       profile: { create: { displayName: 'Cajero Uno' } },
       wallet: { create: { balance: 0n } },
       cashierProfile: {
@@ -50,25 +70,30 @@ async function main() {
     },
   });
 
-  for (const name of ['pepe', 'juana', 'toto', 'mica']) {
-    await prisma.user.upsert({
-      where: { username: name },
-      update: {},
-      create: {
-        username: name,
-        email: `${name}@trucazo.local`,
-        passwordHash: password,
-        emailVerified: true,
-        profile: { create: { displayName: name[0]!.toUpperCase() + name.slice(1) } },
-        wallet: { create: { balance: 500n } }, // monedas de bienvenida
-        ratings: {
-          create: [
-            { mode: 'RANKED_1V1', rating: 1500 },
-            { mode: 'RANKED_2V2', rating: 1500 },
-          ],
+  // Cuentas demo: sólo se crean fuera de producción.
+  if (!esProd) {
+    for (const name of ['pepe', 'juana', 'toto', 'mica']) {
+      await prisma.user.upsert({
+        where: { username: name },
+        update: {},
+        create: {
+          username: name,
+          email: `${name}@trucazo.local`,
+          passwordHash: password,
+          emailVerified: true,
+          birthdate: nacimientoAdulto,
+          ageVerifiedAt: edadVerificada,
+          profile: { create: { displayName: name[0]!.toUpperCase() + name.slice(1) } },
+          wallet: { create: { balance: 500n } }, // monedas de bienvenida
+          ratings: {
+            create: [
+              { mode: 'RANKED_1V1', rating: 1500 },
+              { mode: 'RANKED_2V2', rating: 1500 },
+            ],
+          },
         },
-      },
-    });
+      });
+    }
   }
 
   // ── Feature flags ──────────────────────────────────────────────────────
@@ -140,9 +165,8 @@ async function main() {
     skipDuplicates: true,
   });
 
-  console.log(
-    `✓ Seed completo. admin=${admin.username} cajero=${cajero.username} (pass: trucazo123)`,
-  );
+  const nota = esProd ? '(claves desde env)' : '(demo pass: trucazo123)';
+  console.log(`✓ Seed completo. admin=${admin.username} cajero=${cajero.username} ${nota}`);
 }
 
 main()

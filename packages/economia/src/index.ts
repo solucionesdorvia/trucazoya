@@ -3,6 +3,7 @@
 export * from './ledger.js';
 export * from './apuestas.js';
 export * from './cajeros.js';
+export * from './juego-responsable.js';
 export * from './glicko.js';
 export * from './ranking.js';
 export * from './progresion.js';
