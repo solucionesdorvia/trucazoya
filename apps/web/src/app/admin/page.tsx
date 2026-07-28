@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@trucazo/db';
-import { auditarUsuario, reconciliacionCajeros } from '@trucazo/economia';
+import { auditarUsuario, kycPendientes, reconciliacionCajeros } from '@trucazo/economia';
 import { Encabezado } from '@/components/Encabezado';
 import { Panel, Pildora } from '@/components/ui';
 import { getSessionUser } from '@/lib/session';
-import { cambiarSuspension, crearTorneo, resolverReporte } from './acciones';
+import { cambiarSuspension, crearTorneo, resolverKycAccion, resolverReporte } from './acciones';
 
 export const metadata = { title: 'Administración' };
 
@@ -17,29 +17,39 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
 
   const { q } = await searchParams;
 
-  const [usuarios, partidas, salasActivas, cajeros, retiros, movimientos, ultimosLogs, reportes] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.match.count(),
-      prisma.room.count({ where: { state: { in: ['WAITING', 'IN_PROGRESS'] } } }),
-      reconciliacionCajeros(),
-      prisma.withdrawalRequest.count({ where: { state: { in: ['PENDING', 'RESERVED'] } } }),
-      prisma.ledgerEntry.count(),
-      prisma.auditLog.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        include: { actor: { select: { username: true } } },
-      }),
-      prisma.report.findMany({
-        where: { state: { in: ['OPEN', 'IN_REVIEW'] } },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        include: {
-          reporter: { select: { username: true } },
-          reported: { select: { username: true } },
-        },
-      }),
-    ]);
+  const [
+    usuarios,
+    partidas,
+    salasActivas,
+    cajeros,
+    retiros,
+    movimientos,
+    ultimosLogs,
+    reportes,
+    kyc,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.match.count(),
+    prisma.room.count({ where: { state: { in: ['WAITING', 'IN_PROGRESS'] } } }),
+    reconciliacionCajeros(),
+    prisma.withdrawalRequest.count({ where: { state: { in: ['PENDING', 'RESERVED'] } } }),
+    prisma.ledgerEntry.count(),
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: { actor: { select: { username: true } } },
+    }),
+    prisma.report.findMany({
+      where: { state: { in: ['OPEN', 'IN_REVIEW'] } },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: {
+        reporter: { select: { username: true } },
+        reported: { select: { username: true } },
+      },
+    }),
+    kycPendientes(),
+  ]);
 
   // Búsqueda de usuario + auditoría de su ledger.
   const buscado = q
@@ -68,6 +78,61 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           <Metrica etiqueta="Asientos ledger" valor={movimientos} />
           <Metrica etiqueta="Retiros pendientes" valor={retiros} alerta={retiros > 0} />
         </div>
+
+        {/* ─── KYC pendientes ────────────────────────────────────────── */}
+        <section className="mt-8">
+          <h2 className="text-xl font-bold tracking-tight">
+            Verificaciones de identidad (KYC){' '}
+            {kyc.length > 0 && <Pildora tono="rojo">{kyc.length}</Pildora>}
+          </h2>
+          {kyc.length === 0 ? (
+            <Panel className="mt-3 text-tinta-400">No hay verificaciones pendientes.</Panel>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {kyc.map((k) => (
+                <li key={k.id}>
+                  <Panel className="flex flex-wrap items-center justify-between gap-3 !p-3.5">
+                    <span>
+                      <span className="block font-medium text-tinta-50">{k.fullName}</span>
+                      <span className="block text-xs text-tinta-400">
+                        @{k.user.username} · {k.docType} {k.docNumber}
+                        {k.docImageUrl && (
+                          <>
+                            {' · '}
+                            <a
+                              href={k.docImageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-oro-400 hover:text-oro-500"
+                            >
+                              ver documento
+                            </a>
+                          </>
+                        )}
+                      </span>
+                    </span>
+                    <span className="flex gap-2">
+                      <form action={resolverKycAccion}>
+                        <input type="hidden" name="submissionId" value={k.id} />
+                        <input type="hidden" name="accion" value="APPROVED" />
+                        <button className="h-9 rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-500">
+                          Aprobar
+                        </button>
+                      </form>
+                      <form action={resolverKycAccion}>
+                        <input type="hidden" name="submissionId" value={k.id} />
+                        <input type="hidden" name="accion" value="REJECTED" />
+                        <button className="h-9 rounded-lg bg-canto-500 px-3 text-sm font-semibold text-white hover:bg-canto-400">
+                          Rechazar
+                        </button>
+                      </form>
+                    </span>
+                  </Panel>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         {/* ─── Auditoría de usuario ──────────────────────────────────── */}
         <section className="mt-8">

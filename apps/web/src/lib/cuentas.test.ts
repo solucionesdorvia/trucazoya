@@ -45,6 +45,7 @@ describe('crearCuenta', () => {
       email,
       password: clave,
       birthdate: '1990-01-01',
+      province: 'CABA',
     });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -75,6 +76,7 @@ describe('crearCuenta', () => {
       email: `otro_${sufijo}@t.local`,
       password: clave,
       birthdate: '1990-01-01',
+      province: 'CABA',
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.campo).toBe('username');
@@ -86,6 +88,7 @@ describe('crearCuenta', () => {
       email,
       password: clave,
       birthdate: '1990-01-01',
+      province: 'CABA',
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.campo).toBe('email');
@@ -99,6 +102,7 @@ describe('crearCuenta', () => {
       email: `menor_${sufijo}@t.local`,
       password: clave,
       birthdate: menor,
+      province: 'CABA',
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.campo).toBe('birthdate');

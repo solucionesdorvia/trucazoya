@@ -8,13 +8,29 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@trucazo/db';
-import { registrarMovimiento } from '@trucazo/economia';
+import { registrarMovimiento, resolverKyc } from '@trucazo/economia';
 import { requireUser } from '@/lib/session';
 
 async function exigirModerador() {
   const user = await requireUser();
   if (user.role !== 'ADMIN' && user.role !== 'MODERATOR') throw new Error('FORBIDDEN');
   return user;
+}
+
+/** Aprueba o rechaza una verificación KYC. Aprobar habilita los retiros. */
+export async function resolverKycAccion(formData: FormData): Promise<void> {
+  const admin = await exigirModerador();
+  const submissionId = String(formData.get('submissionId') ?? '');
+  const accion = String(formData.get('accion') ?? '');
+  if (accion !== 'APPROVED' && accion !== 'REJECTED') return;
+
+  await resolverKyc({
+    adminUserId: admin.id,
+    submissionId,
+    accion,
+    nota: String(formData.get('nota') ?? '').trim() || undefined,
+  });
+  revalidatePath('/admin');
 }
 
 export async function resolverReporte(formData: FormData): Promise<void> {

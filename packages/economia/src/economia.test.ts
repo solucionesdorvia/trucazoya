@@ -23,10 +23,11 @@ async function crearUsuario(nombre: string, saldo: bigint, verificado = true) {
       username: `${nombre}_${sufijo}`,
       email: `${nombre}_${sufijo}@t.local`,
       emailVerified: verificado,
-      // Un usuario "verificado" también tiene la edad validada (requisito para
-      // retirar). Los no verificados quedan sin edad para probar ese gate.
+      // Un usuario "verificado" tiene edad + KYC validados (requisitos para
+      // retirar). Los no verificados quedan sin nada para probar esos gates.
       ageVerifiedAt: verificado ? new Date() : null,
       birthdate: verificado ? new Date('1990-01-01') : null,
+      kycVerifiedAt: verificado ? new Date() : null,
       profile: { create: { displayName: nombre } },
       wallet: { create: { balance: saldo } },
     },

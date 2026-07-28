@@ -1,11 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@trucazo/db';
-import {
-  commitDeSemilla,
-  fullDeck,
-  randomIntDeSemilla,
-  shuffle,
-} from '@trucazo/engine';
+import { commitDeSemilla, fullDeck, randomIntDeSemilla, shuffle } from '@trucazo/engine';
 import { Logo } from '@/components/ui';
 
 export const metadata = { title: 'Verificar reparto' };
@@ -125,9 +120,10 @@ export default async function VerificarReparto({
             </div>
 
             <p className="mt-5 text-sm text-tinta-400">
-              Cómo se verifica: el servidor publicó <code className="text-tinta-200">commit =
-              SHA-256(semilla)</code> antes de jugar cada ronda. Al terminar revela la semilla; con
-              ella cualquiera recomputa el mazo y comprueba que es el que se jugó.
+              Cómo se verifica: el servidor publicó{' '}
+              <code className="text-tinta-200">commit = SHA-256(semilla)</code> antes de jugar cada
+              ronda. Al terminar revela la semilla; con ella cualquiera recomputa el mazo y
+              comprueba que es el que se jugó.
             </p>
 
             <ul className="mt-4 space-y-3">
@@ -155,8 +151,8 @@ export default async function VerificarReparto({
                         semilla: {v.serverSeed}
                       </p>
                       <p className="mt-1 text-xs text-tinta-500">
-                        SHA-256(semilla) {v.commitOk ? '=' : '≠'} commit ·{' '}
-                        mazo recomputado {v.mazoOk ? '=' : '≠'} mazo jugado
+                        SHA-256(semilla) {v.commitOk ? '=' : '≠'} commit · mazo recomputado{' '}
+                        {v.mazoOk ? '=' : '≠'} mazo jugado
                       </p>
                       <p className="mt-2 break-all font-mono text-[11px] text-tinta-500">
                         {v.deckOrder.join(' ')}

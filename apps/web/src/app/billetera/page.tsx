@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { prisma } from '@trucazo/db';
-import { listarCajeros, saldoDe } from '@trucazo/economia';
+import { estadoKyc, listarCajeros, saldoDe } from '@trucazo/economia';
 import { Encabezado } from '@/components/Encabezado';
 import { Panel, Pildora } from '@/components/ui';
 import { FormRetiro } from '@/components/billetera/FormRetiro';
@@ -30,7 +31,7 @@ export default async function Billetera() {
   const user = await getSessionUser();
   if (!user) redirect('/ingresar');
 
-  const [saldo, movimientos, cajeros, retiros] = await Promise.all([
+  const [saldo, movimientos, cajeros, retiros, kyc] = await Promise.all([
     saldoDe(user.id),
     prisma.ledgerEntry.findMany({
       where: { userId: user.id },
@@ -42,6 +43,7 @@ export default async function Billetera() {
       where: { userId: user.id, state: { in: ['PENDING', 'RESERVED'] } },
       orderBy: { createdAt: 'desc' },
     }),
+    estadoKyc(user.id),
   ]);
 
   return (
@@ -62,6 +64,25 @@ export default async function Billetera() {
                   Reenviar link
                 </button>
               </form>
+            </div>
+          </Panel>
+        )}
+
+        {!user.isGuest && kyc !== 'APPROVED' && (
+          <Panel className="mt-4 border-oro-500/40 bg-oro-500/5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-tinta-200">
+                🪪 Verificá tu identidad (KYC) para poder <strong>retirar</strong>.
+                {kyc === 'PENDING' && ' Tu verificación está en revisión.'}
+              </p>
+              {kyc !== 'PENDING' && (
+                <Link
+                  href="/kyc"
+                  className="h-9 rounded-lg border border-oro-500/40 px-3 text-sm font-medium leading-9 text-oro-400"
+                >
+                  Verificar identidad
+                </Link>
+              )}
             </div>
           </Panel>
         )}

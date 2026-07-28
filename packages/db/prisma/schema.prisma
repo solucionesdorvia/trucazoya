@@ -37,6 +37,12 @@ model User {
   birthdate     DateTime?
   /// Cuándo se verificó que es mayor de edad. null = sin verificar.
   ageVerifiedAt DateTime?
+  /// Cuándo aceptó términos y política de privacidad (requisito de alta).
+  acceptedTermsAt DateTime?
+  /// Provincia declarada (control de jurisdicción). Código corto, ej. "CABA".
+  province      String?
+  /// Cuándo se aprobó su KYC documental. null = sin verificar (no puede retirar).
+  kycVerifiedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastSeenAt    DateTime @default(now())
@@ -51,6 +57,7 @@ model User {
   sanctions      Sanction[]      @relation("SanctionTarget")
   rgLimits       ResponsibleGamingLimits?
   selfExclusions SelfExclusion[]
+  kycSubmissions KycSubmission[]
 
   roomParticipations RoomParticipant[]
   matchPlayers       MatchPlayer[]
@@ -274,6 +281,34 @@ model SelfExclusion {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, until])
+}
+
+enum KycState {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Verificación de identidad (KYC) para poder retirar. El operador con licencia
+/// revisa cada envío. El binario del documento vive en storage del operador
+/// (`docImageUrl` es la referencia); acá guardamos los datos y el estado.
+model KycSubmission {
+  id           String    @id @default(cuid())
+  userId       String
+  fullName     String
+  docType      String // "DNI" | "PASSPORT"
+  docNumber    String
+  docImageUrl  String?
+  state        KycState  @default(PENDING)
+  reviewedById String?
+  reviewNote   String?
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([state])
 }
 
 /// Compromiso verificable del reparto (fair play, esquema commit-reveal).

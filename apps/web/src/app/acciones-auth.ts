@@ -23,13 +23,21 @@ export async function registrarse(_prev: EstadoForm, formData: FormData): Promis
     email: String(formData.get('email') ?? ''),
     password: String(formData.get('password') ?? ''),
     birthdate: String(formData.get('birthdate') ?? ''),
+    province: String(formData.get('province') ?? ''),
+    acceptedTerms: formData.get('acceptedTerms') ? 'on' : '',
   });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return { error: issue?.message ?? 'Datos inválidos', campo: String(issue?.path[0] ?? '') };
   }
 
-  const res = await crearCuenta(parsed.data);
+  const res = await crearCuenta({
+    username: parsed.data.username,
+    email: parsed.data.email,
+    password: parsed.data.password,
+    birthdate: parsed.data.birthdate,
+    province: parsed.data.province,
+  });
   if (!res.ok) return { error: res.error, campo: res.campo };
 
   // Envía el email de verificación (en dev, se loguea el link a consola).

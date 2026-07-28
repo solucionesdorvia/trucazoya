@@ -171,7 +171,13 @@ export async function solicitarRetiro(input: {
 
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
-    select: { emailVerified: true, isGuest: true, suspended: true, ageVerifiedAt: true },
+    select: {
+      emailVerified: true,
+      isGuest: true,
+      suspended: true,
+      ageVerifiedAt: true,
+      kycVerifiedAt: true,
+    },
   });
   if (!user) return { ok: false, error: 'Usuario inexistente' };
   // Retirar exige cuenta real y verificada: es la barrera contra multicuentas
@@ -179,6 +185,9 @@ export async function solicitarRetiro(input: {
   if (user.isGuest) return { ok: false, error: 'Necesitás una cuenta registrada para retirar' };
   if (!user.emailVerified) return { ok: false, error: 'Verificá tu email antes de retirar' };
   if (!user.ageVerifiedAt) return { ok: false, error: 'Verificá tu edad (+18) antes de retirar' };
+  // KYC documental aprobado: requisito para pagar por caja (antilavado).
+  if (!user.kycVerifiedAt)
+    return { ok: false, error: 'Verificá tu identidad (KYC) antes de retirar' };
   if (user.suspended) return { ok: false, error: 'Tu cuenta está suspendida' };
 
   // Autoexclusión también corta los retiros por caja durante su vigencia.

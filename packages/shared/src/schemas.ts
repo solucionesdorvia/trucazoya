@@ -33,11 +33,47 @@ export const birthdateSchema = z
     `Tenés que ser mayor de ${EDAD_MINIMA} años`,
   );
 
+/** Provincias argentinas (código → nombre) para el control de jurisdicción. */
+export const PROVINCIAS_AR: Record<string, string> = {
+  CABA: 'Ciudad de Buenos Aires',
+  BA: 'Buenos Aires',
+  CAT: 'Catamarca',
+  CHA: 'Chaco',
+  CHU: 'Chubut',
+  COR: 'Córdoba',
+  CTE: 'Corrientes',
+  ER: 'Entre Ríos',
+  FOR: 'Formosa',
+  JUJ: 'Jujuy',
+  LP: 'La Pampa',
+  LR: 'La Rioja',
+  MZA: 'Mendoza',
+  MIS: 'Misiones',
+  NQN: 'Neuquén',
+  RN: 'Río Negro',
+  SAL: 'Salta',
+  SJ: 'San Juan',
+  SL: 'San Luis',
+  SC: 'Santa Cruz',
+  SF: 'Santa Fe',
+  SE: 'Santiago del Estero',
+  TF: 'Tierra del Fuego',
+  TUC: 'Tucumán',
+};
+
+export const provinceSchema = z
+  .string()
+  .refine((p) => p in PROVINCIAS_AR, 'Elegí una provincia válida');
+
 export const registerSchema = z.object({
   username: usernameSchema,
   email: z.string().email('Email inválido'),
   password: passwordSchema,
   birthdate: birthdateSchema,
+  province: provinceSchema,
+  acceptedTerms: z
+    .union([z.literal('on'), z.literal('true'), z.boolean()])
+    .refine((v) => v === 'on' || v === 'true' || v === true, 'Tenés que aceptar los términos'),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

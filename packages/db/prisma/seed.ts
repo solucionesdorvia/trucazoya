@@ -46,6 +46,9 @@ async function main() {
       emailVerified: true,
       birthdate: nacimientoAdulto,
       ageVerifiedAt: edadVerificada,
+      acceptedTermsAt: edadVerificada,
+      province: 'CABA',
+      kycVerifiedAt: edadVerificada,
       profile: { create: { displayName: 'Administrador' } },
       wallet: { create: { balance: 0n } },
     },
@@ -62,6 +65,9 @@ async function main() {
       emailVerified: true,
       birthdate: nacimientoAdulto,
       ageVerifiedAt: edadVerificada,
+      acceptedTermsAt: edadVerificada,
+      province: 'CABA',
+      kycVerifiedAt: edadVerificada,
       profile: { create: { displayName: 'Cajero Uno' } },
       wallet: { create: { balance: 0n } },
       cashierProfile: {
@@ -83,6 +89,9 @@ async function main() {
           emailVerified: true,
           birthdate: nacimientoAdulto,
           ageVerifiedAt: edadVerificada,
+          acceptedTermsAt: edadVerificada,
+          province: 'CABA',
+          kycVerifiedAt: edadVerificada,
           profile: { create: { displayName: name[0]!.toUpperCase() + name.slice(1) } },
           wallet: { create: { balance: 500n } }, // monedas de bienvenida
           ratings: {

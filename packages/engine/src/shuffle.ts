@@ -7,7 +7,10 @@
  * reproducir repartos exactos.
  */
 
-import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto';
+// Specifier "crypto" (no "node:"): Next lo externaliza como builtin en el
+// build de webpack; el prefijo "node:" no lo reconoce y rompe el bundle del
+// verificador de fairness (que importa estas funciones en un server component).
+import { createHash, createHmac, randomBytes, randomInt } from 'crypto';
 import type { Card } from './cards.js';
 
 /** Devuelve un entero uniforme en [0, maxExclusive). */

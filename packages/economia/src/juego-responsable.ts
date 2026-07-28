@@ -10,6 +10,7 @@
  */
 
 import { prisma } from '@trucazo/db';
+import { configRG } from './cumplimiento.js';
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 const SEMANA_MS = 7 * DIA_MS;
@@ -147,10 +148,17 @@ export async function puedeDepositar(userId: string, monto: bigint): Promise<Che
     return { ok: false, error: 'El jugador está autoexcluido y no puede cargar' };
   }
   const l = await limitesDe(userId);
-  if (l.dailyDepositMax !== null) {
+  // Tope diario: el que se fijó el jugador o, si no fijó ninguno, el default
+  // regulatorio que configura el operador.
+  let topeDiario = l.dailyDepositMax;
+  if (topeDiario === null) {
+    const cfg = await configRG();
+    topeDiario = cfg.defaultDailyDepositMax === null ? null : BigInt(cfg.defaultDailyDepositMax);
+  }
+  if (topeDiario !== null) {
     const hoy = await depositadoEnVentana(userId, DIA_MS);
-    if (hoy + monto > l.dailyDepositMax) {
-      return { ok: false, error: `Supera su límite diario de carga (${l.dailyDepositMax})` };
+    if (hoy + monto > topeDiario) {
+      return { ok: false, error: `Supera el límite diario de carga (${topeDiario})` };
     }
   }
   if (l.weeklyDepositMax !== null) {
