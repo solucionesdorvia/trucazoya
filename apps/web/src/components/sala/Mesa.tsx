@@ -107,7 +107,7 @@ export function Mesa({
         aria-label="Cartas jugadas"
       >
         {terminada ? (
-          <Resultado vista={vista} miEquipo={miEquipo} />
+          <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
         ) : (
           <div className="flex flex-col items-center gap-3">
             {vista.tricks.map((baza, i) =>
@@ -271,7 +271,15 @@ function Marcador({
   );
 }
 
-function Resultado({ vista, miEquipo }: { vista: VistaJugador; miEquipo: number }) {
+function Resultado({
+  vista,
+  miEquipo,
+  matchId,
+}: {
+  vista: VistaJugador;
+  miEquipo: number;
+  matchId: string | null;
+}) {
   const gane = vista.winner === miEquipo;
   return (
     <div className="animar-aparecer text-center">
@@ -284,6 +292,16 @@ function Resultado({ vista, miEquipo }: { vista: VistaJugador; miEquipo: number 
       <p className="mt-1.5 font-mono text-lg text-tinta-400">
         {vista.scores[miEquipo]} — {vista.scores[miEquipo === 0 ? 1 : 0]}
       </p>
+      {matchId && (
+        <a
+          href={`/reparto/${matchId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-block text-sm text-oro-400 underline-offset-4 hover:underline"
+        >
+          Verificar que el reparto fue justo →
+        </a>
+      )}
     </div>
   );
 }
