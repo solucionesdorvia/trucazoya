@@ -11,6 +11,8 @@
 import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
 import { Server as SocketServer } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
 import { prisma } from '@trucazo/db';
 import { generarCodigoSala, verificarTokenPartida } from '@trucazo/shared';
 import {
@@ -48,10 +50,30 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   const registro = new RegistroSalas();
   const matchmaker = new Matchmaker();
 
+  // Contadores acumulados desde el arranque (observabilidad / capacity).
+  const metricas = {
+    partidasArrancadas: 0,
+    accionesAplicadas: 0,
+    accionesRechazadas: 0,
+    conexiones: 0,
+    desconexiones: 0,
+  };
+
   app.get('/salud', async () => ({
     ok: true,
     salas: registro.cantidad,
     uptime: Math.round(process.uptime()),
+  }));
+
+  // Métricas operativas en JSON (scrapeable por un dashboard o un cron).
+  app.get('/metricas', async () => ({
+    uptime: Math.round(process.uptime()),
+    salasActivas: registro.cantidad,
+    socketsConectados: io.engine.clientsCount,
+    usuariosConectados: socketsPorUsuario.size,
+    enColaMatchmaking: matchmaker.totalEnCola(),
+    ...metricas,
+    memoriaMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
   }));
 
   const server = app.server;
@@ -175,6 +197,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   io.on('connection', (socket) => {
     const userId = socket.data.userId as string;
     const username = socket.data.username as string;
+    metricas.conexiones++;
 
     const set = socketsPorUsuario.get(userId) ?? new Set();
     set.add(socket.id);
@@ -245,8 +268,10 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
 
         const rechazo = mesa.aplicar(userId, action, actionId);
         if (rechazo) {
+          metricas.accionesRechazadas++;
           return socket.emit('accion:rechazada', { actionId, motivo: rechazo });
         }
+        metricas.accionesAplicadas++;
 
         await volcarEventos(mesa.id, sala);
         if (mesa.terminada) await finalizarPartida(sala, codeActual);
@@ -304,6 +329,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
 
     // ── Desconexión ──────────────────────────────────────────────────────
     socket.on('disconnect', () => {
+      metricas.desconexiones++;
       const s = socketsPorUsuario.get(userId);
       s?.delete(socket.id);
       if (s && s.size === 0) socketsPorUsuario.delete(userId);
@@ -443,6 +469,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     }
 
     const mesa = sala.arrancar(matchId, emitirAUsuario);
+    metricas.partidasArrancadas++;
     io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
     io.to(`sala:${code}`).emit('partida:arrancada', { matchId });
     mesa.difundir([]);
@@ -523,8 +550,29 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     console.log(`▸ partida ${mesa.id} terminada — ganó equipo ${ganador} ${mesa.state.scores}`);
   }
 
+  // Adapter de Redis para escalar Socket.IO a varios nodos: sincroniza las
+  // salas (broadcasts) entre procesos vía pub/sub. Sólo se activa si hay
+  // REDIS_URL. LIMITACIÓN CONOCIDA: el estado de cada partida vive en memoria
+  // del nodo que la arrancó, así que para multi-nodo real hay que rutear a los
+  // jugadores de una sala al mismo nodo (sticky por sala) o mover el estado a
+  // Redis; el adapter resuelve el fan-out de eventos, no la afinidad de partida.
+  const REDIS_URL = process.env.REDIS_URL;
+  let redisPub: ReturnType<typeof createClient> | null = null;
+  let redisSub: ReturnType<typeof createClient> | null = null;
+
   return {
     async escuchar() {
+      if (REDIS_URL) {
+        try {
+          redisPub = createClient({ url: REDIS_URL });
+          redisSub = redisPub.duplicate();
+          await Promise.all([redisPub.connect(), redisSub.connect()]);
+          io.adapter(createAdapter(redisPub, redisSub));
+          console.log('▸ Socket.IO usando adapter de Redis (multi-nodo)');
+        } catch (e) {
+          console.error('[redis] no se pudo conectar; sigo en modo single-node', e);
+        }
+      }
       await app.listen({ port: PORT, host: '0.0.0.0' });
       const dir = app.server.address();
       const puerto = typeof dir === 'object' && dir ? dir.port : PORT;
@@ -534,6 +582,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       clearInterval(tickMatchmaking);
       io.close();
       await app.close();
+      await Promise.all([redisPub?.quit(), redisSub?.quit()].filter(Boolean));
     },
     registro,
   };

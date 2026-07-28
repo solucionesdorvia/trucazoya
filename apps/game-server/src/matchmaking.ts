@@ -55,6 +55,13 @@ export class Matchmaker {
     }
   }
 
+  /** Total de jugadores esperando emparejamiento (para métricas). */
+  totalEnCola(): number {
+    let total = 0;
+    for (const cola of this.colas.values()) total += cola.length;
+    return total;
+  }
+
   enCola(userId: string): { mode: GameMode; posicion: number; espera: number } | null {
     for (const [mode, cola] of this.colas) {
       const idx = cola.findIndex((j) => j.userId === userId);
