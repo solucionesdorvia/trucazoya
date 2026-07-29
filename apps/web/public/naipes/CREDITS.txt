@@ -1,0 +1,13 @@
+Arte de la baraja española (naipes/*.svg)
+=========================================
+
+Obra original: Basquetteur (Wikimedia Commons)
+  https://commons.wikimedia.org/wiki/Category:Spanish_playing_cards
+Versión SVG por carta: gjenkins20/spanish-playing-cards-svg
+  https://github.com/gjenkins20/spanish-playing-cards-svg
+
+Licencia: Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+Cambios realizados: renombrado a <palo>-<rango>.svg y optimizado con svgo.
+Estos assets se distribuyen bajo la misma licencia CC BY-SA 3.0.

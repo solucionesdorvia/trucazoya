@@ -177,6 +177,17 @@ export default async function Landing() {
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-noche-700 pt-6">
           <Logo size={24} />
           <p>Jugá con responsabilidad. Monedas virtuales, sin dinero real.</p>
+          <nav className="flex gap-4">
+            <Link href="/terminos" className="hover:text-tinta-300">
+              Términos
+            </Link>
+            <Link href="/privacidad" className="hover:text-tinta-300">
+              Privacidad
+            </Link>
+            <Link href="/creditos" className="hover:text-tinta-300">
+              Créditos
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>
