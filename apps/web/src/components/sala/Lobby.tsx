@@ -109,9 +109,8 @@ export function Lobby({
         )}
         {faltan > 0 && (
           <p className="mt-2 text-center text-sm text-tinta-400">
-            {sala.hostUserId === userId
-              ? `Faltan ${faltan}. Si activaste bots, al marcarte listo se completan solos.`
-              : `Esperando ${faltan} jugador${faltan === 1 ? '' : 'es'} más…`}
+            {`Esperando ${faltan} jugador${faltan === 1 ? '' : 'es'} más…`}
+            {sala.hostUserId === userId && ' Compartí el código para que entren.'}
           </p>
         )}
       </div>

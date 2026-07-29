@@ -11,7 +11,6 @@ export default function CrearSala() {
   const [estado, accion, pendiente] = useActionState(crearSala, inicial);
   const [modo, setModo] = useState('CASUAL_1V1');
   const [puntos, setPuntos] = useState(30);
-  const [conBots, setConBots] = useState(true);
 
   return (
     <div className="mx-auto max-w-lg px-5 py-8">
@@ -100,16 +99,9 @@ export default function CrearSala() {
             desc="Se juega flor y contraflor"
           />
           <Interruptor
-            name="allowBots"
-            checked={conBots}
-            onChange={setConBots}
-            label="Permitir bots"
-            desc="Completa los lugares vacíos para arrancar solo"
-          />
-          <Interruptor
             name="isPrivate"
             label="Sala privada"
-            desc="No aparece en el navegador público"
+            desc="No aparece en el navegador público: se entra con código"
           />
         </Panel>
 

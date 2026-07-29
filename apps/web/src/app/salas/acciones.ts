@@ -31,7 +31,8 @@ export async function crearSala(_prev: EstadoSala, formData: FormData): Promise<
     pointsToWin: Number(formData.get('pointsToWin') ?? 30),
     isPrivate: formData.get('isPrivate') === 'on',
     florEnabled: formData.get('florEnabled') === 'on',
-    allowBots: formData.get('allowBots') === 'on',
+    // Sin bots: todos contra todos, se juega contra personas.
+    allowBots: false,
     betAmount: Number(formData.get('betAmount') ?? 0),
     chatEnabled: true,
     allowSpectators: true,
