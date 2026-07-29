@@ -164,7 +164,6 @@ export function Mesa({
   const miEquipo = vista.team;
   const puntosMios = vista.scores[miEquipo];
   const puntosRival = vista.scores[miEquipo === 0 ? 1 : 0];
-  const mitad = Math.ceil(vista.pointsToWin / 2);
   // Valor de la "falta": lo que le falta al que va ganando para el juego.
   const falta = Math.max(1, vista.pointsToWin - Math.max(puntosMios, puntosRival));
 
@@ -228,13 +227,11 @@ export function Mesa({
       {/* ─── Contenido ────────────────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-dvh flex-col">
         {/* Marcador */}
-        <header className="flex items-start justify-between gap-3 px-4 pt-3">
+        <header className="flex items-center justify-between gap-3 px-4 pt-3">
           <div className="flex items-center gap-2">
-            <Tanteador etiqueta="Nosotros" valor={puntosMios} mitad={mitad} destacado />
-            <Tanteador etiqueta="Ellos" valor={puntosRival} mitad={mitad} />
-            <span className="mt-1 self-start text-xs text-emerald-200/70">
-              a {vista.pointsToWin}
-            </span>
+            <Tanteador etiqueta="Nosotros" valor={puntosMios} destacado />
+            <Tanteador etiqueta="Ellos" valor={puntosRival} />
+            <span className="self-center text-xs text-emerald-200/70">a {vista.pointsToWin}</span>
           </div>
           <div className="flex items-center gap-2">
             {vista.truco.level > 0 && (
@@ -581,93 +578,32 @@ function BotonMesa({
   );
 }
 
-// ─── Tanteador con fósforos (malas / buenas) ─────────────────────────────────
-
-function Fosforos({ n }: { n: number }) {
-  // Grupos de 5: 4 palitos + 1 cruzado (卌), estilo tanteador de club.
-  const grupos = Math.floor(n / 5);
-  const resto = n % 5;
-  return (
-    <span className="inline-flex items-end gap-[3px]" aria-hidden="true">
-      {Array.from({ length: grupos }, (_, i) => (
-        <GrupoFosforo key={i} palitos={5} />
-      ))}
-      {resto > 0 && <GrupoFosforo palitos={resto} />}
-    </span>
-  );
-}
-
-function GrupoFosforo({ palitos }: { palitos: number }) {
-  const rectos = Math.min(palitos, 4);
-  return (
-    <svg width="15" height="16" viewBox="0 0 15 16">
-      {Array.from({ length: rectos }, (_, i) => (
-        <line
-          key={i}
-          x1={2 + i * 3}
-          y1="2"
-          x2={2 + i * 3}
-          y2="14"
-          stroke="#e8b04b"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      ))}
-      {palitos === 5 && (
-        <line
-          x1="1"
-          y1="13"
-          x2="13"
-          y2="3"
-          stroke="#e8b04b"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      )}
-    </svg>
-  );
-}
+// ─── Tanteador ───────────────────────────────────────────────────────────────
 
 function Tanteador({
   etiqueta,
   valor,
-  mitad,
   destacado,
 }: {
   etiqueta: string;
   valor: number;
-  mitad: number;
   destacado?: boolean;
 }) {
-  const malas = Math.min(valor, mitad);
-  const buenas = Math.max(0, valor - mitad);
   return (
     <div
-      className="min-w-[74px] rounded-xl border px-2.5 py-1"
+      className="min-w-[62px] rounded-xl border px-2.5 py-1 text-center"
       style={{
         background: 'rgba(6,20,15,.65)',
         borderColor: destacado ? 'rgba(232,176,75,.55)' : 'rgba(232,176,75,.22)',
         backdropFilter: 'blur(4px)',
       }}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[9px] uppercase tracking-wider text-emerald-100/50">{etiqueta}</span>
-        <span
-          className={`font-mono text-lg font-bold ${destacado ? 'text-oro-300' : 'text-emerald-50'}`}
-          style={{ fontVariantNumeric: 'tabular-nums' }}
-        >
-          {valor}
-        </span>
-      </div>
-      <div className="mt-0.5 flex flex-col gap-[1px]">
-        <div className="flex h-[16px] items-center gap-1">
-          <span className="w-8 text-[8px] uppercase text-emerald-100/40">malas</span>
-          <Fosforos n={malas} />
-        </div>
-        <div className="flex h-[16px] items-center gap-1 opacity-90">
-          <span className="w-8 text-[8px] uppercase text-oro-300/70">buenas</span>
-          <Fosforos n={buenas} />
-        </div>
+      <div className="text-[9px] uppercase tracking-wider text-emerald-100/50">{etiqueta}</div>
+      <div
+        className={`font-mono text-2xl font-bold ${destacado ? 'text-oro-300' : 'text-emerald-50'}`}
+        style={{ fontVariantNumeric: 'tabular-nums' }}
+      >
+        {valor}
       </div>
     </div>
   );
