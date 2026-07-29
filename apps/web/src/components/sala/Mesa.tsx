@@ -27,7 +27,6 @@ const ETIQUETA_CANTO: Record<string, string> = {
 };
 
 const NIVEL_TRUCO = ['Truco', 'Retruco', 'Vale cuatro'];
-const NOMBRE_BAZA = ['Primera', 'Segunda', 'Tercera'];
 
 /** Feedback háptico (si el dispositivo lo soporta). */
 function vibrar(patron: number | number[]) {
@@ -389,44 +388,8 @@ export function Mesa({
 
           {terminada ? (
             <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
-          ) : vista.tricks.every((t) => t.length === 0) ? (
-            <p className="text-sm text-emerald-100/50">Repartiendo…</p>
           ) : (
-            <div className="flex flex-col items-center gap-2.5">
-              {vista.tricks.map((baza, i) =>
-                baza.length === 0 ? null : (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="w-16 text-right text-[10px] uppercase tracking-wider text-emerald-100/40">
-                      {NOMBRE_BAZA[i]}
-                    </span>
-                    {baza.map((j, k) => (
-                      <div
-                        key={k}
-                        className={
-                          j.seat === vista.seat ? 'animar-jugada-mia' : 'animar-jugada-rival'
-                        }
-                      >
-                        <CartaEspanola
-                          card={j.card}
-                          size={i === vista.currentTrick ? 'md' : 'xs'}
-                        />
-                      </div>
-                    ))}
-                    {vista.trickOutcomes[i] && (
-                      <span className="ml-1 text-sm">
-                        {vista.trickOutcomes[i] === 'PARDA' ? (
-                          <span className="text-emerald-100/50">parda</span>
-                        ) : vista.trickOutcomes[i] === `TEAM_${miEquipo}` ? (
-                          <span className="text-emerald-400">✓</span>
-                        ) : (
-                          <span className="text-canto-400">✗</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                ),
-              )}
-            </div>
+            <Bazas vista={vista} miEquipo={miEquipo} />
           )}
         </section>
 
@@ -661,6 +624,116 @@ function Confeti() {
 
 function claveCarta(c: Card): string {
   return `${c.suit}-${c.rank}`;
+}
+
+// ─── Bazas (las rondas en el centro del paño) ────────────────────────────────
+
+const ANCHO_SLOT: Record<'sm' | 'md', number> = { sm: 62, md: 86 };
+const NOMBRE_CORTO = ['1ª', '2ª', '3ª'];
+
+/**
+ * Las tres bazas dispuestas como en la mesa: cada una es una columna con la
+ * carta del rival arriba y la tuya abajo, enfrentadas. La ganadora queda
+ * resaltada y la perdedora atenuada; la baza en juego se destaca. Las que
+ * faltan muestran el hueco, para que se lea la estructura de la mano.
+ */
+function Bazas({ vista, miEquipo }: { vista: VistaJugador; miEquipo: number }) {
+  const arranco = vista.tricks.some((t) => t.length > 0);
+  return (
+    <div className="flex items-start justify-center gap-3 sm:gap-6">
+      {[0, 1, 2].map((i) => {
+        const baza = vista.tricks[i] ?? [];
+        const rivales = baza.filter((p) => p.seat % 2 !== miEquipo);
+        const mias = baza.filter((p) => p.seat % 2 === miEquipo);
+        const outcome = vista.trickOutcomes[i];
+        const resuelta = Boolean(outcome);
+        const parda = outcome === 'PARDA';
+        const gane = outcome === `TEAM_${miEquipo}`;
+        const enJuego = arranco && !resuelta && i === vista.currentTrick;
+        const size = 'sm' as const;
+
+        return (
+          <div
+            key={i}
+            className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2 transition-all duration-300 ${
+              enJuego ? 'scale-105 bg-black/20 ring-1 ring-oro-500/40' : 'scale-100'
+            } ${resuelta ? 'opacity-95' : ''}`}
+          >
+            <span
+              className={`text-[10px] font-semibold uppercase tracking-widest ${
+                enJuego ? 'text-oro-300' : 'text-emerald-100/35'
+              }`}
+            >
+              {NOMBRE_CORTO[i]}
+            </span>
+
+            <SlotBaza
+              cartas={rivales}
+              lado="rival"
+              size={size}
+              destacada={resuelta && !parda && !gane}
+              atenuada={resuelta && (gane || parda)}
+            />
+
+            <span className="flex h-4 items-center text-[11px] font-medium">
+              {!resuelta ? (
+                <span className="text-emerald-100/15">·</span>
+              ) : parda ? (
+                <span className="text-emerald-100/50">parda</span>
+              ) : gane ? (
+                <span className="text-emerald-400">▲</span>
+              ) : (
+                <span className="text-canto-400">▼</span>
+              )}
+            </span>
+
+            <SlotBaza
+              cartas={mias}
+              lado="mia"
+              size={size}
+              destacada={resuelta && !parda && gane}
+              atenuada={resuelta && !parda && !gane}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SlotBaza({
+  cartas,
+  lado,
+  size,
+  destacada,
+  atenuada,
+}: {
+  cartas: { seat: number; card: Card }[];
+  lado: 'rival' | 'mia';
+  size: 'sm' | 'md';
+  destacada: boolean;
+  atenuada: boolean;
+}) {
+  if (cartas.length === 0) {
+    const w = ANCHO_SLOT[size];
+    return (
+      <div
+        className="rounded-lg border border-dashed border-white/10"
+        style={{ width: w, height: Math.round(w * 1.541) }}
+        aria-hidden="true"
+      />
+    );
+  }
+  return (
+    <div className="flex gap-1">
+      {cartas.map((p, k) => (
+        // La carta propia entra por el vuelo desde la mano; la del rival cae de arriba.
+        <div key={k} className={lado === 'rival' ? 'animar-jugada-rival' : 'animar-jugada-mia'}>
+          <CartaEspanola card={p.card} size={size} destacada={destacada} atenuada={atenuada} />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ─── Botón de mesa (táctil, con puntos en juego) ─────────────────────────────
