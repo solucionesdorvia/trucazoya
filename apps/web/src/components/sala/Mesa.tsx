@@ -147,6 +147,59 @@ export function Mesa({
   const sonido = useSonido();
   const estampa = useEstampaCanto(vista, sonido.canto);
 
+  // Refs y estado de animaciones.
+  const centroRef = useRef<HTMLElement>(null);
+  const vueloRef = useRef<HTMLDivElement>(null);
+  const [volando, setVolando] = useState<{ card: Card; from: DOMRect } | null>(null);
+  const [sacudir, setSacudir] = useState(false);
+  const [dealKey, setDealKey] = useState(0);
+  const prevLen = useRef(vista.myHand.length);
+
+  // Reparto animado: cuando vuelve a haber 3 cartas, es una mano nueva.
+  useEffect(() => {
+    if (vista.myHand.length === 3 && prevLen.current < 3) setDealKey((k) => k + 1);
+    prevLen.current = vista.myHand.length;
+  }, [vista.myHand.length]);
+
+  // Sacudida de pantalla en los cantos grandes.
+  useEffect(() => {
+    if (estampa && /(VALE CUATRO|FALTA|CONTRAFLOR)/.test(estampa)) {
+      setSacudir(true);
+      const t = setTimeout(() => setSacudir(false), 440);
+      return () => clearTimeout(t);
+    }
+  }, [estampa]);
+
+  // Vuelo de la carta desde la mano hasta el centro (Web Animations API).
+  useEffect(() => {
+    if (!volando) return;
+    const centro = centroRef.current?.getBoundingClientRect();
+    const el = vueloRef.current;
+    if (!centro || !el) {
+      setVolando(null);
+      return;
+    }
+    const { from } = volando;
+    const dx = centro.left + centro.width / 2 - (from.left + from.width / 2);
+    const dy = centro.top + centro.height / 2 - (from.top + from.height / 2);
+    const anim = el.animate(
+      [
+        { transform: 'translate(0,0) scale(1) rotate(0deg)' },
+        { transform: `translate(${dx}px, ${dy}px) scale(.62) rotate(7deg)` },
+      ],
+      { duration: 300, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' },
+    );
+    const t = setTimeout(() => setVolando(null), 280);
+    return () => {
+      clearTimeout(t);
+      try {
+        anim.cancel();
+      } catch {
+        /* no-op */
+      }
+    };
+  }, [volando]);
+
   const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0;
   const terminada = vista.phase === 'MATCH_FINISHED';
 
@@ -170,9 +223,11 @@ export function Mesa({
   const soyMano = vista.manoSeat === vista.seat;
   const soyPie = vista.players === 2 && !soyMano;
 
-  function jugar(c: Card) {
+  function jugar(c: Card, el: HTMLElement) {
+    if (volando) return;
     sonido.slap();
     vibrar(12);
+    setVolando({ card: c, from: el.getBoundingClientRect() });
     onAccion({ type: 'PLAY_CARD', seat: vista.seat, card: c });
   }
 
@@ -191,7 +246,9 @@ export function Mesa({
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden">
+    <div
+      className={`relative flex min-h-dvh flex-col overflow-hidden ${sacudir ? 'animar-sacudida' : ''}`}
+    >
       {/* ─── Fondo: paño + luz cenital + riel ─────────────────────────── */}
       <div
         aria-hidden="true"
@@ -308,6 +365,7 @@ export function Mesa({
 
         {/* Paño: cartas jugadas + estampa */}
         <section
+          ref={centroRef}
           className="relative flex flex-1 flex-col items-center justify-center gap-3 px-4 py-5"
           aria-label="Cartas jugadas"
         >
@@ -393,25 +451,31 @@ export function Mesa({
                 const jugable = miTurno && cartasJugables.has(claveCarta(c));
                 const rot = (i - (n - 1) / 2) * 9;
                 const dy = Math.abs(i - (n - 1) / 2) * 8;
+                const volandoEsta = volando && claveCarta(volando.card) === claveCarta(c);
                 return (
-                  <button
-                    key={claveCarta(c)}
-                    disabled={!jugable}
-                    onClick={() => jugar(c)}
-                    className="group -mx-2 rounded-lg transition-all duration-150 enabled:hover:z-10 disabled:cursor-not-allowed"
-                    style={{
-                      transform: `rotate(${rot}deg) translateY(${dy}px)`,
-                      transformOrigin: 'bottom center',
-                    }}
-                    aria-label={`Jugar ${nombreCarta(c)}`}
+                  <div
+                    key={`${dealKey}-${claveCarta(c)}`}
+                    className="animar-mano -mx-2"
+                    style={{ animationDelay: `${i * 80}ms`, opacity: volandoEsta ? 0 : 1 }}
                   >
-                    <span
-                      className="block transition-transform duration-150 group-enabled:group-hover:-translate-y-6 group-enabled:group-hover:scale-105"
-                      style={{ transform: `rotate(${-rot}deg)` }}
+                    <button
+                      disabled={!jugable}
+                      onClick={(e) => jugar(c, e.currentTarget)}
+                      className="group rounded-lg transition-all duration-150 enabled:hover:z-10 disabled:cursor-not-allowed"
+                      style={{
+                        transform: `rotate(${rot}deg) translateY(${dy}px)`,
+                        transformOrigin: 'bottom center',
+                      }}
+                      aria-label={`Jugar ${nombreCarta(c)}`}
                     >
-                      <CartaEspanola card={c} size="lg" destacada={jugable} atenuada={!jugable} />
-                    </span>
-                  </button>
+                      <span
+                        className="block transition-transform duration-150 group-enabled:group-hover:-translate-y-6 group-enabled:group-hover:scale-105"
+                        style={{ transform: `rotate(${-rot}deg)` }}
+                      >
+                        <CartaEspanola card={c} size="lg" destacada={jugable} atenuada={!jugable} />
+                      </span>
+                    </button>
+                  </div>
                 );
               })}
               {vista.myHand.length === 0 && (
@@ -518,6 +582,22 @@ export function Mesa({
         </div>
       </div>
 
+      {/* Carta en vuelo (de la mano al centro) */}
+      {volando && (
+        <div
+          ref={vueloRef}
+          className="pointer-events-none fixed z-40"
+          style={{
+            left: volando.from.left,
+            top: volando.from.top,
+            width: volando.from.width,
+            height: volando.from.height,
+          }}
+        >
+          <CartaEspanola card={volando.card} size="lg" />
+        </div>
+      )}
+
       {confirmando && (
         <Confirmacion
           titulo={confirmando.titulo}
@@ -532,6 +612,51 @@ export function Mesa({
       )}
     </div>
   );
+}
+
+/** Confeti liviano en canvas (sin dependencias) para la victoria. */
+function Confeti() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+    const w = (cv.width = cv.offsetWidth);
+    const h = (cv.height = cv.offsetHeight);
+    const colores = ['#e8b04b', '#f6d78a', '#1c7a4e', '#c8323c', '#f2f4f7'];
+    const parts = Array.from({ length: 90 }, () => ({
+      x: Math.random() * w,
+      y: -20 - Math.random() * h,
+      vy: 2 + Math.random() * 3,
+      vx: -1 + Math.random() * 2,
+      s: 5 + Math.random() * 5,
+      rot: Math.random() * Math.PI,
+      vr: -0.2 + Math.random() * 0.4,
+      c: colores[Math.floor(Math.random() * colores.length)] as string,
+    }));
+    let raf = 0;
+    let frames = 0;
+    const tick = () => {
+      frames++;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of parts) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+        ctx.restore();
+      }
+      if (frames < 200) raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={ref} className="pointer-events-none absolute inset-0 h-full w-full" />;
 }
 
 function claveCarta(c: Card): string {
@@ -624,6 +749,7 @@ function Resultado({
   }, [gane]);
   return (
     <div className="animar-aparecer text-center">
+      {gane && <Confeti />}
       <div className="text-6xl" aria-hidden="true">
         {gane ? '🏆' : '🫡'}
       </div>
