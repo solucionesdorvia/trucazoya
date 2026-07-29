@@ -216,9 +216,17 @@ export function Mesa({
   // Dispositivo: en pantallas grandes la mesa se agranda y el chat va a un riel;
   // en touch, jugar una carta es a dos toques (elegir → confirmar).
   const grande = useMediaQuery('(min-width: 1024px)');
-  const esTouch = useMediaQuery('(pointer: coarse)');
+  // `any-pointer: coarse` = el dispositivo TIENE touch (aunque también haya
+  // mouse): mejor pecar de seguro y pedir dos toques para algo irreversible.
+  const esTouch = useMediaQuery('(any-pointer: coarse)');
   const [elegida, setElegida] = useState<string | null>(null);
   const sizeMano: 'lg' | 'xl' = grande ? 'xl' : 'lg';
+
+  // Al cambiar de turno o repartirse una mano nueva, se descarta la carta que
+  // estaba "elegida" (si no, una selección vieja podría jugarse de un toque).
+  useEffect(() => {
+    setElegida(null);
+  }, [vista.turnSeat, dealKey]);
 
   const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0;
   const terminada = vista.phase === 'MATCH_FINISHED';
@@ -283,7 +291,7 @@ export function Mesa({
 
   return (
     <div
-      className={`relative flex min-h-dvh flex-col overflow-hidden ${sacudir ? 'animar-sacudida' : ''}`}
+      className={`relative flex min-h-dvh flex-col overflow-x-hidden ${sacudir ? 'animar-sacudida' : ''}`}
     >
       {/* ─── Fondo: paño + luz cenital + riel ─────────────────────────── */}
       <div
@@ -419,10 +427,12 @@ export function Mesa({
                 aria-live="assertive"
               >
                 <span
-                  className="animar-estampa select-none rounded-2xl border-4 px-5 py-1 font-bold"
+                  className="animar-estampa select-none rounded-2xl border-4 px-5 py-1 text-center font-bold"
                   style={{
                     fontFamily: "'Iowan Old Style', Palatino, Georgia, serif",
-                    fontSize: 'clamp(2.2rem, 6vw, 4rem)',
+                    fontSize: 'clamp(1.6rem, 6vw, 4rem)',
+                    maxWidth: '92vw',
+                    textWrap: 'balance',
                     color: '#ffdca8',
                     borderColor: '#ffdca8',
                     background: 'rgba(122,29,36,.28)',
