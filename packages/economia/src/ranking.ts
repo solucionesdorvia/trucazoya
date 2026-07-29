@@ -116,3 +116,64 @@ export function tablaPosiciones(mode: GameMode, limite = 50) {
     },
   });
 }
+
+export interface FilaRanking {
+  userId: string;
+  username: string;
+  displayName: string;
+  games: number;
+  wins: number;
+  puntos: number;
+}
+
+/**
+ * Ranking por PERÍODO: cuenta jugadas y ganadas de partidas TERMINADAS en la
+ * ventana [desde, ahora]. Puntos = ganadas × 3 + jugadas (jugar suma, ganar
+ * suma más). Todos contra todos: no depende del nivel, así que crearse mil
+ * cuentas no sirve — solo suma el que efectivamente juega y gana.
+ * `desde = null` → de toda la historia.
+ */
+export async function rankingPorPeriodo(
+  mode: GameMode,
+  desde: Date | null,
+  limite = 100,
+): Promise<FilaRanking[]> {
+  const filas = await prisma.matchPlayer.findMany({
+    where: {
+      isBot: false,
+      match: {
+        mode,
+        state: 'FINISHED',
+        ...(desde ? { finishedAt: { gte: desde } } : {}),
+      },
+    },
+    select: {
+      userId: true,
+      team: true,
+      match: { select: { winnerTeam: true } },
+      user: { select: { username: true, profile: { select: { displayName: true } } } },
+    },
+  });
+
+  const acc = new Map<string, FilaRanking>();
+  for (const f of filas) {
+    const prev =
+      acc.get(f.userId) ??
+      ({
+        userId: f.userId,
+        username: f.user.username,
+        displayName: f.user.profile?.displayName ?? f.user.username,
+        games: 0,
+        wins: 0,
+        puntos: 0,
+      } as FilaRanking);
+    prev.games += 1;
+    if (f.match.winnerTeam !== null && f.match.winnerTeam === f.team) prev.wins += 1;
+    acc.set(f.userId, prev);
+  }
+
+  return [...acc.values()]
+    .map((r) => ({ ...r, puntos: r.wins * 3 + r.games }))
+    .sort((a, b) => b.puntos - a.puntos || b.wins - a.wins)
+    .slice(0, limite);
+}
