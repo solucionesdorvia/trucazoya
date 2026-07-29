@@ -4,7 +4,18 @@ import { useEffect, useRef, useState } from 'react';
 import type { MensajeChat } from './SalaVivo';
 
 /** Frases rápidas: evitan el teclado en celular y filtran el spam. */
-const FRASES = ['Buenas', 'Suerte', 'Vamos', 'Buena mano', 'Bien jugado', 'Revancha', 'Gracias'];
+const FRASES = [
+  '¡Buenas!',
+  'Vamo arriba',
+  'Son buenas',
+  'Achicate',
+  'Contame una',
+  'Mazo tenés',
+  'Uh, qué mano',
+  'Bien ahí',
+  'Revancha',
+  '¡Gracias!',
+];
 
 export function Chat({
   mensajes,

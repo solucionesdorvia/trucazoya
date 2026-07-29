@@ -41,8 +41,7 @@
 
   --font-display:
     'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-sans:
-    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
   --radius-card: 0.875rem;
 
@@ -160,4 +159,73 @@ body {
 
 @utility animar-aparecer {
   animation: aparecer 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes estampa {
+  0% {
+    opacity: 0;
+    transform: rotate(-8deg) scale(0.4);
+  }
+  18% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1.08);
+  }
+  32% {
+    transform: rotate(-8deg) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(-8deg) scale(1.03);
+  }
+}
+
+@utility animar-estampa {
+  animation: estampa 1.3s cubic-bezier(0.2, 1.4, 0.3, 1) forwards;
+}
+
+@keyframes jugada-mia {
+  from {
+    opacity: 0;
+    transform: translateY(90px) scale(0.82) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animar-jugada-mia {
+  animation: jugada-mia 0.34s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
+}
+
+@keyframes jugada-rival {
+  from {
+    opacity: 0;
+    transform: translateY(-90px) scale(0.82) rotate(4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animar-jugada-rival {
+  animation: jugada-rival 0.34s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
+}
+
+@keyframes latido {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+@utility animar-latido {
+  animation: latido 1.1s ease-in-out infinite;
 }
