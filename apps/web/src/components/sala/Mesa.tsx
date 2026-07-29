@@ -39,6 +39,20 @@ function vibrar(patron: number | number[]) {
   }
 }
 
+/** Media query reactiva (para elegir layout/tamaños por dispositivo). */
+function useMediaQuery(query: string): boolean {
+  const [match, setMatch] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const m = window.matchMedia(query);
+    const on = () => setMatch(m.matches);
+    on();
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, [query]);
+  return match;
+}
+
 // ─── Sonido (Web Audio, sin assets) ─────────────────────────────────────────
 
 function useSonido() {
@@ -199,6 +213,13 @@ export function Mesa({
     };
   }, [volando]);
 
+  // Dispositivo: en pantallas grandes la mesa se agranda y el chat va a un riel;
+  // en touch, jugar una carta es a dos toques (elegir → confirmar).
+  const grande = useMediaQuery('(min-width: 1024px)');
+  const esTouch = useMediaQuery('(pointer: coarse)');
+  const [elegida, setElegida] = useState<string | null>(null);
+  const sizeMano: 'lg' | 'xl' = grande ? 'xl' : 'lg';
+
   const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0;
   const terminada = vista.phase === 'MATCH_FINISHED';
 
@@ -224,10 +245,26 @@ export function Mesa({
 
   function jugar(c: Card, el: HTMLElement) {
     if (volando) return;
+    setElegida(null);
     sonido.slap();
     vibrar(12);
     setVolando({ card: c, from: el.getBoundingClientRect() });
     onAccion({ type: 'PLAY_CARD', seat: vista.seat, card: c });
+  }
+
+  /**
+   * Tocar una carta. En touch, el primer toque la ELIGE (la levanta) y el
+   * segundo la juega — así no se tira la carta equivocada de un dedazo (jugar
+   * es irreversible). Con mouse, el hover ya previsualiza, así que va directo.
+   */
+  function tocarCarta(c: Card, el: HTMLElement) {
+    const clave = claveCarta(c);
+    if (esTouch && elegida !== clave) {
+      setElegida(clave);
+      vibrar(8);
+      return;
+    }
+    jugar(c, el);
   }
 
   /** Despacha una acción; si es un canto grande, pide confirmación. */
@@ -281,268 +318,315 @@ export function Mesa({
       />
 
       {/* ─── Contenido ────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex min-h-dvh flex-col">
-        {/* Marcador */}
-        <header className="flex items-center justify-between gap-3 px-4 pt-3">
-          <div className="flex items-center gap-2">
-            <Tanteador etiqueta="Nosotros" valor={puntosMios} destacado />
-            <Tanteador etiqueta="Ellos" valor={puntosRival} />
-            <span className="self-center text-xs text-emerald-200/70">a {vista.pointsToWin}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {vista.truco.level > 0 && (
-              <span className="rounded-full border border-canto-500/50 bg-canto-500/20 px-2.5 py-1 text-xs font-semibold text-canto-300">
-                {NIVEL_TRUCO[vista.truco.level - 1]}
-                {vista.truco.accepted ? ' querido' : ''}
-              </span>
-            )}
-            {vista.flor.iHaveFlor && (
-              <span className="rounded-full border border-oro-500/50 bg-oro-500/15 px-2.5 py-1 text-xs font-semibold text-oro-300">
-                Flor
-              </span>
-            )}
-            {sala.config.apuesta > 0 && (
-              <span className="hidden rounded-full border border-oro-500/30 bg-black/30 px-2.5 py-1 text-xs text-oro-300 sm:inline">
-                🪙 {sala.config.apuesta}
-              </span>
-            )}
-            <button
-              onClick={sonido.alternarMudo}
-              aria-label={sonido.mudo ? 'Activar sonido' : 'Silenciar'}
-              className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50"
-            >
-              {sonido.mudo ? '🔇' : '🔊'}
-            </button>
-          </div>
-        </header>
-
-        {/* Rivales */}
-        <section className="flex justify-center gap-8 px-4 pt-5" aria-label="Rivales">
-          {rivales.map((r) => {
-            const n = vista.handCounts[r.seat as number] ?? 0;
-            return (
-              <div key={r.userId} className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="grid h-11 w-11 place-items-center rounded-full text-base font-bold text-cyan-50"
-                    style={{
-                      background: 'conic-gradient(from 200deg,#25506a,#123049)',
-                      boxShadow: '0 0 0 2px rgba(232,176,75,.5), 0 6px 14px -6px #000',
-                    }}
-                  >
-                    {r.username.slice(0, 1).toUpperCase()}
-                  </div>
-                  <div className="flex" aria-label={`${r.username} tiene ${n} cartas`}>
-                    {Array.from({ length: n }, (_, i) => (
-                      <div
-                        key={i}
-                        className="-ml-6 first:ml-0"
-                        style={{ transform: `rotate(${(i - (n - 1) / 2) * 5}deg)` }}
-                      >
-                        <ReversoCarta size="xs" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-50/90">
-                  {r.username}
-                  {vista.manoSeat === r.seat && (
-                    <span className="rounded bg-oro-500/20 px-1.5 text-[10px] font-semibold text-oro-300">
-                      mano
-                    </span>
-                  )}
-                  {!r.conectado && (
-                    <span className="text-canto-400" title="Desconectado">
-                      ⚠
-                    </span>
-                  )}
+      <div className="relative z-10 flex min-h-dvh flex-col lg:flex-row">
+        {/* Columna central: la mesa (se centra y limita el ancho en desktop) */}
+        <div className="flex min-h-dvh flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-3xl">
+          {/* Marcador (en desktop el score vive en el riel; acá se oculta) */}
+          <header className="flex items-center justify-between gap-3 px-4 pt-3">
+            <div className="flex items-center gap-2 lg:hidden">
+              <Tanteador etiqueta="Nosotros" valor={puntosMios} destacado />
+              <Tanteador etiqueta="Ellos" valor={puntosRival} />
+              <span className="self-center text-xs text-emerald-200/70">a {vista.pointsToWin}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {vista.truco.level > 0 && (
+                <span className="rounded-full border border-canto-500/50 bg-canto-500/20 px-2.5 py-1 text-xs font-semibold text-canto-300">
+                  {NIVEL_TRUCO[vista.truco.level - 1]}
+                  {vista.truco.accepted ? ' querido' : ''}
                 </span>
-              </div>
-            );
-          })}
-        </section>
-
-        {/* Paño: cartas jugadas + estampa */}
-        <section
-          ref={centroRef}
-          className="relative flex flex-1 flex-col items-center justify-center gap-3 px-4 py-5"
-          aria-label="Cartas jugadas"
-        >
-          {estampa && (
-            <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-              <span
-                className="animar-estampa select-none rounded-2xl border-4 px-5 py-1 font-bold"
-                style={{
-                  fontFamily: "'Iowan Old Style', Palatino, Georgia, serif",
-                  fontSize: '2.6rem',
-                  color: '#ffdca8',
-                  borderColor: '#ffdca8',
-                  background: 'rgba(122,29,36,.28)',
-                  textShadow: '0 3px 0 rgba(82,18,23,.3), 0 0 26px rgba(246,215,138,.5)',
-                }}
+              )}
+              {vista.flor.iHaveFlor && (
+                <span className="rounded-full border border-oro-500/50 bg-oro-500/15 px-2.5 py-1 text-xs font-semibold text-oro-300">
+                  Flor
+                </span>
+              )}
+              {sala.config.apuesta > 0 && (
+                <span className="hidden rounded-full border border-oro-500/30 bg-black/30 px-2.5 py-1 text-xs text-oro-300 sm:inline">
+                  🪙 {sala.config.apuesta}
+                </span>
+              )}
+              <button
+                onClick={sonido.alternarMudo}
+                aria-label={sonido.mudo ? 'Activar sonido' : 'Silenciar'}
+                className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50"
               >
-                {estampa}
-              </span>
+                {sonido.mudo ? '🔇' : '🔊'}
+              </button>
             </div>
-          )}
+          </header>
 
-          {terminada ? (
-            <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
-          ) : (
-            <Bazas vista={vista} miEquipo={miEquipo} />
-          )}
-        </section>
-
-        {/* Mi mano (en abanico) + rol */}
-        {!terminada && (
-          <section className="px-4 pb-1" aria-label="Tus cartas">
-            <div className="mb-1 flex items-center justify-center gap-2">
-              {(soyMano || soyPie) && (
-                <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-[11px] font-medium text-emerald-100/80">
-                  Sos {soyMano ? 'mano' : 'pie'}
-                </span>
-              )}
-              {miTurno && (
-                <span className="animar-latido rounded-full bg-oro-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-oro-300">
-                  Tu turno
-                </span>
-              )}
-            </div>
-            <div className="flex items-end justify-center" style={{ minHeight: 176 }}>
-              {vista.myHand.map((c, i) => {
-                const n = vista.myHand.length;
-                const jugable = miTurno && cartasJugables.has(claveCarta(c));
-                const rot = (i - (n - 1) / 2) * 9;
-                const dy = Math.abs(i - (n - 1) / 2) * 8;
-                const volandoEsta = volando && claveCarta(volando.card) === claveCarta(c);
-                return (
-                  <div
-                    key={`${dealKey}-${claveCarta(c)}`}
-                    className="animar-mano -mx-2"
-                    style={{ animationDelay: `${i * 80}ms`, opacity: volandoEsta ? 0 : 1 }}
-                  >
-                    <button
-                      disabled={!jugable}
-                      onClick={(e) => jugar(c, e.currentTarget)}
-                      className="group rounded-lg transition-all duration-150 enabled:hover:z-10 disabled:cursor-not-allowed"
+          {/* Rivales */}
+          <section className="flex justify-center gap-8 px-4 pt-5" aria-label="Rivales">
+            {rivales.map((r) => {
+              const n = vista.handCounts[r.seat as number] ?? 0;
+              const suTurno = vista.turnSeat === r.seat;
+              return (
+                <div key={r.userId} className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`grid h-11 w-11 place-items-center rounded-full text-base font-bold text-cyan-50 ${
+                        suTurno ? 'animar-latido' : ''
+                      }`}
                       style={{
-                        transform: `rotate(${rot}deg) translateY(${dy}px)`,
-                        transformOrigin: 'bottom center',
+                        background: 'conic-gradient(from 200deg,#25506a,#123049)',
+                        boxShadow: suTurno
+                          ? '0 0 0 3px rgba(232,176,75,.95), 0 0 16px rgba(232,176,75,.55)'
+                          : '0 0 0 2px rgba(232,176,75,.5), 0 6px 14px -6px #000',
                       }}
-                      aria-label={`Jugar ${nombreCarta(c)}`}
                     >
-                      <span
-                        className="block transition-transform duration-150 group-enabled:group-hover:-translate-y-6 group-enabled:group-hover:scale-105"
-                        style={{ transform: `rotate(${-rot}deg)` }}
-                      >
-                        <CartaEspanola card={c} size="lg" destacada={jugable} atenuada={!jugable} />
-                      </span>
-                    </button>
+                      {r.username.slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="flex" aria-label={`${r.username} tiene ${n} cartas`}>
+                      {Array.from({ length: n }, (_, i) => (
+                        <div
+                          key={i}
+                          className="-ml-6 first:ml-0"
+                          style={{ transform: `rotate(${(i - (n - 1) / 2) * 5}deg)` }}
+                        >
+                          <ReversoCarta size="xs" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                );
-              })}
-              {vista.myHand.length === 0 && (
-                <p className="py-6 text-sm text-emerald-100/50">Sin cartas en la mano</p>
-              )}
-            </div>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-50/90">
+                    {r.username}
+                    {vista.manoSeat === r.seat && (
+                      <span className="rounded bg-oro-500/20 px-1.5 text-[10px] font-semibold text-oro-300">
+                        mano
+                      </span>
+                    )}
+                    {!r.conectado && (
+                      <span className="text-canto-400" title="Desconectado">
+                        ⚠
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </section>
-        )}
 
-        {/* Dock de acciones */}
-        <section className="sticky bottom-0 z-10 border-t border-black/40 bg-[#06140f]/92 px-3 py-3 backdrop-blur">
-          {terminada ? (
-            <a href="/inicio" className="block">
-              <Boton tamaño="lg" className="w-full">
-                Volver al inicio
-              </Boton>
-            </a>
-          ) : vista.legales.length === 0 ? (
-            <p className="py-2 text-center text-sm text-emerald-100/60">Esperando al rival…</p>
-          ) : (
-            <div className="flex flex-wrap justify-center gap-2">
-              {respuestas.map((a) => (
-                <BotonMesa
-                  key={a.type + (a.type === 'RESPOND' ? a.response : '')}
-                  tono={a.type === 'RESPOND' && a.response === 'QUIERO' ? 'quiero' : 'noquiero'}
-                  onClick={() => {
-                    vibrar(10);
-                    onAccion(a);
+          {/* Paño: cartas jugadas + estampa */}
+          <section
+            ref={centroRef}
+            className="relative flex flex-1 flex-col items-center justify-center gap-3 px-4 py-5"
+            aria-label="Cartas jugadas"
+          >
+            {estampa && (
+              <div
+                className="pointer-events-none absolute inset-0 z-20 grid place-items-center"
+                role="status"
+                aria-live="assertive"
+              >
+                <span
+                  className="animar-estampa select-none rounded-2xl border-4 px-5 py-1 font-bold"
+                  style={{
+                    fontFamily: "'Iowan Old Style', Palatino, Georgia, serif",
+                    fontSize: 'clamp(2.2rem, 6vw, 4rem)',
+                    color: '#ffdca8',
+                    borderColor: '#ffdca8',
+                    background: 'rgba(122,29,36,.28)',
+                    textShadow: '0 3px 0 rgba(82,18,23,.3), 0 0 26px rgba(246,215,138,.5)',
                   }}
                 >
-                  {a.type === 'RESPOND' && a.response === 'QUIERO' ? '¡Quiero!' : 'No quiero'}
-                </BotonMesa>
-              ))}
+                  {estampa}
+                </span>
+              </div>
+            )}
 
-              {cantosFlor.map((a) => {
-                const v = a.type === 'CALL_FLOR' ? a.variant : 'FLOR';
-                const pts = v === 'FLOR' ? 3 : v === 'CONTRAFLOR' ? 6 : falta;
-                return (
+            {terminada ? (
+              <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
+            ) : (
+              <Bazas vista={vista} miEquipo={miEquipo} grande={grande} />
+            )}
+          </section>
+
+          {/* Mi mano (en abanico) + rol */}
+          {!terminada && (
+            <section className="px-4 pb-1" aria-label="Tus cartas">
+              <div
+                className="mb-1 flex items-center justify-center gap-2"
+                role="status"
+                aria-live="polite"
+              >
+                {(soyMano || soyPie) && (
+                  <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-[11px] font-medium text-emerald-100/80">
+                    Sos {soyMano ? 'mano' : 'pie'}
+                  </span>
+                )}
+                {elegida ? (
+                  <span className="animar-latido rounded-full bg-oro-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-oro-200">
+                    Tocá de nuevo para tirar
+                  </span>
+                ) : miTurno ? (
+                  <span className="animar-latido rounded-full bg-oro-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-oro-300">
+                    Tu turno
+                  </span>
+                ) : null}
+              </div>
+              <div
+                className="flex items-end justify-center"
+                style={{ minHeight: grande ? 240 : 176 }}
+              >
+                {vista.myHand.map((c, i) => {
+                  const n = vista.myHand.length;
+                  const jugable = miTurno && cartasJugables.has(claveCarta(c));
+                  const rot = (i - (n - 1) / 2) * 9;
+                  const dy = Math.abs(i - (n - 1) / 2) * 8;
+                  const clave = claveCarta(c);
+                  const volandoEsta = volando && claveCarta(volando.card) === clave;
+                  const elegidaEsta = elegida === clave;
+                  return (
+                    <div
+                      key={`${dealKey}-${clave}`}
+                      className="animar-mano -mx-3 md:-mx-2"
+                      style={{ animationDelay: `${i * 80}ms`, opacity: volandoEsta ? 0 : 1 }}
+                    >
+                      <button
+                        disabled={!jugable}
+                        onClick={(e) => tocarCarta(c, e.currentTarget)}
+                        className="group rounded-lg transition-all duration-150 enabled:hover:z-10 disabled:cursor-not-allowed"
+                        style={{
+                          transform: `rotate(${rot}deg) translateY(${dy}px)`,
+                          transformOrigin: 'bottom center',
+                        }}
+                        aria-label={
+                          elegidaEsta ? `Confirmar ${nombreCarta(c)}` : `Jugar ${nombreCarta(c)}`
+                        }
+                      >
+                        <span
+                          className={`block transition-transform duration-150 group-enabled:group-hover:-translate-y-6 group-enabled:group-hover:scale-105 ${
+                            elegidaEsta ? '-translate-y-7 scale-105' : ''
+                          }`}
+                          style={{ transform: `rotate(${-rot}deg)` }}
+                        >
+                          <CartaEspanola
+                            card={c}
+                            size={sizeMano}
+                            destacada={jugable || elegidaEsta}
+                            atenuada={!jugable}
+                          />
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+                {vista.myHand.length === 0 && (
+                  <p className="py-6 text-sm text-emerald-100/50">Sin cartas en la mano</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Dock de acciones */}
+          <section className="sticky bottom-0 z-10 border-t border-black/40 bg-[#06140f]/92 px-3 py-3 backdrop-blur">
+            {terminada ? (
+              <a href="/inicio" className="block">
+                <Boton tamaño="lg" className="w-full">
+                  Volver al inicio
+                </Boton>
+              </a>
+            ) : vista.legales.length === 0 ? (
+              <p className="py-2 text-center text-sm text-emerald-100/60">Esperando al rival…</p>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-2">
+                {respuestas.map((a) => (
                   <BotonMesa
-                    key={`flor-${v}`}
-                    tono="oro"
-                    valor={pts}
-                    onClick={() =>
-                      cantar(a, ETIQUETA_CANTO[v] ?? 'Flor', pts, v === 'CONTRAFLOR_AL_RESTO')
-                    }
+                    key={a.type + (a.type === 'RESPOND' ? a.response : '')}
+                    tono={a.type === 'RESPOND' && a.response === 'QUIERO' ? 'quiero' : 'noquiero'}
+                    onClick={() => {
+                      vibrar(10);
+                      onAccion(a);
+                    }}
                   >
-                    {ETIQUETA_CANTO[v] ?? 'Flor'}
+                    {a.type === 'RESPOND' && a.response === 'QUIERO' ? '¡Quiero!' : 'No quiero'}
                   </BotonMesa>
-                );
-              })}
+                ))}
 
-              {cantosEnvido.map((a) => {
-                const v = a.type === 'CALL_ENVIDO' ? a.variant : 'ENVIDO';
-                const pts = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
-                return (
-                  <BotonMesa
-                    key={`env-${v}`}
-                    tono="verde"
-                    valor={pts}
-                    onClick={() =>
-                      cantar(a, ETIQUETA_CANTO[v] ?? 'Envido', pts, v === 'FALTA_ENVIDO')
-                    }
-                  >
-                    {ETIQUETA_CANTO[v] ?? 'Envido'}
-                  </BotonMesa>
-                );
-              })}
-
-              {cantoTruco &&
-                (() => {
-                  const pts = vista.truco.level + 2;
-                  const etq = NIVEL_TRUCO[vista.truco.level] ?? 'Truco';
+                {cantosFlor.map((a) => {
+                  const v = a.type === 'CALL_FLOR' ? a.variant : 'FLOR';
+                  const pts = v === 'FLOR' ? 3 : v === 'CONTRAFLOR' ? 6 : falta;
                   return (
                     <BotonMesa
-                      tono="truco"
+                      key={`flor-${v}`}
+                      tono="oro"
                       valor={pts}
-                      onClick={() => cantar(cantoTruco, etq, pts, vista.truco.level >= 2)}
+                      onClick={() =>
+                        cantar(a, ETIQUETA_CANTO[v] ?? 'Flor', pts, v === 'CONTRAFLOR_AL_RESTO')
+                      }
                     >
-                      ¡{etq}!
+                      {ETIQUETA_CANTO[v] ?? 'Flor'}
                     </BotonMesa>
                   );
-                })()}
+                })}
 
-              {mazo && (
-                <BotonMesa
-                  tono="mazo"
-                  onClick={() =>
-                    setConfirmando({
-                      action: mazo,
-                      titulo: '¿Te vas al mazo?',
-                      detalle: 'Le entregás la mano al rival con los puntos que valga el truco.',
-                    })
-                  }
-                >
-                  Al mazo
-                </BotonMesa>
-              )}
-            </div>
-          )}
-        </section>
+                {cantosEnvido.map((a) => {
+                  const v = a.type === 'CALL_ENVIDO' ? a.variant : 'ENVIDO';
+                  const pts = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
+                  return (
+                    <BotonMesa
+                      key={`env-${v}`}
+                      tono="verde"
+                      valor={pts}
+                      onClick={() =>
+                        cantar(a, ETIQUETA_CANTO[v] ?? 'Envido', pts, v === 'FALTA_ENVIDO')
+                      }
+                    >
+                      {ETIQUETA_CANTO[v] ?? 'Envido'}
+                    </BotonMesa>
+                  );
+                })}
 
-        <div className="relative z-10 px-4 pb-4 pt-2">
-          <Chat mensajes={mensajes} onEnviar={onChat} compacto />
+                {cantoTruco &&
+                  (() => {
+                    const pts = vista.truco.level + 2;
+                    const etq = NIVEL_TRUCO[vista.truco.level] ?? 'Truco';
+                    return (
+                      <BotonMesa
+                        tono="truco"
+                        valor={pts}
+                        onClick={() => cantar(cantoTruco, etq, pts, vista.truco.level >= 2)}
+                      >
+                        ¡{etq}!
+                      </BotonMesa>
+                    );
+                  })()}
+
+                {mazo && (
+                  <BotonMesa
+                    tono="mazo"
+                    onClick={() =>
+                      setConfirmando({
+                        action: mazo,
+                        titulo: '¿Te vas al mazo?',
+                        detalle: 'Le entregás la mano al rival con los puntos que valga el truco.',
+                      })
+                    }
+                  >
+                    Al mazo
+                  </BotonMesa>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* Chat: inline sólo en mobile/tablet (en desktop va al riel) */}
+          <div className="relative z-10 px-4 pb-4 pt-2 lg:hidden">
+            <Chat mensajes={mensajes} onEnviar={onChat} compacto />
+          </div>
         </div>
+
+        {/* ─── Riel lateral (desktop): marcador grande + chat ───────────── */}
+        <aside className="hidden w-[340px] shrink-0 flex-col border-l border-black/40 bg-[#06140f]/80 backdrop-blur lg:flex">
+          <div className="flex items-center justify-between gap-2 border-b border-black/30 p-4">
+            <Tanteador etiqueta="Nosotros" valor={puntosMios} destacado />
+            <span className="text-xs text-emerald-200/70">a {vista.pointsToWin}</span>
+            <Tanteador etiqueta="Ellos" valor={puntosRival} />
+          </div>
+          <div className="min-h-0 flex-1 p-3">
+            <Chat mensajes={mensajes} onEnviar={onChat} />
+          </div>
+        </aside>
       </div>
 
       {/* Carta en vuelo (de la mano al centro) */}
@@ -557,7 +641,7 @@ export function Mesa({
             height: volando.from.height,
           }}
         >
-          <CartaEspanola card={volando.card} size="lg" />
+          <CartaEspanola card={volando.card} size={sizeMano} />
         </div>
       )}
 
@@ -637,10 +721,19 @@ const NOMBRE_CORTO = ['1ª', '2ª', '3ª'];
  * resaltada y la perdedora atenuada; la baza en juego se destaca. Las que
  * faltan muestran el hueco, para que se lea la estructura de la mano.
  */
-function Bazas({ vista, miEquipo }: { vista: VistaJugador; miEquipo: number }) {
+function Bazas({
+  vista,
+  miEquipo,
+  grande,
+}: {
+  vista: VistaJugador;
+  miEquipo: number;
+  grande: boolean;
+}) {
   const arranco = vista.tricks.some((t) => t.length > 0);
+  const size: 'sm' | 'md' = grande ? 'md' : 'sm';
   return (
-    <div className="flex items-start justify-center gap-3 sm:gap-6">
+    <div className="flex items-start justify-center gap-4 sm:gap-6 lg:gap-8">
       {[0, 1, 2].map((i) => {
         const baza = vista.tricks[i] ?? [];
         const rivales = baza.filter((p) => p.seat % 2 !== miEquipo);
@@ -650,7 +743,6 @@ function Bazas({ vista, miEquipo }: { vista: VistaJugador; miEquipo: number }) {
         const parda = outcome === 'PARDA';
         const gane = outcome === `TEAM_${miEquipo}`;
         const enJuego = arranco && !resuelta && i === vista.currentTrick;
-        const size = 'sm' as const;
 
         return (
           <div

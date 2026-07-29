@@ -30,9 +30,9 @@ export function nombreCarta(card: Card): string {
 
 // ─── Carta ─────────────────────────────────────────────────────────────────
 
-export type TamañoCarta = 'xs' | 'sm' | 'md' | 'lg';
+export type TamañoCarta = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-const ANCHOS: Record<TamañoCarta, number> = { xs: 46, sm: 62, md: 86, lg: 112 };
+const ANCHOS: Record<TamañoCarta, number> = { xs: 46, sm: 62, md: 86, lg: 112, xl: 150 };
 
 interface Props {
   card: Card;
@@ -60,8 +60,11 @@ export function CartaEspanola({ card, size = 'md', destacada, atenuada, classNam
         background: '#fbf7ec',
         boxShadow: destacada ? '0 10px 22px rgba(232,176,75,.55)' : '0 4px 10px rgba(0,0,0,.45)',
         outline: destacada ? '2px solid rgba(232,176,75,.85)' : 'none',
-        opacity: atenuada ? 0.5 : 1,
-        transition: 'opacity .2s, box-shadow .2s, outline .2s, transform .2s',
+        // Atenuada: más contraste que un 0.5 pelado + desaturada, para que se
+        // lea "no jugable" sin desaparecer sobre el paño oscuro.
+        opacity: atenuada ? 0.72 : 1,
+        filter: atenuada ? 'grayscale(.35) brightness(.9)' : 'none',
+        transition: 'opacity .2s, box-shadow .2s, outline .2s, filter .2s, transform .2s',
       }}
     >
       <img
@@ -70,7 +73,9 @@ export function CartaEspanola({ card, size = 'md', destacada, atenuada, classNam
         width={ancho}
         height={alto}
         draggable={false}
-        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+        // `contain`: el arte ya trae su fondo/márgenes; con `cover` se comía el
+        // borde del naipe por el redondeo del alto.
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
       />
     </span>
   );
