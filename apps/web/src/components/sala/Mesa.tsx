@@ -18,6 +18,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -294,7 +295,12 @@ export function Mesa({
   const [chatAbierto, setChatAbierto] = useState(false);
   // Arrastre de carta: se levanta con el dedo/mouse y se tira al soltarla
   // arriba (hacia la mesa). Un toque simple también la tira.
-  const [arrastre, setArrastre] = useState<{ clave: string; dx: number; dy: number } | null>(null);
+  const [arrastre, setArrastre] = useState<{
+    clave: string;
+    dx: number;
+    dy: number;
+    listo: boolean;
+  } | null>(null);
   const arrastreRef = useRef<{
     clave: string;
     x0: number;
@@ -351,7 +357,7 @@ export function Mesa({
       card: c,
       el,
     };
-    setArrastre({ clave: claveCarta(c), dx: 0, dy: 0 });
+    setArrastre({ clave: claveCarta(c), dx: 0, dy: 0, listo: false });
   }
   function cartaMove(e: ReactPointerEvent<HTMLButtonElement>) {
     const a = arrastreRef.current;
@@ -359,7 +365,8 @@ export function Mesa({
     const dx = e.clientX - a.x0;
     const dy = e.clientY - a.y0;
     a.mov = Math.max(a.mov, Math.hypot(dx, dy));
-    setArrastre({ clave: a.clave, dx, dy });
+    // `listo` = arrastrada lo suficiente hacia la mesa como para tirarla.
+    setArrastre({ clave: a.clave, dx, dy, listo: dy <= -46 });
   }
   function cartaUp(e: ReactPointerEvent<HTMLButtonElement>) {
     const a = arrastreRef.current;
@@ -370,6 +377,14 @@ export function Mesa({
     const tirar = a.mov < 8 || dy <= -46;
     if (tirar) jugar(a.card, a.el); // lee el rect actual (donde quedó la carta)
     setArrastre(null);
+  }
+  // Accesibilidad: tirar la carta con teclado (Enter/Espacio).
+  function cartaKey(e: ReactKeyboardEvent<HTMLButtonElement>, c: Card, jugable: boolean) {
+    if (!jugable || volando) return;
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      jugar(c, e.currentTarget);
+    }
   }
 
   /** Despacha un canto; si es de los grandes, pide confirmación (sin puntos). */
@@ -437,26 +452,17 @@ export function Mesa({
         {/* Columna central: la mesa (se centra y limita el ancho en desktop) */}
         <div className="flex h-dvh min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-3xl">
           {/* Marcador (en desktop el score vive en el riel; acá se oculta) */}
-          <header className="flex items-center justify-between gap-3 px-4 pt-3">
-            <div className="flex items-center gap-2 lg:hidden">
+          <header className="flex items-center justify-between gap-2 px-4 pt-3">
+            <div className="flex min-w-0 items-center gap-2 lg:hidden">
               <Tanteador etiqueta="Nosotros" valor={puntosMios} destacado />
               <Tanteador etiqueta="Ellos" valor={puntosRival} />
-              <span className="self-center text-xs text-emerald-200/70">a {vista.pointsToWin}</span>
+              <span className="shrink-0 self-center whitespace-nowrap text-xs text-emerald-200/70">
+                a {vista.pointsToWin}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              {vista.truco.level > 0 && (
-                <span className="rounded-full border border-canto-500/50 bg-canto-500/20 px-2.5 py-1 text-xs font-semibold text-canto-300">
-                  {NIVEL_TRUCO[vista.truco.level - 1]}
-                  {vista.truco.accepted ? ' querido' : ''}
-                </span>
-              )}
-              {vista.flor.iHaveFlor && (
-                <span className="rounded-full border border-oro-500/50 bg-oro-500/15 px-2.5 py-1 text-xs font-semibold text-oro-300">
-                  Flor
-                </span>
-              )}
+            <div className="flex shrink-0 items-center gap-2">
               {sala.config.apuesta > 0 && (
-                <span className="hidden rounded-full border border-oro-500/30 bg-black/30 px-2.5 py-1 text-xs text-oro-300 sm:inline">
+                <span className="hidden shrink-0 rounded-full border border-oro-500/30 bg-black/30 px-2.5 py-1 text-xs text-oro-300 sm:inline">
                   🪙 {sala.config.apuesta}
                 </span>
               )}
@@ -466,7 +472,7 @@ export function Mesa({
                 rel="noopener noreferrer"
                 aria-label="Cómo se juega"
                 title="¿Cómo se juega?"
-                className="rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-sm font-semibold text-emerald-100/80 hover:bg-black/50"
+                className="shrink-0 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-sm font-semibold text-emerald-100/80 hover:bg-black/50"
               >
                 ?
               </a>
@@ -474,7 +480,7 @@ export function Mesa({
                 onClick={sonido.alternarMudo}
                 aria-label={sonido.mudo ? 'Activar sonido' : 'Silenciar'}
                 title={sonido.mudo ? 'Sonido apagado' : 'Sonido prendido'}
-                className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50"
+                className="shrink-0 rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50"
               >
                 {sonido.mudo ? '🔇' : '🔊'}
               </button>
@@ -482,7 +488,7 @@ export function Mesa({
                 onClick={() => setChatAbierto(true)}
                 aria-label="Abrir chat"
                 title="Chat"
-                className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50 lg:hidden"
+                className="shrink-0 rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50 lg:hidden"
               >
                 💬
               </button>
@@ -554,9 +560,33 @@ export function Mesa({
           {/* Paño: cartas jugadas + estampa */}
           <section
             ref={centroRef}
-            className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden px-4 py-3"
+            className={`relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl px-4 py-3 transition-shadow ${
+              arrastre
+                ? arrastre.listo
+                  ? 'ring-2 ring-inset ring-oro-500/70'
+                  : 'ring-2 ring-inset ring-oro-500/25'
+                : ''
+            }`}
             aria-label="Cartas jugadas"
           >
+            {/* Estado de la mano (truco/flor): antes vivía en el header y lo
+                desbordaba en mobile; ahora va sobre el paño. */}
+            {!terminada && (vista.truco.level > 0 || vista.flor.iHaveFlor) && (
+              <div className="absolute left-1/2 top-1 z-10 flex -translate-x-1/2 gap-2">
+                {vista.truco.level > 0 && (
+                  <span className="rounded-full border border-canto-500/50 bg-canto-500/25 px-2.5 py-0.5 text-xs font-semibold text-canto-300 backdrop-blur-sm">
+                    {NIVEL_TRUCO[vista.truco.level - 1]}
+                    {vista.truco.accepted ? ' querido' : ''}
+                  </span>
+                )}
+                {vista.flor.iHaveFlor && (
+                  <span className="rounded-full border border-oro-500/50 bg-oro-500/20 px-2.5 py-0.5 text-xs font-semibold text-oro-300 backdrop-blur-sm">
+                    Flor
+                  </span>
+                )}
+              </div>
+            )}
+
             {estampa && (
               <div
                 className="pointer-events-none absolute inset-0 z-20 grid place-items-center"
@@ -610,6 +640,14 @@ export function Mesa({
           {/* Mi mano (en abanico) — tocá o arrastrá la carta para tirarla */}
           {!terminada && (
             <section className="shrink-0 px-4 pb-1" aria-label="Tus cartas">
+              {miTurno && cartasJugables.size > 0 && respuestas.length === 0 && (
+                <p
+                  role="status"
+                  className="mb-1 text-center text-[11px] font-medium text-oro-300/90"
+                >
+                  Tu turno — tocá o arrastrá una carta ↑
+                </p>
+              )}
               <div
                 className="flex items-end justify-center"
                 style={{ minHeight: grande ? 210 : 156 }}
@@ -634,9 +672,14 @@ export function Mesa({
                           animationDelay: `${i * 95}ms`,
                           opacity: volandoEsta ? 0 : 1,
                           zIndex: arrastrando ? 50 : undefined,
+                          // Sigue al dedo mientras arrastro; al soltar sin llegar,
+                          // vuelve deslizándose (transición) en vez de saltar.
                           transform: arrastrando
                             ? `translate(${arrastre!.dx}px, ${arrastre!.dy}px)`
-                            : undefined,
+                            : 'translate(0px, 0px)',
+                          transition: arrastrando
+                            ? 'none'
+                            : 'transform .2s cubic-bezier(.2,.9,.25,1)',
                           touchAction: 'none',
                           '--rx': `${(i - centro) * -46}px`,
                           '--ry': '-168px',
@@ -650,10 +693,11 @@ export function Mesa({
                         onPointerDown={(e) => cartaDown(e, c, jugable)}
                         onPointerMove={cartaMove}
                         onPointerUp={cartaUp}
+                        onKeyDown={(e) => cartaKey(e, c, jugable)}
                         className="group touch-none rounded-lg transition-transform duration-150 enabled:cursor-grab enabled:hover:z-10 enabled:active:cursor-grabbing disabled:cursor-not-allowed"
                         style={{
                           transform: arrastrando
-                            ? 'rotate(0deg) scale(1.08)'
+                            ? `rotate(0deg) scale(${arrastre!.listo ? 1.14 : 1.08})`
                             : `rotate(${rot}deg) translateY(${dyFan}px)`,
                           transformOrigin: 'bottom center',
                         }}
@@ -686,7 +730,7 @@ export function Mesa({
           )}
 
           {/* Dock de acciones */}
-          <section className="sticky bottom-0 z-10 border-t border-black/40 bg-[#06140f]/92 px-3 py-3 backdrop-blur">
+          <section className="z-10 shrink-0 border-t border-black/40 bg-[#06140f]/92 px-3 py-2 backdrop-blur">
             {terminada ? (
               <a href="/inicio" className="block">
                 <Boton tamaño="lg" className="w-full">
@@ -714,7 +758,7 @@ export function Mesa({
                       </p>
                     );
                   })()}
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-1.5">
                   {respuestas.map((a, i) => (
                     <BotonMesa
                       key={a.type + (a.type === 'RESPOND' ? a.response : '')}
@@ -784,7 +828,7 @@ export function Mesa({
                         })
                       }
                     >
-                      Irme al mazo
+                      Al mazo
                     </BotonMesa>
                   )}
                 </div>
@@ -985,8 +1029,8 @@ function Bazas({
         return (
           <div
             key={i}
-            className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2 transition-all duration-300 ${
-              enJuego ? 'scale-105 bg-black/20 ring-1 ring-oro-500/40' : 'scale-100'
+            className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-1.5 transition-all duration-300 ${
+              enJuego ? 'bg-black/20 ring-1 ring-oro-500/40 lg:scale-105' : 'scale-100'
             } ${resuelta ? 'opacity-95' : ''}`}
           >
             <span
@@ -1006,19 +1050,28 @@ function Bazas({
               barrer={barrer}
             />
 
-            <span className="flex h-5 items-center">
+            <span className="flex h-5 items-center" role="status" aria-live="polite">
               {!resuelta ? (
                 <span className="text-[11px] text-emerald-100/15">·</span>
               ) : parda ? (
-                <span className="animar-estampa rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-100/70">
-                  parda
+                <span
+                  aria-label={`${NOMBRE_CORTO[i]} baza: parda`}
+                  className="animar-aparece-baza rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-100"
+                >
+                  = parda
                 </span>
               ) : gane ? (
-                <span className="animar-estampa rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
+                <span
+                  aria-label={`${NOMBRE_CORTO[i]} baza: tuya`}
+                  className="animar-aparece-baza rounded-full bg-emerald-500/30 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-200"
+                >
                   ▲ tuya
                 </span>
               ) : (
-                <span className="animar-estampa rounded-full bg-canto-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-canto-400">
+                <span
+                  aria-label={`${NOMBRE_CORTO[i]} baza: suya`}
+                  className="animar-aparece-baza rounded-full bg-canto-500/30 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-canto-400"
+                >
                   ▼ suya
                 </span>
               )}
@@ -1066,11 +1119,14 @@ function SlotBaza({
   const slotAttr = lado === 'mia' && dataTrick !== undefined ? { 'data-slot-mia': dataTrick } : {};
   if (cartas.length === 0) {
     const w = ANCHO_SLOT[size];
+    // Placeholder chato en mobile: si usara el alto real de la carta, la
+    // columna vacía se lee como una caja gigante y hueca en el centro.
+    const h = size === 'sm' ? Math.round(w * 0.66) : Math.round(w * 1.541);
     return (
       <div
         {...slotAttr}
         className="rounded-lg border border-dashed border-white/10"
-        style={{ width: w, height: Math.round(w * 1.541) }}
+        style={{ width: w, height: h }}
         aria-hidden="true"
       />
     );
@@ -1131,12 +1187,12 @@ function BotonMesa({
     <button
       onClick={onClick}
       style={indice !== undefined ? { animationDelay: `${indice * 55}ms` } : undefined}
-      className={`relative flex min-h-[48px] min-w-[100px] items-center justify-center rounded-2xl px-5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-2px_3px_rgba(0,0,0,.22),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${
+      className={`relative flex min-h-[44px] items-center justify-center rounded-xl px-3.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-2px_3px_rgba(0,0,0,.22),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 sm:min-h-[48px] sm:rounded-2xl sm:px-5 sm:py-2 ${
         indice !== undefined ? 'animar-boton ' : ''
       }${ESTILO_BOTON[tono]}`}
     >
       <span
-        className="text-[15px] font-bold"
+        className="whitespace-nowrap text-[13px] font-bold sm:text-[15px]"
         style={{ fontFamily: "'Iowan Old Style', Palatino, Georgia, serif" }}
       >
         {children}

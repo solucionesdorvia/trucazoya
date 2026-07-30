@@ -3,6 +3,8 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // El indicador flotante de dev de Next tapaba botones de la mesa en mobile.
+  devIndicators: false,
   // Prisma no debe bundlearse: se requiere desde node_modules en runtime,
   // donde vive el binario del query engine.
   serverExternalPackages: ['@prisma/client', '.prisma/client'],

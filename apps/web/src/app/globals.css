@@ -276,6 +276,25 @@ body {
   animation: flota-mas 0.75s ease-out forwards;
 }
 
+/* Resultado de baza (tuya/suya/parda): entra con un pop y SE QUEDA (a
+   diferencia de la estampa de canto, que se desvanece). */
+@keyframes aparece-baza {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animar-aparece-baza {
+  animation: aparece-baza 0.3s cubic-bezier(0.2, 1.4, 0.3, 1) forwards;
+}
+
 /* Pulso de gloria en la carta que gana la baza. */
 @keyframes gana-baza {
   0% {
