@@ -373,9 +373,20 @@ export function Mesa({
                   🪙 {sala.config.apuesta}
                 </span>
               )}
+              <a
+                href="/reglas"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Cómo se juega"
+                title="¿Cómo se juega?"
+                className="rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-sm font-semibold text-emerald-100/80 hover:bg-black/50"
+              >
+                ?
+              </a>
               <button
                 onClick={sonido.alternarMudo}
                 aria-label={sonido.mudo ? 'Activar sonido' : 'Silenciar'}
+                title={sonido.mudo ? 'Sonido apagado' : 'Sonido prendido'}
                 className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50"
               >
                 {sonido.mudo ? '🔇' : '🔊'}
@@ -493,16 +504,39 @@ export function Mesa({
                     Sos {soyMano ? 'mano' : 'pie'}
                   </span>
                 )}
-                {elegida ? (
-                  <span className="animar-latido rounded-full bg-oro-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-oro-200">
-                    Tocá de nuevo para tirar
+                {!elegida && miTurno && (
+                  <span className="animar-latido rounded-full bg-oro-500 px-3.5 py-1 text-sm font-bold text-noche-950 shadow-[0_0_16px_rgba(232,176,75,.5)]">
+                    ¡Tu turno! Tocá una carta
                   </span>
-                ) : miTurno ? (
-                  <span className="animar-latido rounded-full bg-oro-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-oro-300">
-                    Tu turno
+                )}
+                {!elegida && !miTurno && vista.myHand.length > 0 && (
+                  <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-[11px] text-emerald-100/60">
+                    Esperá al rival…
                   </span>
-                ) : null}
+                )}
               </div>
+
+              {/* Al elegir una carta (touch): confirmar con botones grandes */}
+              {elegida && (
+                <div className="mb-2 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => {
+                      const el = document.querySelector<HTMLElement>(`[data-carta="${elegida}"]`);
+                      const c = vista.myHand.find((x) => claveCarta(x) === elegida);
+                      if (c && el) jugar(c, el);
+                    }}
+                    className="h-11 rounded-2xl bg-emerald-500 px-6 text-base font-bold text-noche-950 shadow-[0_6px_16px_-6px_rgba(28,122,78,.8)] active:translate-y-0.5"
+                  >
+                    🃏 Tirar esta
+                  </button>
+                  <button
+                    onClick={() => setElegida(null)}
+                    className="h-11 rounded-2xl bg-noche-700 px-4 text-sm font-medium text-tinta-200 active:translate-y-0.5"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
               <div
                 className="flex items-end justify-center"
                 style={{ minHeight: grande ? 240 : 176 }}
@@ -522,6 +556,7 @@ export function Mesa({
                       style={{ animationDelay: `${i * 80}ms`, opacity: volandoEsta ? 0 : 1 }}
                     >
                       <button
+                        data-carta={clave}
                         disabled={!jugable}
                         onClick={(e) => tocarCarta(c, e.currentTarget)}
                         className="group rounded-lg transition-all duration-150 enabled:hover:z-10 disabled:cursor-not-allowed"
@@ -568,84 +603,113 @@ export function Mesa({
             ) : vista.legales.length === 0 ? (
               <p className="py-2 text-center text-sm text-emerald-100/60">Esperando al rival…</p>
             ) : (
-              <div className="flex flex-wrap justify-center gap-2">
-                {respuestas.map((a) => (
-                  <BotonMesa
-                    key={a.type + (a.type === 'RESPOND' ? a.response : '')}
-                    tono={a.type === 'RESPOND' && a.response === 'QUIERO' ? 'quiero' : 'noquiero'}
-                    onClick={() => {
-                      vibrar(10);
-                      onAccion(a);
-                    }}
-                  >
-                    {a.type === 'RESPOND' && a.response === 'QUIERO' ? '¡Quiero!' : 'No quiero'}
-                  </BotonMesa>
-                ))}
-
-                {cantosFlor.map((a) => {
-                  const v = a.type === 'CALL_FLOR' ? a.variant : 'FLOR';
-                  const pts = v === 'FLOR' ? 3 : v === 'CONTRAFLOR' ? 6 : falta;
-                  return (
-                    <BotonMesa
-                      key={`flor-${v}`}
-                      tono="oro"
-                      valor={pts}
-                      onClick={() =>
-                        cantar(a, ETIQUETA_CANTO[v] ?? 'Flor', pts, v === 'CONTRAFLOR_AL_RESTO')
-                      }
-                    >
-                      {ETIQUETA_CANTO[v] ?? 'Flor'}
-                    </BotonMesa>
-                  );
-                })}
-
-                {cantosEnvido.map((a) => {
-                  const v = a.type === 'CALL_ENVIDO' ? a.variant : 'ENVIDO';
-                  const pts = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
-                  return (
-                    <BotonMesa
-                      key={`env-${v}`}
-                      tono="verde"
-                      valor={pts}
-                      onClick={() =>
-                        cantar(a, ETIQUETA_CANTO[v] ?? 'Envido', pts, v === 'FALTA_ENVIDO')
-                      }
-                    >
-                      {ETIQUETA_CANTO[v] ?? 'Envido'}
-                    </BotonMesa>
-                  );
-                })}
-
-                {cantoTruco &&
+              <>
+                {respuestas.length > 0 &&
                   (() => {
-                    const pts = vista.truco.level + 2;
-                    const etq = NIVEL_TRUCO[vista.truco.level] ?? 'Truco';
+                    let nombre = 'un canto';
+                    let quieroVale = 2;
+                    let noQuieroDas = 1;
+                    if (vista.envido.pending.length > 0) {
+                      const v = vista.envido.pending[vista.envido.pending.length - 1] ?? 'ENVIDO';
+                      nombre = ETIQUETA_CANTO[v] ?? 'Envido';
+                      quieroVale = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
+                    } else if (vista.flor.active) {
+                      nombre = 'Flor';
+                      quieroVale = 3;
+                    } else if (vista.truco.level > 0) {
+                      nombre = NIVEL_TRUCO[vista.truco.level - 1] ?? 'Truco';
+                      quieroVale = vista.truco.level + 1;
+                      noQuieroDas = vista.truco.level;
+                    }
                     return (
-                      <BotonMesa
-                        tono="truco"
-                        valor={pts}
-                        onClick={() => cantar(cantoTruco, etq, pts, vista.truco.level >= 2)}
-                      >
-                        ¡{etq}!
-                      </BotonMesa>
+                      <p className="mb-2 text-center text-sm text-emerald-50">
+                        El rival cantó <b className="text-oro-300">{nombre}</b>.{' '}
+                        <span className="text-emerald-300">Quiero</span> = jugás por {quieroVale} ·{' '}
+                        <span className="text-canto-300">No quiero</span> = le das {noQuieroDas} y
+                        sigue
+                      </p>
                     );
                   })()}
+                <div className="flex flex-wrap justify-center gap-2">
+                  {respuestas.map((a) => (
+                    <BotonMesa
+                      key={a.type + (a.type === 'RESPOND' ? a.response : '')}
+                      tono={a.type === 'RESPOND' && a.response === 'QUIERO' ? 'quiero' : 'noquiero'}
+                      onClick={() => {
+                        vibrar(10);
+                        onAccion(a);
+                      }}
+                    >
+                      {a.type === 'RESPOND' && a.response === 'QUIERO' ? '¡Quiero!' : 'No quiero'}
+                    </BotonMesa>
+                  ))}
 
-                {mazo && (
-                  <BotonMesa
-                    tono="mazo"
-                    onClick={() =>
-                      setConfirmando({
-                        action: mazo,
-                        titulo: '¿Te vas al mazo?',
-                        detalle: 'Le entregás la mano al rival con los puntos que valga el truco.',
-                      })
-                    }
-                  >
-                    Al mazo
-                  </BotonMesa>
-                )}
-              </div>
+                  {cantosFlor.map((a) => {
+                    const v = a.type === 'CALL_FLOR' ? a.variant : 'FLOR';
+                    const pts = v === 'FLOR' ? 3 : v === 'CONTRAFLOR' ? 6 : falta;
+                    return (
+                      <BotonMesa
+                        key={`flor-${v}`}
+                        tono="oro"
+                        valor={pts}
+                        onClick={() =>
+                          cantar(a, ETIQUETA_CANTO[v] ?? 'Flor', pts, v === 'CONTRAFLOR_AL_RESTO')
+                        }
+                      >
+                        {ETIQUETA_CANTO[v] ?? 'Flor'}
+                      </BotonMesa>
+                    );
+                  })}
+
+                  {cantosEnvido.map((a) => {
+                    const v = a.type === 'CALL_ENVIDO' ? a.variant : 'ENVIDO';
+                    const pts = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
+                    return (
+                      <BotonMesa
+                        key={`env-${v}`}
+                        tono="verde"
+                        valor={pts}
+                        onClick={() =>
+                          cantar(a, ETIQUETA_CANTO[v] ?? 'Envido', pts, v === 'FALTA_ENVIDO')
+                        }
+                      >
+                        {ETIQUETA_CANTO[v] ?? 'Envido'}
+                      </BotonMesa>
+                    );
+                  })}
+
+                  {cantoTruco &&
+                    (() => {
+                      const pts = vista.truco.level + 2;
+                      const etq = NIVEL_TRUCO[vista.truco.level] ?? 'Truco';
+                      return (
+                        <BotonMesa
+                          tono="truco"
+                          valor={pts}
+                          onClick={() => cantar(cantoTruco, etq, pts, vista.truco.level >= 2)}
+                        >
+                          ¡{etq}!
+                        </BotonMesa>
+                      );
+                    })()}
+
+                  {mazo && (
+                    <BotonMesa
+                      tono="mazo"
+                      onClick={() =>
+                        setConfirmando({
+                          action: mazo,
+                          titulo: '¿Te vas al mazo?',
+                          detalle:
+                            'Abandonás esta mano: le das al rival los puntos que valga el truco. Seguís jugando la partida.',
+                        })
+                      }
+                    >
+                      Irme al mazo
+                    </BotonMesa>
+                  )}
+                </div>
+              </>
             )}
           </section>
 
@@ -909,14 +973,16 @@ function BotonMesa({
   return (
     <button
       onClick={onClick}
-      className={`relative h-12 min-w-[92px] rounded-2xl px-4 text-[15px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${ESTILO_BOTON[tono]}`}
-      style={{ fontFamily: "'Iowan Old Style', Palatino, Georgia, serif" }}
+      className={`relative flex min-h-[52px] min-w-[104px] flex-col items-center justify-center rounded-2xl px-4 py-1.5 leading-tight shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${ESTILO_BOTON[tono]}`}
     >
-      {children}
+      <span
+        className="text-[15px] font-bold"
+        style={{ fontFamily: "'Iowan Old Style', Palatino, Georgia, serif" }}
+      >
+        {children}
+      </span>
       {valor !== undefined && (
-        <span className="ml-1.5 rounded-full bg-black/25 px-1.5 text-[11px] font-bold align-middle">
-          {valor}
-        </span>
+        <span className="text-[11px] font-semibold opacity-90">vale {valor}</span>
       )}
     </button>
   );
@@ -942,7 +1008,9 @@ function Tanteador({
         backdropFilter: 'blur(4px)',
       }}
     >
-      <div className="text-[9px] uppercase tracking-wider text-emerald-100/50">{etiqueta}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-100/70">
+        {etiqueta}
+      </div>
       <div
         className={`font-mono text-2xl font-bold ${destacado ? 'text-oro-300' : 'text-emerald-50'}`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
