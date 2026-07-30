@@ -245,6 +245,70 @@ body {
   animation: mano-in 0.42s cubic-bezier(0.2, 0.85, 0.25, 1) backwards;
 }
 
+/* Pop del número del tanteador cuando suben los puntos (refuerzo positivo). */
+@keyframes punto-sube {
+  0% {
+    transform: scale(1);
+  }
+  38% {
+    transform: scale(1.4) translateY(-4px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@utility animar-punto {
+  animation: punto-sube 0.5s cubic-bezier(0.2, 1.5, 0.35, 1);
+}
+
+/* "+N" fantasma que sube y se desvanece al ganar puntos. */
+@keyframes flota-mas {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(1.15);
+  }
+}
+@utility animar-mas {
+  animation: flota-mas 0.75s ease-out forwards;
+}
+
+/* Pulso de gloria en la carta que gana la baza. */
+@keyframes gana-baza {
+  0% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  }
+  35% {
+    box-shadow:
+      0 0 22px 5px rgba(232, 176, 75, 0.75),
+      0 4px 10px rgba(0, 0, 0, 0.45);
+  }
+  100% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  }
+}
+@utility animar-gana-baza {
+  animation: gana-baza 0.9s ease-out;
+}
+
+/* Entrada escalonada de los botones de acción (cantos / respuestas). */
+@keyframes boton-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animar-boton {
+  animation: boton-in 0.24s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
+}
+
 /* Sacudida de pantalla para los cantos grandes (vale cuatro, falta, contraflor). */
 @keyframes sacudida {
   0%,

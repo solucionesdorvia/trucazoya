@@ -180,6 +180,7 @@ export function Mesa({
   // Refs y estado de animaciones.
   const centroRef = useRef<HTMLElement>(null);
   const vueloRef = useRef<HTMLDivElement>(null);
+  const sombraVueloRef = useRef<HTMLDivElement>(null);
   const [volando, setVolando] = useState<{ card: Card; from: DOMRect } | null>(null);
   const [sacudir, setSacudir] = useState(false);
   const [dealKey, setDealKey] = useState(0);
@@ -212,14 +213,30 @@ export function Mesa({
     const { from } = volando;
     const dx = centro.left + centro.width / 2 - (from.left + from.width / 2);
     const dy = centro.top + centro.height / 2 - (from.top + from.height / 2);
+    // Vuelo con overshoot y asentamiento: pasa un pelín de largo y rebota
+    // corto antes de quedar quieta, como un naipe tirado sobre el paño.
     const anim = el.animate(
       [
         { transform: 'translate(0,0) scale(1) rotate(0deg)' },
+        { transform: `translate(${dx}px, ${dy}px) scale(.66) rotate(8deg)`, offset: 0.82 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.6) rotate(6.5deg)`, offset: 0.92 },
         { transform: `translate(${dx}px, ${dy}px) scale(.62) rotate(7deg)` },
       ],
-      { duration: 300, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' },
+      { duration: 360, easing: 'cubic-bezier(.34,1.4,.5,1)', fill: 'forwards' },
     );
-    const t = setTimeout(() => setVolando(null), 280);
+    // La sombra "cae" con la carta: arranca chica y difusa, aterriza marcada.
+    sombraVueloRef.current?.animate(
+      [
+        { transform: `translate(${0}px, ${0}px) scale(.3)`, opacity: 0 },
+        {
+          transform: `translate(${dx}px, ${dy}px) scale(.62)`,
+          opacity: 0.38,
+          offset: 1,
+        },
+      ],
+      { duration: 360, easing: 'cubic-bezier(.34,1.1,.5,1)', fill: 'forwards' },
+    );
+    const t = setTimeout(() => setVolando(null), 340);
     return () => {
       clearTimeout(t);
       try {
@@ -314,34 +331,48 @@ export function Mesa({
       className={`relative flex min-h-dvh flex-col overflow-x-hidden ${sacudir ? 'animar-sacudida' : ''}`}
     >
       {/* ─── Fondo: paño + luz cenital + riel ─────────────────────────── */}
+      {/* Base: paño con "panza" de luz al centro y esquinas hundidas. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'radial-gradient(120% 75% at 50% 30%, #12664c 0%, #0b3f30 58%, #062018 100%)',
+          background:
+            'radial-gradient(115% 82% at 50% 24%, #14654f 0%, #0a3a2c 46%, #06251d 78%, #04140f 100%)',
         }}
       />
+      {/* Grano de fieltro (feTurbulence): textura orgánica en vez de rejilla. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
+        className="pointer-events-none absolute inset-0 opacity-[.06] mix-blend-soft-light"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 2px, transparent 2px 4px), repeating-linear-gradient(-45deg, rgba(0,0,0,.06) 0 2px, transparent 2px 4px)',
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          backgroundSize: '170px 170px',
         }}
       />
+      {/* Derrame cálido de lámpara sobre el centro de la mesa. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[26%] h-[70%] w-[150%] -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute left-1/2 top-[24%] h-[80%] w-[160%] -translate-x-1/2 -translate-y-1/2"
         style={{
-          background: 'radial-gradient(closest-side, rgba(255,240,200,.13), transparent 70%)',
+          background: 'radial-gradient(closest-side, rgba(242,205,122,.15), transparent 72%)',
         }}
       />
+      {/* Viñeta: hunde las esquinas para dar volumen de mesa. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: 'radial-gradient(120% 105% at 50% 42%, transparent 52%, rgba(0,0,0,.5) 100%)',
+        }}
+      />
+      {/* Riel de madera lustrada con luz cenital lamiendo el borde superior. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           boxShadow:
-            'inset 0 0 0 8px #3a2416, inset 0 0 0 9px rgba(0,0,0,.5), inset 0 0 30px 14px rgba(0,0,0,.45)',
+            'inset 0 0 0 10px #2a1a0f, inset 0 0 0 11px rgba(0,0,0,.6), inset 0 2px 0 11px rgba(242,205,122,.10), inset 0 0 34px 16px rgba(0,0,0,.5)',
         }}
       />
 
@@ -403,11 +434,13 @@ export function Mesa({
                 <div key={r.userId} className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2.5">
                     <div
-                      className={`grid h-11 w-11 place-items-center rounded-full text-base font-bold text-cyan-50 ${
+                      className={`grid h-11 w-11 place-items-center rounded-full text-base font-bold ${
                         suTurno ? 'animar-latido' : ''
                       }`}
                       style={{
-                        background: 'conic-gradient(from 200deg,#25506a,#123049)',
+                        background: 'conic-gradient(from 210deg,#1f2531,#10131a)',
+                        color: '#f2cd7a',
+                        textShadow: '0 1px 0 rgba(0,0,0,.5)',
                         boxShadow: suTurno
                           ? '0 0 0 3px rgba(232,176,75,.95), 0 0 16px rgba(232,176,75,.55)'
                           : '0 0 0 2px rgba(232,176,75,.5), 0 6px 14px -6px #000',
@@ -484,6 +517,19 @@ export function Mesa({
               </div>
             )}
 
+            {/* Mazo apoyado en la mesa: ancla física del paño (solo desktop). */}
+            {!terminada && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute right-5 top-5 hidden lg:block"
+                style={{ width: 62, height: 96 }}
+              >
+                <ReversoCarta size="sm" className="absolute left-0 top-0 -rotate-6 opacity-70" />
+                <ReversoCarta size="sm" className="absolute left-1 top-px rotate-3 opacity-85" />
+                <ReversoCarta size="sm" className="absolute left-0.5 top-0" />
+              </div>
+            )}
+
             {terminada ? (
               <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
             ) : (
@@ -505,7 +551,10 @@ export function Mesa({
                   </span>
                 )}
                 {!elegida && miTurno && (
-                  <span className="animar-latido rounded-full bg-oro-500 px-3.5 py-1 text-sm font-bold text-noche-950 shadow-[0_0_16px_rgba(232,176,75,.5)]">
+                  <span
+                    className="animar-latido rounded-full px-3.5 py-1 text-sm font-bold text-noche-950 shadow-[inset_0_1px_0_rgba(255,255,255,.55),inset_0_-2px_3px_rgba(122,90,20,.5),0_0_16px_rgba(232,176,75,.5)]"
+                    style={{ background: 'linear-gradient(#f7dc94, #e8b04b)' }}
+                  >
                     ¡Tu turno! Tocá una carta
                   </span>
                 )}
@@ -635,9 +684,10 @@ export function Mesa({
                     );
                   })()}
                 <div className="flex flex-wrap justify-center gap-2">
-                  {respuestas.map((a) => (
+                  {respuestas.map((a, i) => (
                     <BotonMesa
                       key={a.type + (a.type === 'RESPOND' ? a.response : '')}
+                      indice={i}
                       tono={a.type === 'RESPOND' && a.response === 'QUIERO' ? 'quiero' : 'noquiero'}
                       onClick={() => {
                         vibrar(10);
@@ -739,20 +789,36 @@ export function Mesa({
       {/* Guía de primera vez */}
       {!terminada && <PrimeraVez puntos={vista.pointsToWin} />}
 
-      {/* Carta en vuelo (de la mano al centro) */}
+      {/* Carta en vuelo (de la mano al centro) + su sombra que cae */}
       {volando && (
-        <div
-          ref={vueloRef}
-          className="pointer-events-none fixed z-40"
-          style={{
-            left: volando.from.left,
-            top: volando.from.top,
-            width: volando.from.width,
-            height: volando.from.height,
-          }}
-        >
-          <CartaEspanola card={volando.card} size={sizeMano} />
-        </div>
+        <>
+          <div
+            ref={sombraVueloRef}
+            aria-hidden="true"
+            className="pointer-events-none fixed z-30"
+            style={{
+              left: volando.from.left,
+              top: volando.from.top + volando.from.height * 0.72,
+              width: volando.from.width,
+              height: volando.from.height * 0.5,
+              background:
+                'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,0,0,.6), transparent 72%)',
+              opacity: 0,
+            }}
+          />
+          <div
+            ref={vueloRef}
+            className="pointer-events-none fixed z-40"
+            style={{
+              left: volando.from.left,
+              top: volando.from.top,
+              width: volando.from.width,
+              height: volando.from.height,
+            }}
+          >
+            <CartaEspanola card={volando.card} size={sizeMano} />
+          </div>
+        </>
       )}
 
       {confirmando && (
@@ -1005,7 +1071,12 @@ function SlotBaza({
     <div className="flex gap-1">
       {cartas.map((p, k) => (
         // La carta propia entra por el vuelo desde la mano; la del rival cae de arriba.
-        <div key={k} className={lado === 'rival' ? 'animar-jugada-rival' : 'animar-jugada-mia'}>
+        <div
+          key={k}
+          className={`rounded-xl ${destacada ? 'animar-gana-baza' : ''} ${
+            lado === 'rival' ? 'animar-jugada-rival' : 'animar-jugada-mia'
+          }`}
+        >
           <CartaEspanola card={p.card} size={size} destacada={destacada} atenuada={atenuada} />
         </div>
       ))}
@@ -1031,16 +1102,22 @@ function BotonMesa({
   tono,
   valor,
   onClick,
+  indice,
 }: {
   children: ReactNode;
   tono: TonoBoton;
   valor?: number;
   onClick: () => void;
+  /** Si se pasa, el botón entra escalonado (materialización con foco). */
+  indice?: number;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex min-h-[52px] min-w-[104px] flex-col items-center justify-center rounded-2xl px-4 py-1.5 leading-tight shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${ESTILO_BOTON[tono]}`}
+      style={indice !== undefined ? { animationDelay: `${indice * 55}ms` } : undefined}
+      className={`relative flex min-h-[52px] min-w-[104px] flex-col items-center justify-center rounded-2xl px-4 py-1.5 leading-tight shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-2px_3px_rgba(0,0,0,.22),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${
+        indice !== undefined ? 'animar-boton ' : ''
+      }${ESTILO_BOTON[tono]}`}
     >
       <span
         className="text-[15px] font-bold"
@@ -1066,24 +1143,60 @@ function Tanteador({
   valor: number;
   destacado?: boolean;
 }) {
+  // Cuando el puntaje sube, el número pega un pop y sale un "+N" fantasma:
+  // el objetivo del juego —anotar— merece un refuerzo visible.
+  const [delta, setDelta] = useState(0);
+  const [pulso, setPulso] = useState(false);
+  const prev = useRef(valor);
+  useEffect(() => {
+    if (valor > prev.current) {
+      setDelta(valor - prev.current);
+      setPulso(true);
+      const t = setTimeout(() => setPulso(false), 760);
+      prev.current = valor;
+      return () => clearTimeout(t);
+    }
+    prev.current = valor;
+  }, [valor]);
+
   return (
     <div
-      className="min-w-[62px] rounded-xl border px-2.5 py-1 text-center"
+      className="relative min-w-[62px] rounded-xl border px-2.5 py-1 text-center"
       style={{
         background: 'rgba(6,20,15,.65)',
         borderColor: destacado ? 'rgba(232,176,75,.55)' : 'rgba(232,176,75,.22)',
+        boxShadow: pulso
+          ? '0 0 0 1px rgba(232,176,75,.5), 0 0 18px -4px rgba(232,176,75,.55)'
+          : 'none',
         backdropFilter: 'blur(4px)',
+        transition: 'box-shadow .3s',
       }}
     >
       <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-100/70">
         {etiqueta}
       </div>
       <div
-        className={`font-mono text-2xl font-bold ${destacado ? 'text-oro-300' : 'text-emerald-50'}`}
-        style={{ fontVariantNumeric: 'tabular-nums' }}
+        key={valor}
+        className={`font-mono text-2xl font-bold ${pulso ? 'animar-punto ' : ''}${
+          destacado ? 'text-oro-300' : 'text-emerald-50'
+        }`}
+        style={{
+          fontVariantNumeric: 'tabular-nums',
+          textShadow: destacado
+            ? '0 1px 0 rgba(0,0,0,.4), 0 0 12px rgba(232,176,75,.35)'
+            : undefined,
+        }}
       >
         {valor}
       </div>
+      {pulso && delta > 0 && (
+        <span
+          aria-hidden="true"
+          className="animar-mas pointer-events-none absolute left-1/2 top-1 text-sm font-bold text-oro-300"
+        >
+          +{delta}
+        </span>
+      )}
     </div>
   );
 }

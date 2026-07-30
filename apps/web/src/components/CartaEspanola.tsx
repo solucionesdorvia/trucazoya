@@ -58,7 +58,11 @@ export function CartaEspanola({ card, size = 'md', destacada, atenuada, classNam
         borderRadius: Math.max(4, Math.round(ancho * 0.08)),
         overflow: 'hidden',
         background: '#fbf7ec',
-        boxShadow: destacada ? '0 10px 22px rgba(232,176,75,.55)' : '0 4px 10px rgba(0,0,0,.45)',
+        // Sombra en capas: contacto tenue pegado al borde + sombra ambiental
+        // proyectada = la carta se lee "apoyada sobre el paño", no flotando.
+        boxShadow: destacada
+          ? '0 1px 1px rgba(0,0,0,.4), 0 10px 22px rgba(232,176,75,.55)'
+          : '0 1px 1px rgba(0,0,0,.5), 0 6px 12px -4px rgba(0,0,0,.55), 0 16px 26px -12px rgba(0,0,0,.55)',
         outline: destacada ? '2px solid rgba(232,176,75,.85)' : 'none',
         // Atenuada: más contraste que un 0.5 pelado + desaturada, para que se
         // lea "no jugable" sin desaparecer sobre el paño oscuro.
