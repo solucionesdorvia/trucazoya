@@ -64,7 +64,8 @@ function useMediaQuery(query: string): boolean {
   );
   return useSyncExternalStore(
     subscribe,
-    () => window.matchMedia(query).matches,
+    () =>
+      typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(query).matches : false,
     () => false,
   );
 }
@@ -432,7 +433,6 @@ export function Mesa({
                     <span
                       className="flex items-center gap-1 text-[10px] text-oro-300/90"
                       role="status"
-                      aria-live="polite"
                     >
                       pensando
                       <PuntitosPensando />
