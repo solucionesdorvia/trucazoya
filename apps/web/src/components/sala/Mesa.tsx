@@ -401,49 +401,41 @@ export function Mesa({
     <div
       className={`relative flex h-dvh flex-col overflow-hidden ${sacudir ? 'animar-sacudida' : ''}`}
     >
-      {/* ─── Fondo: paño + luz cenital + riel ─────────────────────────── */}
-      {/* Base: paño con "panza" de luz al centro y esquinas hundidas. */}
+      {/* ─── Fondo: la sala de la peña, de noche. La mesa (oval) vive en el
+          paño central; el fondo es más oscuro para que la mesa "salte". ── */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(115% 82% at 50% 24%, #14654f 0%, #0a3a2c 46%, #06251d 78%, #04140f 100%)',
+            'radial-gradient(120% 90% at 50% 18%, #10382c 0%, #0a241d 42%, #051510 72%, #030b08 100%)',
         }}
       />
-      {/* Grano de fieltro (feTurbulence): textura orgánica en vez de rejilla. */}
+      {/* Grano ambiental (feTurbulence): aire de sala, no superficie plana. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[.06] mix-blend-soft-light"
+        className="pointer-events-none absolute inset-0 opacity-[.05] mix-blend-soft-light"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
           backgroundSize: '170px 170px',
         }}
       />
-      {/* Derrame cálido de lámpara sobre el centro de la mesa. */}
+      {/* Cono de luz de la lámpara colgante, cayendo sobre la mesa. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[24%] h-[80%] w-[160%] -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute left-1/2 top-[30%] h-[90%] w-[170%] -translate-x-1/2 -translate-y-1/2"
         style={{
-          background: 'radial-gradient(closest-side, rgba(242,205,122,.15), transparent 72%)',
+          background: 'radial-gradient(closest-side, rgba(242,205,122,.13), transparent 70%)',
         }}
       />
-      {/* Viñeta: hunde las esquinas para dar volumen de mesa. */}
+      {/* Viñeta de la sala: esquinas en penumbra. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'radial-gradient(120% 105% at 50% 42%, transparent 52%, rgba(0,0,0,.5) 100%)',
-        }}
-      />
-      {/* Riel de madera lustrada con luz cenital lamiendo el borde superior. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          boxShadow:
-            'inset 0 0 0 10px #2a1a0f, inset 0 0 0 11px rgba(0,0,0,.6), inset 0 2px 0 11px rgba(242,205,122,.10), inset 0 0 34px 16px rgba(0,0,0,.5)',
+          background:
+            'radial-gradient(125% 110% at 50% 40%, transparent 46%, rgba(0,0,0,.62) 100%)',
         }}
       />
 
@@ -557,22 +549,75 @@ export function Mesa({
             })}
           </section>
 
-          {/* Paño: cartas jugadas + estampa */}
+          {/* La mesa: un tablero oval físico sobre el que caen las cartas */}
           <section
             ref={centroRef}
-            className={`relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl px-4 py-3 transition-shadow ${
-              arrastre
-                ? arrastre.listo
-                  ? 'ring-2 ring-inset ring-oro-500/70'
-                  : 'ring-2 ring-inset ring-oro-500/25'
-                : ''
-            }`}
+            className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden px-4 py-3"
             aria-label="Cartas jugadas"
           >
+            {/* Tablero oval: riel de madera + paño con inlay dorado + luz. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[-14%] bottom-[1%] top-[4%]"
+            >
+              {/* Sombra que la mesa proyecta sobre el piso de la sala */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  borderRadius: '50%',
+                  boxShadow: '0 34px 70px -18px rgba(0,0,0,.75), 0 10px 24px -8px rgba(0,0,0,.5)',
+                }}
+              />
+              {/* Riel de madera lustrada */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(180deg,#4a2f1b 0%,#2f1d10 55%,#1c110a 100%)',
+                  boxShadow:
+                    'inset 0 2px 0 rgba(242,205,122,.22), inset 0 -8px 16px rgba(0,0,0,.6)',
+                }}
+              />
+              {/* Paño interior con inlay dorado */}
+              <div
+                className="absolute inset-[9px] sm:inset-[12px]"
+                style={{
+                  borderRadius: '50%',
+                  background:
+                    'radial-gradient(92% 72% at 50% 36%, #17705a 0%, #0e4d3c 46%, #093528 78%, #072b21 100%)',
+                  boxShadow:
+                    'inset 0 0 0 2px rgba(232,176,75,.30), inset 0 12px 34px rgba(0,0,0,.38), inset 0 -16px 44px rgba(0,0,0,.5)',
+                }}
+              />
+              {/* Brillo especular de la lámpara sobre el paño */}
+              <div
+                className="absolute inset-[9px] sm:inset-[12px]"
+                style={{
+                  borderRadius: '50%',
+                  background:
+                    'radial-gradient(58% 30% at 50% 16%, rgba(242,205,122,.14), transparent 72%)',
+                }}
+              />
+            </div>
+
+            {/* Al arrastrar una carta, la mesa entera se enciende como destino. */}
+            {arrastre && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-[-14%] bottom-[1%] top-[4%] z-10 transition-shadow duration-200"
+                style={{
+                  borderRadius: '50%',
+                  boxShadow: arrastre.listo
+                    ? 'inset 0 0 0 3px rgba(232,176,75,.85), inset 0 0 46px rgba(232,176,75,.28)'
+                    : 'inset 0 0 0 2px rgba(232,176,75,.35)',
+                }}
+              />
+            )}
+
             {/* Estado de la mano (truco/flor): antes vivía en el header y lo
-                desbordaba en mobile; ahora va sobre el paño. */}
+                desbordaba en mobile; ahora va sobre el borde de la mesa. */}
             {!terminada && (vista.truco.level > 0 || vista.flor.iHaveFlor) && (
-              <div className="absolute left-1/2 top-1 z-10 flex -translate-x-1/2 gap-2">
+              <div className="absolute left-1/2 top-1 z-20 flex -translate-x-1/2 gap-2">
                 {vista.truco.level > 0 && (
                   <span className="rounded-full border border-canto-500/50 bg-canto-500/25 px-2.5 py-0.5 text-xs font-semibold text-canto-300 backdrop-blur-sm">
                     {NIVEL_TRUCO[vista.truco.level - 1]}
@@ -611,11 +656,11 @@ export function Mesa({
               </div>
             )}
 
-            {/* Mazo apoyado en la mesa: ancla física del paño (solo desktop). */}
+            {/* Mazo apoyado sobre la mesa (solo desktop). */}
             {!terminada && (
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute right-5 top-5 hidden lg:block"
+                className="pointer-events-none absolute right-[13%] top-[18%] hidden -rotate-6 lg:block"
                 style={{ width: 62, height: 96 }}
               >
                 <ReversoCarta size="sm" className="absolute left-0 top-0 -rotate-6 opacity-70" />
@@ -627,13 +672,19 @@ export function Mesa({
             {terminada ? (
               <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
             ) : (
-              <Bazas
-                vista={vista}
-                miEquipo={miEquipo}
-                grande={grande}
-                ultimaMia={ultimaMia}
-                barrer={barrer}
-              />
+              /* Perspectiva sutil: las bazas se apoyan EN la mesa, no flotan. */
+              <div
+                className="relative z-10"
+                style={{ transform: 'perspective(1100px) rotateX(5deg)' }}
+              >
+                <Bazas
+                  vista={vista}
+                  miEquipo={miEquipo}
+                  grande={grande}
+                  ultimaMia={ultimaMia}
+                  barrer={barrer}
+                />
+              </div>
             )}
           </section>
 
@@ -1030,13 +1081,14 @@ function Bazas({
           <div
             key={i}
             className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-1.5 transition-all duration-300 ${
-              enJuego ? 'bg-black/20 ring-1 ring-oro-500/40 lg:scale-105' : 'scale-100'
+              enJuego ? 'ring-1 ring-oro-500/45' : ''
             } ${resuelta ? 'opacity-95' : ''}`}
           >
             <span
               className={`text-[10px] font-semibold uppercase tracking-widest ${
                 enJuego ? 'text-oro-300' : 'text-emerald-100/35'
               }`}
+              style={{ textShadow: '0 1px 0 rgba(0,0,0,.6)' }}
             >
               {NOMBRE_CORTO[i]}
             </span>
@@ -1119,14 +1171,20 @@ function SlotBaza({
   const slotAttr = lado === 'mia' && dataTrick !== undefined ? { 'data-slot-mia': dataTrick } : {};
   if (cartas.length === 0) {
     const w = ANCHO_SLOT[size];
-    // Placeholder chato en mobile: si usara el alto real de la carta, la
-    // columna vacía se lee como una caja gigante y hueca en el centro.
-    const h = size === 'sm' ? Math.round(w * 0.66) : Math.round(w * 1.541);
+    // Placeholder chato: si usara el alto real de la carta, la columna vacía
+    // sería más alta que la propia mesa y se leería como una caja hueca.
+    const h = Math.round(w * 0.66);
     return (
       <div
         {...slotAttr}
-        className="rounded-lg border border-dashed border-white/10"
-        style={{ width: w, height: h }}
+        className="rounded-lg"
+        style={{
+          width: w,
+          height: h,
+          // Hueco "grabado" en el paño (bajorrelieve), como mesa de casino.
+          background: 'rgba(0,0,0,.16)',
+          boxShadow: 'inset 0 2px 5px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.05)',
+        }}
         aria-hidden="true"
       />
     );
