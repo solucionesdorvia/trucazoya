@@ -309,6 +309,49 @@ body {
   animation: boton-in 0.24s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
 }
 
+/* Reparto: cada carta sale del mazo (punto común arriba) y abanica a su lugar,
+   con un pequeño arco. El origen por-carta llega en --rx/--ry/--rr. */
+@keyframes reparto-mazo {
+  0% {
+    opacity: 0;
+    transform: translate(var(--rx, 0), var(--ry, -165px)) rotate(var(--rr, 0deg)) scale(0.72);
+  }
+  40% {
+    opacity: 1;
+  }
+  70% {
+    transform: translate(calc(var(--rx, 0) * 0.12), -10px) rotate(calc(var(--rr, 0deg) * 0.15))
+      scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+}
+@utility animar-reparto-mazo {
+  animation: reparto-mazo 0.5s cubic-bezier(0.2, 0.82, 0.25, 1) backwards;
+}
+
+/* Barrido de las cartas de la mesa hacia el ganador al cerrar la mano. */
+@keyframes barrer-abajo {
+  to {
+    transform: translateY(150px) scale(0.68) rotate(-7deg);
+    opacity: 0;
+  }
+}
+@utility animar-barrer-abajo {
+  animation: barrer-abajo 0.42s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+@keyframes barrer-arriba {
+  to {
+    transform: translateY(-150px) scale(0.68) rotate(7deg);
+    opacity: 0;
+  }
+}
+@utility animar-barrer-arriba {
+  animation: barrer-arriba 0.42s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
 /* Sacudida de pantalla para los cantos grandes (vale cuatro, falta, contraflor). */
 @keyframes sacudida {
   0%,

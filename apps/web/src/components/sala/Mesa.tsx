@@ -16,6 +16,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import type { Action, Card } from '@trucazo/engine';
@@ -181,14 +182,22 @@ export function Mesa({
   const centroRef = useRef<HTMLElement>(null);
   const vueloRef = useRef<HTMLDivElement>(null);
   const sombraVueloRef = useRef<HTMLDivElement>(null);
-  const [volando, setVolando] = useState<{ card: Card; from: DOMRect } | null>(null);
+  const [volando, setVolando] = useState<{ card: Card; from: DOMRect; trick: number } | null>(null);
+  // Carta propia recién jugada: no re-anima su entrada en la baza (ya llegó
+  // volando desde la mano), para que encastre en vez de brotar de nuevo.
+  const [ultimaMia, setUltimaMia] = useState<string | null>(null);
   const [sacudir, setSacudir] = useState(false);
+  const [barrer, setBarrer] = useState<'abajo' | 'arriba' | null>(null);
+  const decisorRef = useRef(false);
   const [dealKey, setDealKey] = useState(0);
   const prevLen = useRef(vista.myHand.length);
 
   // Reparto animado: cuando vuelve a haber 3 cartas, es una mano nueva.
   useEffect(() => {
-    if (vista.myHand.length === 3 && prevLen.current < 3) setDealKey((k) => k + 1);
+    if (vista.myHand.length === 3 && prevLen.current < 3) {
+      setDealKey((k) => k + 1);
+      setUltimaMia(null);
+    }
     prevLen.current = vista.myHand.length;
   }, [vista.myHand.length]);
 
@@ -201,42 +210,71 @@ export function Mesa({
     }
   }, [estampa]);
 
-  // Vuelo de la carta desde la mano hasta el centro (Web Animations API).
+  // Cierre de mano: cuando un equipo se lleva 2 bazas, las cartas de la mesa
+  // barren hacia el ganador (abajo si gané yo, arriba si ganó el rival).
+  useEffect(() => {
+    const outs = vista.trickOutcomes;
+    const w0 = outs.filter((o) => o === 'TEAM_0').length;
+    const w1 = outs.filter((o) => o === 'TEAM_1').length;
+    const ganador = w0 >= 2 ? 0 : w1 >= 2 ? 1 : null;
+    if (ganador !== null && !decisorRef.current) {
+      decisorRef.current = true;
+      setBarrer(ganador === vista.team ? 'abajo' : 'arriba');
+      const t = setTimeout(() => setBarrer(null), 520);
+      return () => clearTimeout(t);
+    }
+    if (ganador === null) {
+      decisorRef.current = false;
+      setBarrer(null);
+    }
+  }, [vista.trickOutcomes, vista.team]);
+
+  // Vuelo de la carta desde la mano hasta SU lugar en la baza (Web Animations
+  // API). Aterriza exactamente sobre el slot de la baza actual y al mismo
+  // tamaño que la carta jugada, para que encastre sin doble movimiento.
   useEffect(() => {
     if (!volando) return;
-    const centro = centroRef.current?.getBoundingClientRect();
     const el = vueloRef.current;
-    if (!centro || !el) {
+    // Destino: el slot propio de la baza donde cae la carta; si no está,
+    // el centro del paño como respaldo.
+    const slot = document
+      .querySelector(`[data-slot-mia="${volando.trick}"]`)
+      ?.getBoundingClientRect();
+    const destino = slot ?? centroRef.current?.getBoundingClientRect();
+    if (!destino || !el) {
       setVolando(null);
       return;
     }
     const { from } = volando;
-    const dx = centro.left + centro.width / 2 - (from.left + from.width / 2);
-    const dy = centro.top + centro.height / 2 - (from.top + from.height / 2);
+    const dx = destino.left + destino.width / 2 - (from.left + from.width / 2);
+    const dy = destino.top + destino.height / 2 - (from.top + from.height / 2);
+    const esc = slot ? Math.min(1, slot.width / from.width) : 0.62;
     // Vuelo con overshoot y asentamiento: pasa un pelín de largo y rebota
     // corto antes de quedar quieta, como un naipe tirado sobre el paño.
     const anim = el.animate(
       [
         { transform: 'translate(0,0) scale(1) rotate(0deg)' },
-        { transform: `translate(${dx}px, ${dy}px) scale(.66) rotate(8deg)`, offset: 0.82 },
-        { transform: `translate(${dx}px, ${dy}px) scale(.6) rotate(6.5deg)`, offset: 0.92 },
-        { transform: `translate(${dx}px, ${dy}px) scale(.62) rotate(7deg)` },
+        {
+          transform: `translate(${dx}px, ${dy}px) scale(${esc * 1.06}) rotate(8deg)`,
+          offset: 0.82,
+        },
+        {
+          transform: `translate(${dx}px, ${dy}px) scale(${esc * 0.97}) rotate(6.5deg)`,
+          offset: 0.92,
+        },
+        { transform: `translate(${dx}px, ${dy}px) scale(${esc}) rotate(0deg)` },
       ],
       { duration: 360, easing: 'cubic-bezier(.34,1.4,.5,1)', fill: 'forwards' },
     );
     // La sombra "cae" con la carta: arranca chica y difusa, aterriza marcada.
     sombraVueloRef.current?.animate(
       [
-        { transform: `translate(${0}px, ${0}px) scale(.3)`, opacity: 0 },
-        {
-          transform: `translate(${dx}px, ${dy}px) scale(.62)`,
-          opacity: 0.38,
-          offset: 1,
-        },
+        { transform: `translate(0px, 0px) scale(.3)`, opacity: 0 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${esc})`, opacity: 0.38, offset: 1 },
       ],
       { duration: 360, easing: 'cubic-bezier(.34,1.1,.5,1)', fill: 'forwards' },
     );
-    const t = setTimeout(() => setVolando(null), 340);
+    const t = setTimeout(() => setVolando(null), 380);
     return () => {
       clearTimeout(t);
       try {
@@ -293,7 +331,8 @@ export function Mesa({
     // Tomamos el rect de la carta derecha (el <span> interno), no el del botón
     // rotado por el abanico: así el vuelo arranca justo donde está la carta.
     const origen = (el.querySelector('span') as HTMLElement | null) ?? el;
-    setVolando({ card: c, from: origen.getBoundingClientRect() });
+    setUltimaMia(claveCarta(c));
+    setVolando({ card: c, from: origen.getBoundingClientRect(), trick: vista.currentTrick });
     onAccion({ type: 'PLAY_CARD', seat: vista.seat, card: c });
   }
 
@@ -533,7 +572,13 @@ export function Mesa({
             {terminada ? (
               <Resultado vista={vista} miEquipo={miEquipo} matchId={sala.matchId} />
             ) : (
-              <Bazas vista={vista} miEquipo={miEquipo} grande={grande} />
+              <Bazas
+                vista={vista}
+                miEquipo={miEquipo}
+                grande={grande}
+                ultimaMia={ultimaMia}
+                barrer={barrer}
+              />
             )}
           </section>
 
@@ -599,11 +644,22 @@ export function Mesa({
                   const clave = claveCarta(c);
                   const volandoEsta = volando && claveCarta(volando.card) === clave;
                   const elegidaEsta = elegida === clave;
+                  const centro = (n - 1) / 2;
                   return (
                     <div
                       key={`${dealKey}-${clave}`}
-                      className="animar-mano -mx-3 md:-mx-2"
-                      style={{ animationDelay: `${i * 80}ms`, opacity: volandoEsta ? 0 : 1 }}
+                      className="animar-reparto-mazo -mx-3 md:-mx-2"
+                      style={
+                        {
+                          animationDelay: `${i * 95}ms`,
+                          opacity: volandoEsta ? 0 : 1,
+                          // Origen del reparto: todas convergen a un punto común
+                          // arriba (el mazo) y se abren a su lugar del abanico.
+                          '--rx': `${(i - centro) * -46}px`,
+                          '--ry': '-168px',
+                          '--rr': `${(i - centro) * 7}deg`,
+                        } as CSSProperties
+                      }
                     >
                       <button
                         data-carta={clave}
@@ -970,10 +1026,16 @@ function Bazas({
   vista,
   miEquipo,
   grande,
+  ultimaMia,
+  barrer,
 }: {
   vista: VistaJugador;
   miEquipo: number;
   grande: boolean;
+  /** Clave de la carta propia recién jugada (no re-anima su entrada). */
+  ultimaMia: string | null;
+  /** Dirección del barrido de cierre de mano, o null. */
+  barrer: 'abajo' | 'arriba' | null;
 }) {
   const arranco = vista.tricks.some((t) => t.length > 0);
   const size: 'sm' | 'md' = grande ? 'md' : 'sm';
@@ -1010,6 +1072,7 @@ function Bazas({
               size={size}
               destacada={resuelta && !parda && !gane}
               atenuada={resuelta && (gane || parda)}
+              barrer={barrer}
             />
 
             <span className="flex h-5 items-center">
@@ -1036,6 +1099,9 @@ function Bazas({
               size={size}
               destacada={resuelta && !parda && gane}
               atenuada={resuelta && !parda && !gane}
+              sinEntrada={ultimaMia}
+              barrer={barrer}
+              dataTrick={i}
             />
           </div>
         );
@@ -1050,36 +1116,57 @@ function SlotBaza({
   size,
   destacada,
   atenuada,
+  sinEntrada,
+  barrer,
+  dataTrick,
 }: {
   cartas: { seat: number; card: Card }[];
   lado: 'rival' | 'mia';
   size: 'sm' | 'md';
   destacada: boolean;
   atenuada: boolean;
+  /** Clave de la carta que NO debe re-animar su entrada (llegó volando). */
+  sinEntrada?: string | null;
+  /** Barrido de cierre de mano hacia el ganador. */
+  barrer?: 'abajo' | 'arriba' | null;
+  /** Índice de baza, para que el vuelo apunte a este slot (solo lado mía). */
+  dataTrick?: number;
 }) {
+  const slotAttr = lado === 'mia' && dataTrick !== undefined ? { 'data-slot-mia': dataTrick } : {};
   if (cartas.length === 0) {
     const w = ANCHO_SLOT[size];
     return (
       <div
+        {...slotAttr}
         className="rounded-lg border border-dashed border-white/10"
         style={{ width: w, height: Math.round(w * 1.541) }}
         aria-hidden="true"
       />
     );
   }
+  const claseBarrer = barrer ? `animar-barrer-${barrer}` : '';
   return (
-    <div className="flex gap-1">
-      {cartas.map((p, k) => (
-        // La carta propia entra por el vuelo desde la mano; la del rival cae de arriba.
-        <div
-          key={k}
-          className={`rounded-xl ${destacada ? 'animar-gana-baza' : ''} ${
-            lado === 'rival' ? 'animar-jugada-rival' : 'animar-jugada-mia'
-          }`}
-        >
-          <CartaEspanola card={p.card} size={size} destacada={destacada} atenuada={atenuada} />
-        </div>
-      ))}
+    <div {...slotAttr} className="flex gap-1">
+      {cartas.map((p, k) => {
+        // La carta propia recién jugada llegó por el vuelo: no re-anima su
+        // entrada (encastra donde la dejó el vuelo). El resto sí entra.
+        const recien = lado === 'mia' && sinEntrada && claveCarta(p.card) === sinEntrada;
+        const entrada = claseBarrer
+          ? claseBarrer
+          : recien
+            ? ''
+            : lado === 'rival'
+              ? 'animar-jugada-rival'
+              : 'animar-jugada-mia';
+        return (
+          <div
+            key={k}
+            className={`rounded-xl ${destacada && !barrer ? 'animar-gana-baza' : ''} ${entrada}`}
+          >
+            <CartaEspanola card={p.card} size={size} destacada={destacada} atenuada={atenuada} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1134,6 +1221,50 @@ function BotonMesa({
 
 // ─── Tanteador ───────────────────────────────────────────────────────────────
 
+/**
+ * Un "cuadro" de fósforos: 4 palitos verticales + 1 en diagonal cruzando =
+ * cinco, como se anota el truco en la libreta del boliche. `n` (1..5) dice
+ * cuántos palitos van dibujados.
+ */
+function Cuadro({ n, color }: { n: number; color: string }) {
+  return (
+    <svg
+      width="20"
+      height="24"
+      viewBox="0 0 22 24"
+      aria-hidden="true"
+      style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,.4))' }}
+    >
+      <g stroke={color} strokeWidth="2.2" strokeLinecap="round">
+        {n >= 1 && <line x1="3" y1="3" x2="3" y2="21" />}
+        {n >= 2 && <line x1="8" y1="3" x2="8" y2="21" />}
+        {n >= 3 && <line x1="13" y1="3" x2="13" y2="21" />}
+        {n >= 4 && <line x1="18" y1="3" x2="18" y2="21" />}
+        {n >= 5 && <line x1="1" y1="22" x2="21" y2="2" />}
+      </g>
+    </svg>
+  );
+}
+
+/** El puntaje dibujado como fósforos en cuadros de a cinco. */
+function Fosforos({ valor, color }: { valor: number; color: string }) {
+  if (valor <= 0) return null;
+  const cuadros: number[] = [];
+  let resto = valor;
+  while (resto >= 5) {
+    cuadros.push(5);
+    resto -= 5;
+  }
+  if (resto > 0) cuadros.push(resto);
+  return (
+    <div className="mx-auto mt-0.5 flex max-w-[86px] flex-wrap justify-center gap-x-[3px] gap-y-0.5">
+      {cuadros.map((n, i) => (
+        <Cuadro key={i} n={n} color={color} />
+      ))}
+    </div>
+  );
+}
+
 function Tanteador({
   etiqueta,
   valor,
@@ -1177,7 +1308,7 @@ function Tanteador({
       </div>
       <div
         key={valor}
-        className={`font-mono text-2xl font-bold ${pulso ? 'animar-punto ' : ''}${
+        className={`font-mono text-2xl font-bold leading-none ${pulso ? 'animar-punto ' : ''}${
           destacado ? 'text-oro-300' : 'text-emerald-50'
         }`}
         style={{
@@ -1189,6 +1320,7 @@ function Tanteador({
       >
         {valor}
       </div>
+      <Fosforos valor={valor} color={destacado ? '#f2cd7a' : '#e2545e'} />
       {pulso && delta > 0 && (
         <span
           aria-hidden="true"
