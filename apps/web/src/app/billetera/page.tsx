@@ -57,7 +57,7 @@ export default async function Billetera() {
           <Panel className="mt-4 border-oro-500/40 bg-oro-500/5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-tinta-200">
-                📧 Verificá tu email para poder <strong>retirar</strong> monedas.
+                📧 Verificá tu email para poder <strong>retirar</strong> fichas.
               </p>
               <form action={reenviarVerificacion}>
                 <button className="h-9 rounded-lg border border-oro-500/40 px-3 text-sm font-medium text-oro-400">
@@ -247,7 +247,7 @@ export default async function Billetera() {
           <div className="flex items-start gap-3">
             <Pildora tono="oro">Aviso</Pildora>
             <p className="text-sm leading-relaxed text-tinta-400">
-              Las monedas son virtuales y sirven para jugar dentro de Trucazo. Jugá con
+              Las fichas son virtuales y sirven para jugar dentro de Trucazo. Jugá con
               responsabilidad y no apuestes más de lo que estés dispuesto a perder.
             </p>
           </div>

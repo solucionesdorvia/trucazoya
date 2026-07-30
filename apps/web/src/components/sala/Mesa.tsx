@@ -523,7 +523,8 @@ export function Mesa({
                     onClick={() => {
                       const el = document.querySelector<HTMLElement>(`[data-carta="${elegida}"]`);
                       const c = vista.myHand.find((x) => claveCarta(x) === elegida);
-                      if (c && el) jugar(c, el);
+                      if (c) jugar(c, el ?? document.body);
+                      else setElegida(null);
                     }}
                     className="h-11 rounded-2xl bg-emerald-500 px-6 text-base font-bold text-noche-950 shadow-[0_6px_16px_-6px_rgba(28,122,78,.8)] active:translate-y-0.5"
                   >
@@ -606,27 +607,30 @@ export function Mesa({
               <>
                 {respuestas.length > 0 &&
                   (() => {
+                    // Nombre del canto pendiente. Los puntos exactos solo los
+                    // mostramos para el truco (son fiables: nivel+1 / nivel); en
+                    // envido/flor pueden venir apilados, así que texto cualitativo
+                    // en vez de arriesgar un número equivocado.
                     let nombre = 'un canto';
-                    let quieroVale = 2;
-                    let noQuieroDas = 1;
+                    const esTruco =
+                      vista.envido.pending.length === 0 &&
+                      !vista.flor.active &&
+                      vista.truco.level > 0;
                     if (vista.envido.pending.length > 0) {
                       const v = vista.envido.pending[vista.envido.pending.length - 1] ?? 'ENVIDO';
                       nombre = ETIQUETA_CANTO[v] ?? 'Envido';
-                      quieroVale = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
                     } else if (vista.flor.active) {
                       nombre = 'Flor';
-                      quieroVale = 3;
                     } else if (vista.truco.level > 0) {
                       nombre = NIVEL_TRUCO[vista.truco.level - 1] ?? 'Truco';
-                      quieroVale = vista.truco.level + 1;
-                      noQuieroDas = vista.truco.level;
                     }
                     return (
                       <p className="mb-2 text-center text-sm text-emerald-50">
                         El rival cantó <b className="text-oro-300">{nombre}</b>.{' '}
-                        <span className="text-emerald-300">Quiero</span> = jugás por {quieroVale} ·{' '}
-                        <span className="text-canto-300">No quiero</span> = le das {noQuieroDas} y
-                        sigue
+                        <span className="text-emerald-300">Quiero</span> ={' '}
+                        {esTruco ? `jugás por ${vista.truco.level + 1}` : 'aceptás y jugás por más'}{' '}
+                        · <span className="text-canto-300">No quiero</span> ={' '}
+                        {esTruco ? `le das ${vista.truco.level}` : 'le das los puntos'} y sigue
                       </p>
                     );
                   })()}
@@ -733,7 +737,7 @@ export function Mesa({
       </div>
 
       {/* Guía de primera vez */}
-      {!terminada && <PrimeraVez />}
+      {!terminada && <PrimeraVez puntos={vista.pointsToWin} />}
 
       {/* Carta en vuelo (de la mano al centro) */}
       {volando && (
@@ -817,7 +821,7 @@ function claveCarta(c: Card): string {
 }
 
 /** Cartelito de primera vez: cómo se juega en ESTA app (se muestra una vez). */
-function PrimeraVez() {
+function PrimeraVez({ puntos }: { puntos: number }) {
   const [mostrar, setMostrar] = useState(false);
   useEffect(() => {
     try {
@@ -852,7 +856,7 @@ function PrimeraVez() {
         <ul className="mx-auto mt-3 max-w-xs space-y-2 text-left text-sm text-tinta-200">
           <li>👉 Tocá una de tus cartas para tirarla al centro.</li>
           <li>🗣️ Cantá con los botones de abajo (dicen cuánto valen).</li>
-          <li>🏆 Ganás la mano con 2 de 3 rondas. La partida va a 30 puntos.</li>
+          <li>🏆 Ganás la mano con 2 de 3 rondas. La partida va a {puntos} puntos.</li>
         </ul>
         <Boton tamaño="lg" className="mt-5 w-full" onClick={cerrar}>
           ¡Dale, a jugar!
