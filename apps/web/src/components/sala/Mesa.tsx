@@ -10,7 +10,14 @@
  * estampa, feedback sonoro y háptico. Revisado por un panel de jugadores.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import type { Action, Card } from '@trucazo/engine';
 import { CartaEspanola, ReversoCarta, nombreCarta } from '@/components/CartaEspanola';
 import { Boton } from '@/components/ui';
@@ -39,18 +46,27 @@ function vibrar(patron: number | number[]) {
   }
 }
 
-/** Media query reactiva (para elegir layout/tamaños por dispositivo). */
+/**
+ * Media query reactiva (para elegir layout/tamaños por dispositivo).
+ * Con `useSyncExternalStore` el primer commit en el cliente ya lee el valor
+ * real (sin flash de tamaños) y sin warning de hidratación (el server siempre
+ * devuelve false).
+ */
 function useMediaQuery(query: string): boolean {
-  const [match, setMatch] = useState(false);
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const m = window.matchMedia(query);
-    const on = () => setMatch(m.matches);
-    on();
-    m.addEventListener('change', on);
-    return () => m.removeEventListener('change', on);
-  }, [query]);
-  return match;
+  const subscribe = useCallback(
+    (cb: () => void) => {
+      if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+      const m = window.matchMedia(query);
+      m.addEventListener('change', cb);
+      return () => m.removeEventListener('change', cb);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
 }
 
 // ─── Sonido (Web Audio, sin assets) ─────────────────────────────────────────
@@ -256,7 +272,10 @@ export function Mesa({
     setElegida(null);
     sonido.slap();
     vibrar(12);
-    setVolando({ card: c, from: el.getBoundingClientRect() });
+    // Tomamos el rect de la carta derecha (el <span> interno), no el del botón
+    // rotado por el abanico: así el vuelo arranca justo donde está la carta.
+    const origen = (el.querySelector('span') as HTMLElement | null) ?? el;
+    setVolando({ card: c, from: origen.getBoundingClientRect() });
     onAccion({ type: 'PLAY_CARD', seat: vista.seat, card: c });
   }
 
@@ -409,6 +428,16 @@ export function Mesa({
                       </span>
                     )}
                   </span>
+                  {suTurno && r.conectado && (
+                    <span
+                      className="flex items-center gap-1 text-[10px] text-oro-300/90"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      pensando
+                      <PuntitosPensando />
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -718,6 +747,21 @@ function Confeti() {
 
 function claveCarta(c: Card): string {
   return `${c.suit}-${c.rank}`;
+}
+
+/** Tres puntitos animados: "pensando…" del rival en su turno. */
+function PuntitosPensando() {
+  return (
+    <span className="inline-flex gap-0.5" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="animar-latido inline-block h-1 w-1 rounded-full bg-oro-400"
+          style={{ animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
+  );
 }
 
 // ─── Bazas (las rondas en el centro del paño) ────────────────────────────────
