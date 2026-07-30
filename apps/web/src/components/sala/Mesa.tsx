@@ -946,15 +946,21 @@ function Bazas({
               atenuada={resuelta && (gane || parda)}
             />
 
-            <span className="flex h-4 items-center text-[11px] font-medium">
+            <span className="flex h-5 items-center">
               {!resuelta ? (
-                <span className="text-emerald-100/15">·</span>
+                <span className="text-[11px] text-emerald-100/15">·</span>
               ) : parda ? (
-                <span className="text-emerald-100/50">parda</span>
+                <span className="animar-estampa rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-100/70">
+                  parda
+                </span>
               ) : gane ? (
-                <span className="text-emerald-400">▲</span>
+                <span className="animar-estampa rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
+                  ▲ tuya
+                </span>
               ) : (
-                <span className="text-canto-400">▼</span>
+                <span className="animar-estampa rounded-full bg-canto-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-canto-400">
+                  ▼ suya
+                </span>
               )}
             </span>
 
