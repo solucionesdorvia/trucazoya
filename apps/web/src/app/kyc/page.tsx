@@ -17,9 +17,11 @@ export default async function Kyc() {
     <>
       <Encabezado user={user} />
       <main id="contenido" className="mx-auto max-w-xl px-5 py-8">
-        <h1 className="text-2xl font-bold tracking-tight">Verificación de identidad</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Verificá tu identidad</h1>
         <p className="mt-1.5 text-sm text-tinta-400">
-          Necesaria para poder retirar. Es un requisito legal antilavado.
+          La necesitamos una sola vez para que puedas <strong>retirar</strong>. Es por ley (para
+          evitar fraudes): te pedimos tu nombre y una foto del documento. Tus datos quedan
+          protegidos.
         </p>
 
         <div className="mt-6">

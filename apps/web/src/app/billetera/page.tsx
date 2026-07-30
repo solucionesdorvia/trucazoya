@@ -72,7 +72,8 @@ export default async function Billetera() {
           <Panel className="mt-4 border-oro-500/40 bg-oro-500/5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-tinta-200">
-                🪪 Verificá tu identidad (KYC) para poder <strong>retirar</strong>.
+                🪪 Para poder <strong>retirar</strong> tenés que verificar tu identidad (te pedimos
+                una foto del documento). Es por ley, una sola vez.
                 {kyc === 'PENDING' && ' Tu verificación está en revisión.'}
               </p>
               {kyc !== 'PENDING' && (
@@ -131,10 +132,27 @@ export default async function Billetera() {
 
         {/* ─── Cajeros ───────────────────────────────────────────────── */}
         <section className="mt-8">
-          <h2 className="text-xl font-bold tracking-tight">Cargar o retirar</h2>
+          <h2 className="text-xl font-bold tracking-tight">Cargar fichas</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-tinta-400">
-            Elegí un cajero, escribile por WhatsApp y coordinás con él. Las cargas te las acredita
-            en el momento; para retirar, primero pedí el retiro acá abajo.
+            Así se carga (todo por WhatsApp, tarda unos minutos):
+          </p>
+          <ol className="mt-2 space-y-1 text-sm text-tinta-300">
+            <li>
+              <b className="text-oro-400">1.</b> Tocá <b>WhatsApp</b> en un cajero (el mensaje ya va
+              escrito con tu usuario).
+            </li>
+            <li>
+              <b className="text-oro-400">2.</b> Le transferís por fuera y le decís cuánto querés
+              cargar.
+            </li>
+            <li>
+              <b className="text-oro-400">3.</b> El cajero te acredita las fichas al toque y las ves
+              acá.
+            </li>
+          </ol>
+          <p className="mt-2 text-xs text-tinta-500">
+            Trucazo no maneja tu plata: coordinás directo con el cajero. Las fichas son virtuales,
+            para jugar dentro de la app.
           </p>
 
           {cajeros.length === 0 ? (
