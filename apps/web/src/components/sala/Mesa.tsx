@@ -6,8 +6,9 @@
  * botón de más, el servidor igual rechazaría la acción.
  *
  * Diseño: mesa de peña de noche — paño con textura y luz cenital, riel de
- * madera, naipes reales, fósforos para el tanteador, cantos con puntos y
- * estampa, feedback sonoro y háptico. Revisado por un panel de jugadores.
+ * madera, naipes reales, fósforos para el tanteador y estampa de canto. La
+ * carta se tira tocándola o arrastrándola a la mesa. Sin scroll: entra en
+ * pantalla. Feedback sonoro y háptico.
  */
 
 import {
@@ -17,6 +18,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
 import type { Action, Card } from '@trucazo/engine';
@@ -285,20 +287,22 @@ export function Mesa({
     };
   }, [volando]);
 
-  // Dispositivo: en pantallas grandes la mesa se agranda y el chat va a un riel;
-  // en touch, jugar una carta es a dos toques (elegir → confirmar).
+  // En pantallas grandes la mesa se agranda y el chat va a un riel lateral.
   const grande = useMediaQuery('(min-width: 1024px)');
-  // `any-pointer: coarse` = el dispositivo TIENE touch (aunque también haya
-  // mouse): mejor pecar de seguro y pedir dos toques para algo irreversible.
-  const esTouch = useMediaQuery('(any-pointer: coarse)');
-  const [elegida, setElegida] = useState<string | null>(null);
   const sizeMano: 'lg' | 'xl' = grande ? 'xl' : 'lg';
-
-  // Al cambiar de turno o repartirse una mano nueva, se descarta la carta que
-  // estaba "elegida" (si no, una selección vieja podría jugarse de un toque).
-  useEffect(() => {
-    setElegida(null);
-  }, [vista.turnSeat, dealKey]);
+  // Chat como panel flotante en mobile (así la mesa no necesita scroll).
+  const [chatAbierto, setChatAbierto] = useState(false);
+  // Arrastre de carta: se levanta con el dedo/mouse y se tira al soltarla
+  // arriba (hacia la mesa). Un toque simple también la tira.
+  const [arrastre, setArrastre] = useState<{ clave: string; dx: number; dy: number } | null>(null);
+  const arrastreRef = useRef<{
+    clave: string;
+    x0: number;
+    y0: number;
+    mov: number;
+    card: Card;
+    el: HTMLElement;
+  } | null>(null);
 
   const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0;
   const terminada = vista.phase === 'MATCH_FINISHED';
@@ -317,15 +321,9 @@ export function Mesa({
   const miEquipo = vista.team;
   const puntosMios = vista.scores[miEquipo];
   const puntosRival = vista.scores[miEquipo === 0 ? 1 : 0];
-  // Valor de la "falta": lo que le falta al que va ganando para el juego.
-  const falta = Math.max(1, vista.pointsToWin - Math.max(puntosMios, puntosRival));
-
-  const soyMano = vista.manoSeat === vista.seat;
-  const soyPie = vista.players === 2 && !soyMano;
 
   function jugar(c: Card, el: HTMLElement) {
     if (volando) return;
-    setElegida(null);
     sonido.slap();
     vibrar(12);
     // Tomamos el rect de la carta derecha (el <span> interno), no el del botón
@@ -336,30 +334,49 @@ export function Mesa({
     onAccion({ type: 'PLAY_CARD', seat: vista.seat, card: c });
   }
 
-  /**
-   * Tocar una carta. En touch, el primer toque la ELIGE (la levanta) y el
-   * segundo la juega — así no se tira la carta equivocada de un dedazo (jugar
-   * es irreversible). Con mouse, el hover ya previsualiza, así que va directo.
-   */
-  function tocarCarta(c: Card, el: HTMLElement) {
-    const clave = claveCarta(c);
-    if (esTouch && elegida !== clave) {
-      setElegida(clave);
-      vibrar(8);
-      return;
+  // ─── Arrastrar / tocar la carta para tirarla ──────────────────────────────
+  function cartaDown(e: ReactPointerEvent<HTMLButtonElement>, c: Card, jugable: boolean) {
+    if (!jugable || volando) return;
+    const el = e.currentTarget;
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      /* no-op */
     }
-    jugar(c, el);
+    arrastreRef.current = {
+      clave: claveCarta(c),
+      x0: e.clientX,
+      y0: e.clientY,
+      mov: 0,
+      card: c,
+      el,
+    };
+    setArrastre({ clave: claveCarta(c), dx: 0, dy: 0 });
+  }
+  function cartaMove(e: ReactPointerEvent<HTMLButtonElement>) {
+    const a = arrastreRef.current;
+    if (!a) return;
+    const dx = e.clientX - a.x0;
+    const dy = e.clientY - a.y0;
+    a.mov = Math.max(a.mov, Math.hypot(dx, dy));
+    setArrastre({ clave: a.clave, dx, dy });
+  }
+  function cartaUp(e: ReactPointerEvent<HTMLButtonElement>) {
+    const a = arrastreRef.current;
+    if (!a) return;
+    arrastreRef.current = null;
+    const dy = e.clientY - a.y0;
+    // Toque simple (casi sin mover) o arrastre hacia la mesa (arriba) = tirar.
+    const tirar = a.mov < 8 || dy <= -46;
+    if (tirar) jugar(a.card, a.el); // lee el rect actual (donde quedó la carta)
+    setArrastre(null);
   }
 
-  /** Despacha una acción; si es un canto grande, pide confirmación. */
-  function cantar(a: Action, etiqueta: string, valor: number, grande: boolean) {
+  /** Despacha un canto; si es de los grandes, pide confirmación (sin puntos). */
+  function cantar(a: Action, etiqueta: string, grande: boolean) {
     vibrar(10);
     if (grande) {
-      setConfirmando({
-        action: a,
-        titulo: `¿${etiqueta}?`,
-        detalle: `Ponés en juego ${valor} punto${valor === 1 ? '' : 's'}. No se puede deshacer.`,
-      });
+      setConfirmando({ action: a, titulo: `¿${etiqueta}?`, detalle: 'No se puede deshacer.' });
     } else {
       onAccion(a);
     }
@@ -367,7 +384,7 @@ export function Mesa({
 
   return (
     <div
-      className={`relative flex min-h-dvh flex-col overflow-x-hidden ${sacudir ? 'animar-sacudida' : ''}`}
+      className={`relative flex h-dvh flex-col overflow-hidden ${sacudir ? 'animar-sacudida' : ''}`}
     >
       {/* ─── Fondo: paño + luz cenital + riel ─────────────────────────── */}
       {/* Base: paño con "panza" de luz al centro y esquinas hundidas. */}
@@ -416,9 +433,9 @@ export function Mesa({
       />
 
       {/* ─── Contenido ────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex min-h-dvh flex-col lg:flex-row">
+      <div className="relative z-10 flex h-dvh min-h-0 flex-col lg:flex-row">
         {/* Columna central: la mesa (se centra y limita el ancho en desktop) */}
-        <div className="flex min-h-dvh flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-3xl">
+        <div className="flex h-dvh min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-3xl">
           {/* Marcador (en desktop el score vive en el riel; acá se oculta) */}
           <header className="flex items-center justify-between gap-3 px-4 pt-3">
             <div className="flex items-center gap-2 lg:hidden">
@@ -460,6 +477,14 @@ export function Mesa({
                 className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50"
               >
                 {sonido.mudo ? '🔇' : '🔊'}
+              </button>
+              <button
+                onClick={() => setChatAbierto(true)}
+                aria-label="Abrir chat"
+                title="Chat"
+                className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-sm text-emerald-100/80 hover:bg-black/50 lg:hidden"
+              >
+                💬
               </button>
             </div>
           </header>
@@ -529,7 +554,7 @@ export function Mesa({
           {/* Paño: cartas jugadas + estampa */}
           <section
             ref={centroRef}
-            className="relative flex flex-1 flex-col items-center justify-center gap-3 px-4 py-5"
+            className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden px-4 py-3"
             aria-label="Cartas jugadas"
           >
             {estampa && (
@@ -582,79 +607,37 @@ export function Mesa({
             )}
           </section>
 
-          {/* Mi mano (en abanico) + rol */}
+          {/* Mi mano (en abanico) — tocá o arrastrá la carta para tirarla */}
           {!terminada && (
-            <section className="px-4 pb-1" aria-label="Tus cartas">
-              <div
-                className="mb-1 flex items-center justify-center gap-2"
-                role="status"
-                aria-live="polite"
-              >
-                {(soyMano || soyPie) && (
-                  <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-[11px] font-medium text-emerald-100/80">
-                    Sos {soyMano ? 'mano' : 'pie'}
-                  </span>
-                )}
-                {!elegida && miTurno && (
-                  <span
-                    className="animar-latido rounded-full px-3.5 py-1 text-sm font-bold text-noche-950 shadow-[inset_0_1px_0_rgba(255,255,255,.55),inset_0_-2px_3px_rgba(122,90,20,.5),0_0_16px_rgba(232,176,75,.5)]"
-                    style={{ background: 'linear-gradient(#f7dc94, #e8b04b)' }}
-                  >
-                    ¡Tu turno! Tocá una carta
-                  </span>
-                )}
-                {!elegida && !miTurno && vista.myHand.length > 0 && (
-                  <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-[11px] text-emerald-100/60">
-                    Esperá al rival…
-                  </span>
-                )}
-              </div>
-
-              {/* Al elegir una carta (touch): confirmar con botones grandes */}
-              {elegida && (
-                <div className="mb-2 flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => {
-                      const el = document.querySelector<HTMLElement>(`[data-carta="${elegida}"]`);
-                      const c = vista.myHand.find((x) => claveCarta(x) === elegida);
-                      if (c) jugar(c, el ?? document.body);
-                      else setElegida(null);
-                    }}
-                    className="h-11 rounded-2xl bg-emerald-500 px-6 text-base font-bold text-noche-950 shadow-[0_6px_16px_-6px_rgba(28,122,78,.8)] active:translate-y-0.5"
-                  >
-                    🃏 Tirar esta
-                  </button>
-                  <button
-                    onClick={() => setElegida(null)}
-                    className="h-11 rounded-2xl bg-noche-700 px-4 text-sm font-medium text-tinta-200 active:translate-y-0.5"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              )}
+            <section className="shrink-0 px-4 pb-1" aria-label="Tus cartas">
               <div
                 className="flex items-end justify-center"
-                style={{ minHeight: grande ? 240 : 176 }}
+                style={{ minHeight: grande ? 210 : 156 }}
               >
                 {vista.myHand.map((c, i) => {
                   const n = vista.myHand.length;
                   const jugable = miTurno && cartasJugables.has(claveCarta(c));
                   const rot = (i - (n - 1) / 2) * 9;
-                  const dy = Math.abs(i - (n - 1) / 2) * 8;
+                  const dyFan = Math.abs(i - (n - 1) / 2) * 8;
                   const clave = claveCarta(c);
                   const volandoEsta = volando && claveCarta(volando.card) === clave;
-                  const elegidaEsta = elegida === clave;
+                  const arrastrando = arrastre?.clave === clave;
                   const centro = (n - 1) / 2;
                   return (
                     <div
                       key={`${dealKey}-${clave}`}
-                      className="animar-reparto-mazo -mx-3 md:-mx-2"
+                      className={
+                        arrastrando ? '-mx-3 md:-mx-2' : 'animar-reparto-mazo -mx-3 md:-mx-2'
+                      }
                       style={
                         {
                           animationDelay: `${i * 95}ms`,
                           opacity: volandoEsta ? 0 : 1,
-                          // Origen del reparto: todas convergen a un punto común
-                          // arriba (el mazo) y se abren a su lugar del abanico.
+                          zIndex: arrastrando ? 50 : undefined,
+                          transform: arrastrando
+                            ? `translate(${arrastre!.dx}px, ${arrastre!.dy}px)`
+                            : undefined,
+                          touchAction: 'none',
                           '--rx': `${(i - centro) * -46}px`,
                           '--ry': '-168px',
                           '--rr': `${(i - centro) * 7}deg`,
@@ -664,26 +647,30 @@ export function Mesa({
                       <button
                         data-carta={clave}
                         disabled={!jugable}
-                        onClick={(e) => tocarCarta(c, e.currentTarget)}
-                        className="group rounded-lg transition-all duration-150 enabled:hover:z-10 disabled:cursor-not-allowed"
+                        onPointerDown={(e) => cartaDown(e, c, jugable)}
+                        onPointerMove={cartaMove}
+                        onPointerUp={cartaUp}
+                        className="group touch-none rounded-lg transition-transform duration-150 enabled:cursor-grab enabled:hover:z-10 enabled:active:cursor-grabbing disabled:cursor-not-allowed"
                         style={{
-                          transform: `rotate(${rot}deg) translateY(${dy}px)`,
+                          transform: arrastrando
+                            ? 'rotate(0deg) scale(1.08)'
+                            : `rotate(${rot}deg) translateY(${dyFan}px)`,
                           transformOrigin: 'bottom center',
                         }}
-                        aria-label={
-                          elegidaEsta ? `Confirmar ${nombreCarta(c)}` : `Jugar ${nombreCarta(c)}`
-                        }
+                        aria-label={`Tirar ${nombreCarta(c)}`}
                       >
                         <span
-                          className={`block transition-transform duration-150 group-enabled:group-hover:-translate-y-6 group-enabled:group-hover:scale-105 ${
-                            elegidaEsta ? '-translate-y-7 scale-105' : ''
+                          className={`block transition-transform duration-150 ${
+                            arrastrando
+                              ? ''
+                              : 'group-enabled:group-hover:-translate-y-6 group-enabled:group-hover:scale-105'
                           }`}
-                          style={{ transform: `rotate(${-rot}deg)` }}
+                          style={{ transform: arrastrando ? 'none' : `rotate(${-rot}deg)` }}
                         >
                           <CartaEspanola
                             card={c}
                             size={sizeMano}
-                            destacada={jugable || elegidaEsta}
+                            destacada={jugable}
                             atenuada={!jugable}
                           />
                         </span>
@@ -712,15 +699,7 @@ export function Mesa({
               <>
                 {respuestas.length > 0 &&
                   (() => {
-                    // Nombre del canto pendiente. Los puntos exactos solo los
-                    // mostramos para el truco (son fiables: nivel+1 / nivel); en
-                    // envido/flor pueden venir apilados, así que texto cualitativo
-                    // en vez de arriesgar un número equivocado.
                     let nombre = 'un canto';
-                    const esTruco =
-                      vista.envido.pending.length === 0 &&
-                      !vista.flor.active &&
-                      vista.truco.level > 0;
                     if (vista.envido.pending.length > 0) {
                       const v = vista.envido.pending[vista.envido.pending.length - 1] ?? 'ENVIDO';
                       nombre = ETIQUETA_CANTO[v] ?? 'Envido';
@@ -731,11 +710,7 @@ export function Mesa({
                     }
                     return (
                       <p className="mb-2 text-center text-sm text-emerald-50">
-                        El rival cantó <b className="text-oro-300">{nombre}</b>.{' '}
-                        <span className="text-emerald-300">Quiero</span> ={' '}
-                        {esTruco ? `jugás por ${vista.truco.level + 1}` : 'aceptás y jugás por más'}{' '}
-                        · <span className="text-canto-300">No quiero</span> ={' '}
-                        {esTruco ? `le das ${vista.truco.level}` : 'le das los puntos'} y sigue
+                        El rival cantó <b className="text-oro-300">{nombre}</b>
                       </p>
                     );
                   })()}
@@ -756,14 +731,12 @@ export function Mesa({
 
                   {cantosFlor.map((a) => {
                     const v = a.type === 'CALL_FLOR' ? a.variant : 'FLOR';
-                    const pts = v === 'FLOR' ? 3 : v === 'CONTRAFLOR' ? 6 : falta;
                     return (
                       <BotonMesa
                         key={`flor-${v}`}
                         tono="oro"
-                        valor={pts}
                         onClick={() =>
-                          cantar(a, ETIQUETA_CANTO[v] ?? 'Flor', pts, v === 'CONTRAFLOR_AL_RESTO')
+                          cantar(a, ETIQUETA_CANTO[v] ?? 'Flor', v === 'CONTRAFLOR_AL_RESTO')
                         }
                       >
                         {ETIQUETA_CANTO[v] ?? 'Flor'}
@@ -773,14 +746,12 @@ export function Mesa({
 
                   {cantosEnvido.map((a) => {
                     const v = a.type === 'CALL_ENVIDO' ? a.variant : 'ENVIDO';
-                    const pts = v === 'ENVIDO' ? 2 : v === 'REAL_ENVIDO' ? 3 : falta;
                     return (
                       <BotonMesa
                         key={`env-${v}`}
                         tono="verde"
-                        valor={pts}
                         onClick={() =>
-                          cantar(a, ETIQUETA_CANTO[v] ?? 'Envido', pts, v === 'FALTA_ENVIDO')
+                          cantar(a, ETIQUETA_CANTO[v] ?? 'Envido', v === 'FALTA_ENVIDO')
                         }
                       >
                         {ETIQUETA_CANTO[v] ?? 'Envido'}
@@ -790,13 +761,11 @@ export function Mesa({
 
                   {cantoTruco &&
                     (() => {
-                      const pts = vista.truco.level + 2;
                       const etq = NIVEL_TRUCO[vista.truco.level] ?? 'Truco';
                       return (
                         <BotonMesa
                           tono="truco"
-                          valor={pts}
-                          onClick={() => cantar(cantoTruco, etq, pts, vista.truco.level >= 2)}
+                          onClick={() => cantar(cantoTruco, etq, vista.truco.level >= 2)}
                         >
                           ¡{etq}!
                         </BotonMesa>
@@ -822,11 +791,6 @@ export function Mesa({
               </>
             )}
           </section>
-
-          {/* Chat: inline sólo en mobile/tablet (en desktop va al riel) */}
-          <div className="relative z-10 px-4 pb-4 pt-2 lg:hidden">
-            <Chat mensajes={mensajes} onEnviar={onChat} compacto />
-          </div>
         </div>
 
         {/* ─── Riel lateral (desktop): marcador grande + chat ───────────── */}
@@ -842,8 +806,29 @@ export function Mesa({
         </aside>
       </div>
 
-      {/* Guía de primera vez */}
-      {!terminada && <PrimeraVez puntos={vista.pointsToWin} />}
+      {/* Chat como panel flotante en mobile (no ocupa alto → mesa sin scroll) */}
+      {chatAbierto && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 lg:hidden">
+          <button
+            className="flex-1"
+            aria-label="Cerrar chat"
+            onClick={() => setChatAbierto(false)}
+          />
+          <div className="relative z-10 rounded-t-2xl border-t border-white/10 bg-[#06140f] p-4 pb-6 shadow-[0_-8px_30px_-8px_#000]">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-semibold text-emerald-100/80">Chat</span>
+              <button
+                onClick={() => setChatAbierto(false)}
+                className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-sm text-emerald-100/80"
+                aria-label="Cerrar chat"
+              >
+                ✕
+              </button>
+            </div>
+            <Chat mensajes={mensajes} onEnviar={onChat} compacto />
+          </div>
+        </div>
+      )}
 
       {/* Carta en vuelo (de la mano al centro) + su sombra que cae */}
       {volando && (
@@ -940,60 +925,6 @@ function Confeti() {
 
 function claveCarta(c: Card): string {
   return `${c.suit}-${c.rank}`;
-}
-
-/** Cartelito de primera vez: cómo se juega en ESTA app (se muestra una vez). */
-function PrimeraVez({ puntos }: { puntos: number }) {
-  const [mostrar, setMostrar] = useState(false);
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem('trucazo_tip_mesa')) setMostrar(true);
-    } catch {
-      /* sin localStorage */
-    }
-  }, []);
-  if (!mostrar) return null;
-  const cerrar = () => {
-    try {
-      localStorage.setItem('trucazo_tip_mesa', '1');
-    } catch {
-      /* no-op */
-    }
-    setMostrar(false);
-  };
-  return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="tip-titulo"
-    >
-      <div className="panel w-full max-w-sm p-6 text-center">
-        <div className="text-4xl" aria-hidden="true">
-          🃏
-        </div>
-        <h2 id="tip-titulo" className="mt-2 text-xl font-bold">
-          Cómo jugar acá
-        </h2>
-        <ul className="mx-auto mt-3 max-w-xs space-y-2 text-left text-sm text-tinta-200">
-          <li>👉 Tocá una de tus cartas para tirarla al centro.</li>
-          <li>🗣️ Cantá con los botones de abajo (dicen cuánto valen).</li>
-          <li>🏆 Ganás la mano con 2 de 3 rondas. La partida va a {puntos} puntos.</li>
-        </ul>
-        <Boton tamaño="lg" className="mt-5 w-full" onClick={cerrar}>
-          ¡Dale, a jugar!
-        </Boton>
-        <a
-          href="/reglas"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 block text-xs text-oro-400 hover:text-oro-500"
-        >
-          Ver las reglas completas del truco
-        </a>
-      </div>
-    </div>
-  );
 }
 
 /** Tres puntitos animados: "pensando…" del rival en su turno. */
@@ -1187,13 +1118,11 @@ const ESTILO_BOTON: Record<TonoBoton, string> = {
 function BotonMesa({
   children,
   tono,
-  valor,
   onClick,
   indice,
 }: {
   children: ReactNode;
   tono: TonoBoton;
-  valor?: number;
   onClick: () => void;
   /** Si se pasa, el botón entra escalonado (materialización con foco). */
   indice?: number;
@@ -1202,7 +1131,7 @@ function BotonMesa({
     <button
       onClick={onClick}
       style={indice !== undefined ? { animationDelay: `${indice * 55}ms` } : undefined}
-      className={`relative flex min-h-[52px] min-w-[104px] flex-col items-center justify-center rounded-2xl px-4 py-1.5 leading-tight shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-2px_3px_rgba(0,0,0,.22),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${
+      className={`relative flex min-h-[48px] min-w-[100px] items-center justify-center rounded-2xl px-5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-2px_3px_rgba(0,0,0,.22),0_6px_14px_-8px_#000] transition-transform active:translate-y-0.5 ${
         indice !== undefined ? 'animar-boton ' : ''
       }${ESTILO_BOTON[tono]}`}
     >
@@ -1212,9 +1141,6 @@ function BotonMesa({
       >
         {children}
       </span>
-      {valor !== undefined && (
-        <span className="text-[11px] font-semibold opacity-90">vale {valor}</span>
-      )}
     </button>
   );
 }
