@@ -732,6 +732,9 @@ export function Mesa({
         </aside>
       </div>
 
+      {/* Guía de primera vez */}
+      {!terminada && <PrimeraVez />}
+
       {/* Carta en vuelo (de la mano al centro) */}
       {volando && (
         <div
@@ -811,6 +814,60 @@ function Confeti() {
 
 function claveCarta(c: Card): string {
   return `${c.suit}-${c.rank}`;
+}
+
+/** Cartelito de primera vez: cómo se juega en ESTA app (se muestra una vez). */
+function PrimeraVez() {
+  const [mostrar, setMostrar] = useState(false);
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('trucazo_tip_mesa')) setMostrar(true);
+    } catch {
+      /* sin localStorage */
+    }
+  }, []);
+  if (!mostrar) return null;
+  const cerrar = () => {
+    try {
+      localStorage.setItem('trucazo_tip_mesa', '1');
+    } catch {
+      /* no-op */
+    }
+    setMostrar(false);
+  };
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tip-titulo"
+    >
+      <div className="panel w-full max-w-sm p-6 text-center">
+        <div className="text-4xl" aria-hidden="true">
+          🃏
+        </div>
+        <h2 id="tip-titulo" className="mt-2 text-xl font-bold">
+          Cómo jugar acá
+        </h2>
+        <ul className="mx-auto mt-3 max-w-xs space-y-2 text-left text-sm text-tinta-200">
+          <li>👉 Tocá una de tus cartas para tirarla al centro.</li>
+          <li>🗣️ Cantá con los botones de abajo (dicen cuánto valen).</li>
+          <li>🏆 Ganás la mano con 2 de 3 rondas. La partida va a 30 puntos.</li>
+        </ul>
+        <Boton tamaño="lg" className="mt-5 w-full" onClick={cerrar}>
+          ¡Dale, a jugar!
+        </Boton>
+        <a
+          href="/reglas"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 block text-xs text-oro-400 hover:text-oro-500"
+        >
+          Ver las reglas completas del truco
+        </a>
+      </div>
+    </div>
+  );
 }
 
 /** Tres puntitos animados: "pensando…" del rival en su turno. */
