@@ -424,7 +424,7 @@ export function Mesa({
       {/* Cono de luz de la lámpara colgante, cayendo sobre la mesa. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[30%] h-[90%] w-[170%] -translate-x-1/2 -translate-y-1/2"
+        className="animar-lampara pointer-events-none absolute left-1/2 top-[30%] h-[90%] w-[170%] -translate-x-1/2 -translate-y-1/2"
         style={{
           background: 'radial-gradient(closest-side, rgba(242,205,122,.13), transparent 70%)',
         }}
@@ -487,8 +487,11 @@ export function Mesa({
             </div>
           </header>
 
-          {/* Rivales */}
-          <section className="flex justify-center gap-8 px-4 pt-5" aria-label="Rivales">
+          {/* Rivales: sentados al borde de la mesa (pisan el óvalo) */}
+          <section
+            className="relative z-10 -mb-5 flex justify-center gap-8 px-4 pt-4 sm:-mb-7"
+            aria-label="Rivales"
+          >
             {rivales.map((r) => {
               const n = vista.handCounts[r.seat as number] ?? 0;
               const suTurno = vista.turnSeat === r.seat;
@@ -522,7 +525,7 @@ export function Mesa({
                       ))}
                     </div>
                   </div>
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-50/90">
+                  <span className="flex items-center gap-1.5 rounded-full border border-oro-500/25 bg-black/55 px-2.5 py-0.5 text-xs font-medium text-emerald-50/90 backdrop-blur-sm">
                     {r.username}
                     {vista.manoSeat === r.seat && (
                       <span className="rounded bg-oro-500/20 px-1.5 text-[10px] font-semibold text-oro-300">
@@ -591,7 +594,7 @@ export function Mesa({
               />
               {/* Brillo especular de la lámpara sobre el paño */}
               <div
-                className="absolute inset-[9px] sm:inset-[12px]"
+                className="animar-lampara absolute inset-[9px] sm:inset-[12px]"
                 style={{
                   borderRadius: '50%',
                   background:
@@ -780,8 +783,14 @@ export function Mesa({
             </section>
           )}
 
-          {/* Dock de acciones */}
-          <section className="z-10 shrink-0 border-t border-black/40 bg-[#06140f]/92 px-3 py-2 backdrop-blur">
+          {/* Dock de acciones: la bandeja de madera de tu lado de la mesa */}
+          <section
+            className="z-10 shrink-0 px-3 py-2"
+            style={{
+              background: 'linear-gradient(180deg,#2b1a0e 0%,#1c1108 34%,#140c06 100%)',
+              boxShadow: 'inset 0 1px 0 rgba(242,205,122,.15), 0 -8px 20px -10px rgba(0,0,0,.85)',
+            }}
+          >
             {terminada ? (
               <a href="/inicio" className="block">
                 <Boton tamaño="lg" className="w-full">
@@ -789,7 +798,7 @@ export function Mesa({
                 </Boton>
               </a>
             ) : vista.legales.length === 0 ? (
-              <p className="py-2 text-center text-sm text-emerald-100/60">Esperando al rival…</p>
+              <p className="py-2 text-center text-sm text-amber-100/60">Esperando al rival…</p>
             ) : (
               <>
                 {respuestas.length > 0 &&
@@ -804,7 +813,7 @@ export function Mesa({
                       nombre = NIVEL_TRUCO[vista.truco.level - 1] ?? 'Truco';
                     }
                     return (
-                      <p className="mb-2 text-center text-sm text-emerald-50">
+                      <p className="mb-2 text-center text-sm text-amber-50">
                         El rival cantó <b className="text-oro-300">{nombre}</b>
                       </p>
                     );
@@ -1334,12 +1343,12 @@ function Tanteador({
     <div
       className="relative min-w-[62px] rounded-xl border px-2.5 py-1 text-center"
       style={{
-        background: 'rgba(6,20,15,.65)',
+        // Placa de madera oscura, como pizarra de almacén.
+        background: 'linear-gradient(180deg, rgba(30,18,9,.92), rgba(13,8,4,.94))',
         borderColor: destacado ? 'rgba(232,176,75,.55)' : 'rgba(232,176,75,.22)',
         boxShadow: pulso
           ? '0 0 0 1px rgba(232,176,75,.5), 0 0 18px -4px rgba(232,176,75,.55)'
-          : 'none',
-        backdropFilter: 'blur(4px)',
+          : 'inset 0 1px 0 rgba(242,205,122,.12), 0 4px 10px -6px #000',
         transition: 'box-shadow .3s',
       }}
     >

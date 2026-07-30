@@ -23,12 +23,15 @@
   --color-pano-600: #14654f;
 
   /* Oro (acento primario: puntaje, premios, CTA) */
+  --color-oro-200: #fae9bd;
+  --color-oro-300: #f7dc94;
   --color-oro-400: #f2cd7a;
   --color-oro-500: #e8b04b;
   --color-oro-600: #cf922e;
   --color-oro-700: #a06f1f;
 
   /* Rojo de canto (truco, acciones fuertes, peligro) */
+  --color-canto-300: #ee7d85;
   --color-canto-400: #e2545e;
   --color-canto-500: #c8323c;
   --color-canto-600: #a3242d;
@@ -274,6 +277,20 @@ body {
 }
 @utility animar-mas {
   animation: flota-mas 0.75s ease-out forwards;
+}
+
+/* Respiración de la lámpara: la luz del paño oscila apenas, para que la
+   escena se sienta viva sin distraer. */
+@keyframes lampara {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@utility animar-lampara {
+  animation: lampara 4.8s ease-in-out infinite alternate;
 }
 
 /* Resultado de baza (tuya/suya/parda): entra con un pop y SE QUEDA (a
