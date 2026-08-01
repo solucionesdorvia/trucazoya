@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="oro" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#f7dc94"/><stop offset="1" stop-color="#cf922e"/>
+</linearGradient></defs>
+<rect width="512" height="512" rx="115" fill="#0b0d12"/>
+<rect x="26" y="26" width="460" height="460" rx="96" fill="none" stroke="#e8b04b" stroke-width="9" opacity=".55"/>
+<g transform="translate(256,278)"><path d="M53.55 119.17L-53.55 119.17L-53.55 115.77L-39.61 112.37Q-25.67 109.31-25.67 95.37L-25.67 95.37L-25.67-98.43L-54.57-98.43Q-67.15-98.43-72.59-91.80Q-78.03-85.17-84.15-73.61L-84.15-73.61L-96.39-49.81L-99.79-49.81L-98.09-105.23L98.09-105.23L99.45-49.81L96.05-49.81L83.81-73.61Q78.03-85.17 72.59-91.80Q67.15-98.43 54.57-98.43L54.57-98.43L25.67-98.43L25.67 95.37Q25.67 109.31 39.61 112.37L39.61 112.37L53.55 115.77L53.55 119.17Z" fill="url(#oro)"/></g>
+</svg>

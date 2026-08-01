@@ -94,50 +94,16 @@ export function Pildora({
   );
 }
 
-/** Marca de Trucazo: monograma con guiño al sol de las cartas de oro. */
+/** Marca "La Noche": T serif en placa noche + wordmark dorado vectorizado. */
 export function Logo({ size = 32 }: { size?: number }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="2" y="2" width="44" height="44" rx="12" fill="#0e4d3c" />
-        <rect
-          x="2"
-          y="2"
-          width="44"
-          height="44"
-          rx="12"
-          fill="none"
-          stroke="#e8b04b"
-          strokeWidth="1.5"
-          opacity=".7"
-        />
-        {Array.from({ length: 12 }, (_, i) => (
-          <line
-            key={i}
-            x1="24"
-            y1="24"
-            x2={24 + 15 * Math.cos((i * Math.PI) / 6)}
-            y2={24 + 15 * Math.sin((i * Math.PI) / 6)}
-            stroke="#e8b04b"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            opacity=".5"
-          />
-        ))}
-        <circle cx="24" cy="24" r="10.5" fill="#0b0d12" />
-        <text
-          x="24"
-          y="30"
-          textAnchor="middle"
-          fontSize="15"
-          fontWeight="700"
-          fill="#e8b04b"
-          fontFamily="Georgia, serif"
-        >
-          T
-        </text>
-      </svg>
-      <span className="text-lg font-bold tracking-tight text-tinta-50">Trucazo</span>
+      <img src="/icono-lanoche.svg" alt="" width={size} height={size} aria-hidden="true" />
+      <img
+        src="/logo-lanoche.svg"
+        alt="Trucazo"
+        style={{ height: Math.round(size * 0.82), width: 'auto' }}
+      />
     </span>
   );
 }
