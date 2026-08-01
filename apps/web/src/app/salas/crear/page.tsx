@@ -11,6 +11,7 @@ export default function CrearSala() {
   const [estado, accion, pendiente] = useActionState(crearSala, inicial);
   const [modo, setModo] = useState('CASUAL_1V1');
   const [puntos, setPuntos] = useState(30);
+  const [apuesta, setApuesta] = useState(0);
 
   return (
     <div className="mx-auto max-w-lg px-5 py-8">
@@ -103,6 +104,40 @@ export default function CrearSala() {
             label="Sala privada"
             desc="No aparece en el navegador público: se entra con código"
           />
+        </Panel>
+
+        {/* Apuesta: el server ya validaba betAmount contra la wallet, pero no
+            existía ningún control que lo mandara (siempre iba en 0). */}
+        <Panel>
+          <p className="font-medium text-tinta-50">Se juega por</p>
+          <p className="mt-0.5 text-sm text-tinta-400">
+            Las fichas se descuentan al repartir la primera mano. El que gana se lleva las dos
+            partes.
+          </p>
+          <input type="hidden" name="betAmount" value={apuesta} />
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[0, 100, 500, 1000, 5000].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setApuesta(v)}
+                aria-pressed={apuesta === v}
+                className={`min-h-[44px] rounded-xl border px-4 text-sm font-semibold transition-colors ${
+                  apuesta === v
+                    ? 'border-oro-500 bg-oro-500/20 text-oro-300'
+                    : 'border-noche-600 text-tinta-300 hover:border-noche-600 hover:text-tinta-50'
+                }`}
+              >
+                {v === 0 ? 'Sin fichas' : `${v.toLocaleString('es-AR')} fichas`}
+              </button>
+            ))}
+          </div>
+          {apuesta > 0 && (
+            <p className="mt-3 rounded-lg bg-oro-500/10 px-3 py-2 text-sm text-oro-200">
+              Ponés <strong>{apuesta.toLocaleString('es-AR')}</strong> fichas. Si ganás te llevás{' '}
+              <strong>{(apuesta * 2).toLocaleString('es-AR')}</strong>.
+            </p>
+          )}
         </Panel>
 
         {estado.error && (

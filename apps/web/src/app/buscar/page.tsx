@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { prisma } from '@trucazo/db';
+import { BuscarPartida } from '@/components/BuscarPartida';
 import { Encabezado } from '@/components/Encabezado';
 import { getSessionUser } from '@/lib/session';
 
@@ -33,11 +34,9 @@ export default async function BuscarPage() {
       <main id="contenido" className="mx-auto max-w-3xl px-5 py-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Partida pública</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Jugar</h1>
             <p className="mt-1 text-tinta-400">
-              {salas.length > 0
-                ? `${salas.length} sala${salas.length === 1 ? '' : 's'} abiertas`
-                : 'No hay salas abiertas ahora'}
+              Te buscamos rival automáticamente. También podés entrar a una sala abierta.
             </p>
           </div>
           <Link
@@ -47,6 +46,18 @@ export default async function BuscarPage() {
             + Crear sala
           </Link>
         </div>
+
+        {/* Matchmaking: el camino principal para jugar (1 toque). */}
+        <div className="mt-6">
+          <BuscarPartida />
+        </div>
+
+        <h2 className="mt-10 text-lg font-semibold text-tinta-200">
+          Salas abiertas{salas.length > 0 ? ` (${salas.length})` : ''}
+        </h2>
+        <p className="mt-0.5 text-sm text-tinta-400">
+          Si preferís elegir la mesa vos mismo, entrá a una de acá.
+        </p>
 
         {salas.length === 0 ? (
           <div className="panel mt-6 py-12 text-center">

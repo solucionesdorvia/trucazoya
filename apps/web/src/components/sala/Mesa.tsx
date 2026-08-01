@@ -171,12 +171,18 @@ export function Mesa({
   onAccion,
   mensajes,
   onChat,
+  ausencia,
+  onRevancha,
 }: {
   sala: SnapshotSala;
   vista: VistaJugador;
   onAccion: (a: Action) => void;
   mensajes: MensajeChat[];
   onChat: (t: string) => void;
+  /** Rival caído: hasta cuándo se lo espera antes de cerrar por abandono. */
+  ausencia?: { userId: string; venceEn: number } | null;
+  /** Pide revancha con el mismo rival (recicla la sala). */
+  onRevancha?: () => void;
 }) {
   const [confirmando, setConfirmando] = useState<Confirmable | null>(null);
   const sonido = useSonido();
@@ -216,6 +222,19 @@ export function Mesa({
       timers.forEach(clearTimeout);
     };
   }, [vista.envidoResult, vista.seat, sala.participantes]);
+
+  // Cuenta atrás de la espera al jugador que se cayó.
+  const [restante, setRestante] = useState(0);
+  useEffect(() => {
+    if (!ausencia) {
+      setRestante(0);
+      return;
+    }
+    const tick = () => setRestante(Math.max(0, Math.round((ausencia.venceEn - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [ausencia]);
 
   // Refs y estado de animaciones.
   const centroRef = useRef<HTMLElement>(null);
@@ -506,7 +525,7 @@ export function Mesa({
             <div className="flex min-w-0 items-center gap-2 lg:hidden">
               <Tanteador etiqueta="Nosotros" valor={puntosMios} destacado />
               <Tanteador etiqueta="Ellos" valor={puntosRival} />
-              <span className="shrink-0 self-center whitespace-nowrap text-xs text-emerald-200/70">
+              <span className="shrink-0 self-center whitespace-nowrap text-sm text-emerald-200/85">
                 a {vista.pointsToWin}
               </span>
             </div>
@@ -583,10 +602,10 @@ export function Mesa({
                       ))}
                     </div>
                   </div>
-                  <span className="flex items-center gap-1.5 rounded-full border border-oro-500/25 bg-black/55 px-2.5 py-0.5 text-xs font-medium text-emerald-50/90 backdrop-blur-sm">
+                  <span className="flex items-center gap-1.5 rounded-full border border-oro-500/25 bg-black/55 px-2.5 py-0.5 text-sm font-medium text-emerald-50 backdrop-blur-sm">
                     {r.username}
                     {vista.manoSeat === r.seat && (
-                      <span className="rounded bg-oro-500/20 px-1.5 text-[10px] font-semibold text-oro-300">
+                      <span className="rounded bg-oro-500/20 px-1.5 text-xs font-semibold text-oro-300">
                         mano
                       </span>
                     )}
@@ -597,10 +616,7 @@ export function Mesa({
                     )}
                   </span>
                   {suTurno && r.conectado && (
-                    <span
-                      className="flex items-center gap-1 text-[10px] text-oro-300/90"
-                      role="status"
-                    >
+                    <span className="flex items-center gap-1 text-xs text-oro-300" role="status">
                       pensando
                       <PuntitosPensando />
                     </span>
@@ -693,6 +709,27 @@ export function Mesa({
               </div>
             )}
 
+            {ausencia && restante > 0 && (
+              <div
+                className="absolute inset-x-3 top-10 z-30 rounded-2xl border border-canto-500/50 bg-noche-950/92 p-4 text-center backdrop-blur"
+                role="status"
+                aria-live="polite"
+              >
+                <p className="text-base font-semibold text-canto-300">
+                  {sala.participantes.find((p) => p.userId === ausencia.userId)?.username ??
+                    'El rival'}{' '}
+                  se desconectó
+                </p>
+                <p className="mt-1 text-sm text-tinta-200">
+                  Lo esperamos{' '}
+                  <strong className="font-mono text-oro-300">
+                    {Math.floor(restante / 60)}:{String(restante % 60).padStart(2, '0')}
+                  </strong>
+                  . Si no vuelve, ganás la partida y se te acreditan las fichas.
+                </p>
+              </div>
+            )}
+
             {estampa && (
               <div
                 className="pointer-events-none absolute inset-0 z-20 grid place-items-center"
@@ -777,10 +814,7 @@ export function Mesa({
           {!terminada && (
             <section className="shrink-0 px-4 pb-1" aria-label="Tus cartas">
               {miTurno && cartasJugables.size > 0 && respuestas.length === 0 && (
-                <p
-                  role="status"
-                  className="mb-1 text-center text-[11px] font-medium text-oro-300/90"
-                >
+                <p role="status" className="mb-1 text-center text-sm font-semibold text-oro-300">
                   Tu turno — tocá o arrastrá una carta ↑
                 </p>
               )}
@@ -874,13 +908,20 @@ export function Mesa({
             }}
           >
             {terminada ? (
-              <a href="/inicio" className="block">
-                <Boton tamaño="lg" className="w-full">
-                  Volver al inicio
-                </Boton>
-              </a>
+              <div className="flex flex-col gap-2">
+                {onRevancha && (
+                  <Boton tamaño="lg" className="w-full" onClick={onRevancha}>
+                    Revancha
+                  </Boton>
+                )}
+                <a href="/inicio" className="block">
+                  <Boton variante="fantasma" className="w-full">
+                    Volver al inicio
+                  </Boton>
+                </a>
+              </div>
             ) : vista.legales.length === 0 ? (
-              <p className="py-2 text-center text-sm text-amber-100/60">Esperando al rival…</p>
+              <p className="py-2 text-center text-base text-amber-100/80">Esperando al rival…</p>
             ) : (
               <>
                 {respuestas.length > 0 &&
@@ -1178,8 +1219,8 @@ function Bazas({
             } ${resuelta ? 'opacity-95' : ''}`}
           >
             <span
-              className={`text-[10px] font-semibold uppercase tracking-widest ${
-                enJuego ? 'text-oro-300' : 'text-emerald-100/35'
+              className={`text-xs font-semibold uppercase tracking-widest ${
+                enJuego ? 'text-oro-300' : 'text-emerald-100/70'
               }`}
               style={{ textShadow: '0 1px 0 rgba(0,0,0,.6)' }}
             >
@@ -1201,21 +1242,21 @@ function Bazas({
               ) : parda ? (
                 <span
                   aria-label={`${NOMBRE_CORTO[i]} baza: parda`}
-                  className="animar-aparece-baza rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-100"
+                  className="animar-aparece-baza rounded-full bg-white/15 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-emerald-100"
                 >
                   = parda
                 </span>
               ) : gane ? (
                 <span
                   aria-label={`${NOMBRE_CORTO[i]} baza: tuya`}
-                  className="animar-aparece-baza rounded-full bg-emerald-500/30 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-200"
+                  className="animar-aparece-baza rounded-full bg-emerald-500/30 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-emerald-200"
                 >
                   ▲ tuya
                 </span>
               ) : (
                 <span
                   aria-label={`${NOMBRE_CORTO[i]} baza: suya`}
-                  className="animar-aparece-baza rounded-full bg-canto-500/30 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-canto-400"
+                  className="animar-aparece-baza rounded-full bg-canto-500/30 px-2.5 py-0.5 text-sm font-bold uppercase tracking-wide text-canto-400"
                 >
                   ▼ suya
                 </span>
@@ -1343,7 +1384,7 @@ function BotonMesa({
       }${ESTILO_BOTON[tono]}`}
     >
       <span
-        className="whitespace-nowrap text-[13px] font-bold sm:text-[15px]"
+        className="whitespace-nowrap text-[15px] font-bold sm:text-base"
         style={{ fontFamily: "'Iowan Old Style', Palatino, Georgia, serif" }}
       >
         {children}

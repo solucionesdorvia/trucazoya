@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import {
   autoexcluirAccion,
   guardarLimitesAccion,
@@ -72,6 +72,10 @@ export function FormJuegoResponsable({
     );
   }
 
+  const [tipo, setTipo] = useState('TEMPORARY');
+  const [palabra, setPalabra] = useState('');
+  const habilitado = tipo !== 'PERMANENT' || palabra.trim().toUpperCase() === 'PERMANENTE';
+
   return (
     <div className="flex flex-col gap-5">
       <Panel>
@@ -123,19 +127,58 @@ export function FormJuegoResponsable({
         <form action={accionExc} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1">
             <span className="block text-sm font-medium text-tinta-200">Tipo</span>
-            <select name="tipo" className={claseInput} defaultValue="TEMPORARY">
+            <select
+              name="tipo"
+              className={claseInput}
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+            >
               <option value="TEMPORARY">Temporal</option>
               <option value="PERMANENT">Permanente</option>
             </select>
           </label>
-          <label className="flex-1">
-            <span className="block text-sm font-medium text-tinta-200">Días (si es temporal)</span>
-            <input name="dias" type="number" min={1} defaultValue={7} className={claseInput} />
-          </label>
-          <Boton type="submit" variante="peligro" disabled={pendExc}>
+          {tipo === 'TEMPORARY' ? (
+            <label className="flex-1">
+              <span className="block text-sm font-medium text-tinta-200">Días</span>
+              <input name="dias" type="number" min={1} defaultValue={7} className={claseInput} />
+            </label>
+          ) : (
+            <input type="hidden" name="dias" value="0" />
+          )}
+          <Boton type="submit" variante="peligro" disabled={pendExc || !habilitado}>
             {pendExc ? 'Aplicando…' : 'Autoexcluirme'}
           </Boton>
         </form>
+
+        {/* La acción más irreversible del producto: para la permanente hay que
+            escribir la palabra, y el teléfono de ayuda va acá mismo. */}
+        {tipo === 'PERMANENT' && (
+          <div className="mt-4 rounded-xl border border-canto-500/50 bg-canto-500/10 p-4">
+            <p className="text-sm font-semibold text-canto-300">
+              La autoexclusión permanente no se puede deshacer nunca.
+            </p>
+            <p className="mt-1 text-sm text-tinta-200">
+              Vas a perder el acceso a cargar fichas y a jugar por fichas para siempre. Si te quedan
+              fichas, pedí el retiro <strong>antes</strong> de confirmar.
+            </p>
+            <label className="mt-3 block">
+              <span className="block text-sm font-medium text-tinta-200">
+                Escribí <strong>PERMANENTE</strong> para habilitar el botón
+              </span>
+              <input
+                value={palabra}
+                onChange={(e) => setPalabra(e.target.value)}
+                className={claseInput}
+                placeholder="PERMANENTE"
+                autoComplete="off"
+              />
+            </label>
+            <p className="mt-3 text-sm text-tinta-300">
+              ¿Querés hablar con alguien? Línea gratuita de juego responsable:{' '}
+              <strong className="text-tinta-50">0800-333-0333</strong>
+            </p>
+          </div>
+        )}
         {estadoExc.error && <p className="mt-2 text-sm text-canto-400">{estadoExc.error}</p>}
       </Panel>
     </div>

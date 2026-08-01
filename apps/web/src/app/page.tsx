@@ -53,7 +53,7 @@ export default async function Landing() {
             </div>
 
             <p className="mt-4 text-sm text-tinta-600">
-              Gratis. Monedas virtuales de bienvenida al registrarte.
+              Gratis. Fichas de bienvenida al registrarte.
             </p>
           </div>
 
@@ -104,13 +104,13 @@ export default async function Landing() {
             },
             {
               t: 'Torneos',
-              d: 'Eliminación simple, doble o grupos. Con premios en monedas y llaves en vivo.',
+              d: 'Eliminación simple, doble o grupos. Con premios en fichas y llaves en vivo.',
               i: '⚔️',
             },
             {
-              t: 'Jugá contra bots',
-              d: 'Cinco niveles, de principiante a experto. Ideal para practicar los cantos.',
-              i: '🤖',
+              t: 'Juego limpio verificable',
+              d: 'Antes de repartir se publica un sello del mazo. Al terminar podés comprobarlo vos mismo.',
+              i: '🔍',
             },
             {
               t: 'Anti-trampas',
@@ -126,7 +126,7 @@ export default async function Landing() {
           ))}
         </section>
 
-        {/* ─── Cargar monedas (cajeros) ──────────────────────────────── */}
+        {/* ─── Cargar fichas (cajeros) ──────────────────────────────── */}
         <section className="panel my-10 overflow-hidden p-0">
           <div className="grid gap-0 md:grid-cols-[1.2fr_1fr]">
             <div className="p-7 md:p-9">
@@ -134,8 +134,7 @@ export default async function Landing() {
               <h2 className="mt-4 text-3xl font-bold tracking-tight">Cajeros de confianza</h2>
               <p className="mt-3 max-w-md leading-relaxed text-tinta-400">
                 Sin tarjetas ni pasarelas. Elegís un cajero de la lista, arreglás por WhatsApp y en
-                el momento te aparecen las monedas en la billetera. Para retirar, es igual de
-                simple.
+                el momento te aparecen las fichas en la billetera. Para retirar, es igual de simple.
               </p>
               <ul className="mt-5 space-y-2.5 text-sm text-tinta-200">
                 {[
@@ -154,7 +153,7 @@ export default async function Landing() {
               <div className="w-full max-w-[240px] rounded-2xl border border-pano-600/40 bg-noche-900/70 p-4 backdrop-blur">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-tinta-400">Tu billetera</span>
-                  <Pildora tono="oro">Monedas</Pildora>
+                  <Pildora tono="oro">Fichas</Pildora>
                 </div>
                 <div className="mt-2 font-mono text-3xl font-bold text-oro-400">1.250</div>
                 <div className="mt-4 space-y-2 border-t border-noche-700 pt-3 text-xs">
@@ -176,7 +175,10 @@ export default async function Landing() {
       <footer className="mx-auto max-w-6xl px-5 py-10 text-sm text-tinta-600">
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-noche-700 pt-6">
           <Logo size={24} />
-          <p>Jugá con responsabilidad. Monedas virtuales, sin dinero real.</p>
+          <p>
+            Jugá con responsabilidad. Las fichas se cargan y retiran con cajeros por WhatsApp:
+            Trucazo no procesa pagos.
+          </p>
           <nav className="flex gap-4">
             <Link href="/terminos" className="hover:text-tinta-300">
               Términos

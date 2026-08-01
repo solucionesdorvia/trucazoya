@@ -39,7 +39,9 @@
   /* Texto */
   --color-tinta-50: #f5f6f8;
   --color-tinta-200: #c9ced8;
+  --color-tinta-300: #aeb5c2;
   --color-tinta-400: #8b93a3;
+  --color-tinta-500: #737b8b;
   --color-tinta-600: #5b6373;
 
   --font-display:
@@ -74,6 +76,13 @@
 
 * {
   border-color: var(--borde);
+}
+
+/* Deja aire abajo para la barra de navegación fija de mobile. */
+@media (max-width: 639px) {
+  body:not(:has([data-mesa])) {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
 }
 
 body {

@@ -66,15 +66,9 @@ export function BuscarPartida() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-5 py-8">
-      <a href="/inicio" className="text-sm text-tinta-400 hover:text-tinta-200">
-        ← Volver
-      </a>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight">Buscar partida</h1>
-      <p className="mt-1.5 text-tinta-400">Te emparejamos con alguien de tu nivel.</p>
-
+    <div>
       {buscando ? (
-        <Panel className="mt-6 flex flex-col items-center gap-4 py-10 text-center">
+        <Panel className="flex flex-col items-center gap-4 py-10 text-center">
           <div className="relative">
             <div
               className="h-16 w-16 animate-spin rounded-full border-4 border-noche-700 border-t-oro-500"

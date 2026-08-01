@@ -220,6 +220,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
 
       sala.entrar(userId, username);
       sala.mesa?.marcarConexion(userId, true);
+      cancelarEsperaAusencia(codeActual ?? '', userId);
       codeActual = sala.config.code;
       socket.join(`sala:${codeActual}`);
 
@@ -255,6 +256,26 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       if (sala.puedeArrancar()) {
         await arrancarPartida(sala, codeActual);
       }
+    });
+
+    // ── Revancha ─────────────────────────────────────────────────────────
+    // Al terminar una partida el jugador quedaba expulsado al inicio; acá la
+    // sala se recicla con los mismos jugadores y config, y arranca cuando los
+    // dos piden revancha (el mismo camino que el ready-check).
+    socket.on('sala:revancha', async () => {
+      if (!codeActual) return;
+      const sala = registro.obtener(codeActual);
+      if (!sala || sala.estado !== 'TERMINADA') return;
+
+      sala.estado = 'ESPERANDO';
+      sala.mesa = null;
+      sala.betId = null;
+      for (const p of sala.participantes) p.listo = p.userId === userId;
+
+      io.to(`sala:${codeActual}`).emit('sala:revancha:pedida', { userId });
+      io.to(`sala:${codeActual}`).emit('sala:estado', sala.snapshot());
+
+      if (sala.puedeArrancar()) await arrancarPartida(sala, codeActual);
     });
 
     // ── Acción de juego ──────────────────────────────────────────────────
@@ -343,9 +364,60 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         sala.salir(userId);
         sala.mesa?.marcarConexion(userId, false);
         io.to(`sala:${codeActual}`).emit('sala:estado', sala.snapshot());
+        // Si se cayó en plena partida, se lo espera un rato y si no vuelve la
+        // partida se cierra por abandono: si no, el rival queda colgado y —lo
+        // peor— las fichas apostadas quedan reservadas para siempre.
+        if (sala.estado === 'EN_PARTIDA') iniciarEsperaAusencia(codeActual, userId);
       }
     });
   });
+
+  // ─── Ausencia: esperar al que se cayó, o cerrar por abandono ───────────────
+
+  /** Milisegundos que se espera a un jugador desconectado en plena partida. */
+  const ESPERA_AUSENCIA_MS = 180_000;
+  const ausencias = new Map<string, ReturnType<typeof setTimeout>>();
+  const claveAusencia = (code: string, userId: string) => `${code}:${userId}`;
+
+  function iniciarEsperaAusencia(code: string, userId: string) {
+    const clave = claveAusencia(code, userId);
+    if (ausencias.has(clave)) return;
+    const vence = Date.now() + ESPERA_AUSENCIA_MS;
+    io.to(`sala:${code}`).emit('partida:ausencia', { userId, venceEn: vence });
+    ausencias.set(
+      clave,
+      setTimeout(() => {
+        ausencias.delete(clave);
+        void cerrarPorAbandono(code, userId);
+      }, ESPERA_AUSENCIA_MS),
+    );
+  }
+
+  function cancelarEsperaAusencia(code: string, userId: string) {
+    const clave = claveAusencia(code, userId);
+    const t = ausencias.get(clave);
+    if (!t) return;
+    clearTimeout(t);
+    ausencias.delete(clave);
+    io.to(`sala:${code}`).emit('partida:ausencia', { userId, venceEn: null });
+  }
+
+  /** Cierra la partida dando por ganador al equipo del que sí se quedó. */
+  async function cerrarPorAbandono(code: string, userIdAusente: string) {
+    const sala = registro.obtener(code);
+    if (!sala || sala.estado !== 'EN_PARTIDA' || !sala.mesa) return;
+    // Si volvió a conectarse mientras tanto, no se cierra nada.
+    if (socketsPorUsuario.has(userIdAusente)) return;
+
+    const ausente = sala.participantes.find((p) => p.userId === userIdAusente);
+    if (ausente?.seat == null) return;
+    const equipoAusente = ausente.seat % 2;
+    const ganador = (equipoAusente === 0 ? 1 : 0) as 0 | 1;
+    sala.mesa.state.winner = ganador;
+    sala.mesa.state.phase = 'MATCH_FINISHED';
+    io.to(`sala:${code}`).emit('partida:abandono', { userId: userIdAusente, ganador });
+    await finalizarPartida(sala, code);
+  }
 
   // ─── Tick de matchmaking ────────────────────────────────────────────────────
 

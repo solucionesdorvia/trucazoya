@@ -49,6 +49,8 @@ export function SalaVivo({ code, userId }: { code: string; userId: string }) {
   const [vista, setVista] = useState<VistaJugador | null>(null);
   const [mensajes, setMensajes] = useState<MensajeChat[]>([]);
   const [aviso, setAviso] = useState<string | null>(null);
+  /** Jugador caído en plena partida: hasta cuándo se lo espera. */
+  const [ausencia, setAusencia] = useState<{ userId: string; venceEn: number } | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -89,6 +91,11 @@ export function SalaVivo({ code, userId }: { code: string; userId: string }) {
 
       socket.on('error:app', (d: { mensaje: string }) => setAviso(d.mensaje));
       socket.on('chat:mensaje', (m: MensajeChat) => setMensajes((prev) => [...prev.slice(-49), m]));
+
+      socket.on('partida:ausencia', (d: { userId: string; venceEn: number | null }) => {
+        setAusencia(d.venceEn ? { userId: d.userId, venceEn: d.venceEn } : null);
+      });
+      socket.on('partida:abandono', () => setAusencia(null));
       socket.on('partida:terminada', () => socket?.emit('partida:sync'));
     })();
 
@@ -160,6 +167,8 @@ export function SalaVivo({ code, userId }: { code: string; userId: string }) {
           onAccion={enviarAccion}
           mensajes={mensajes}
           onChat={enviarChat}
+          ausencia={ausencia}
+          onRevancha={() => socketRef.current?.emit('sala:revancha')}
         />
       )}
     </>

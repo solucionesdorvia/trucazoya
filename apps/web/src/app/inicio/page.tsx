@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { prisma } from '@trucazo/db';
+import { PulsoEnVivo } from '@/components/PulsoEnVivo';
 import { Encabezado } from '@/components/Encabezado';
 import { getSessionUser } from '@/lib/session';
 
@@ -28,6 +29,9 @@ export default async function Inicio() {
             Buenas, <span className="text-oro-400">{firstName}</span>
           </h1>
           <p className="mt-1.5 text-tinta-400">¿Qué vas a jugar hoy?</p>
+          <div className="mt-3">
+            <PulsoEnVivo />
+          </div>
         </div>
 
         <section className="mt-7 grid gap-4 sm:grid-cols-2">
