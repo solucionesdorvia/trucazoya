@@ -5,6 +5,7 @@
  */
 
 import type { Card } from './cards.js';
+import { envidoPoints } from './envido.js';
 import { teamOfSeat } from './tricks.js';
 import type { MatchState, Phase, TeamIndex, TrickOutcome } from './types.js';
 
@@ -30,6 +31,13 @@ export interface PlayerView {
   envido: { pending: string[]; resolved: boolean; accepted: boolean };
   truco: { level: number; accepted: boolean };
   flor: { active: boolean; resolved: boolean; iHaveFlor: boolean };
+  /** Declaración pública del envido resuelto con quiero: tantos por asiento
+   *  en orden de mano (info pública, como cantarlos en la mesa). */
+  envidoResult: {
+    winnerTeam: TeamIndex;
+    stake: number;
+    declarations: { seat: number; points: number }[];
+  } | null;
 }
 
 export function redactStateFor(state: MatchState, seat: number): PlayerView {
@@ -53,6 +61,7 @@ export function redactStateFor(state: MatchState, seat: number): PlayerView {
     envido: { pending: [], resolved: false, accepted: false },
     truco: { level: 0, accepted: false },
     flor: { active: false, resolved: true, iHaveFlor: false },
+    envidoResult: null,
   };
   if (!round) return base;
 
@@ -79,5 +88,26 @@ export function redactStateFor(state: MatchState, seat: number): PlayerView {
       resolved: round.flor.resolved,
       iHaveFlor: round.flor.seatsWithFlor.includes(seat),
     },
+    envidoResult:
+      round.envido.resolved && round.envido.accepted
+        ? (() => {
+            const decl: { seat: number; points: number }[] = [];
+            for (let i = 0; i < state.config.players; i++) {
+              const s2 = (round.manoSeat + i) % state.config.players;
+              decl.push({ seat: s2, points: envidoPoints(round.dealt[s2] ?? []) });
+            }
+            const mejorDe = (t: number) =>
+              Math.max(...decl.filter((d) => teamOfSeat(d.seat) === t).map((d) => d.points));
+            const t0 = mejorDe(0);
+            const t1 = mejorDe(1);
+            const winnerTeam: TeamIndex =
+              t0 > t1
+                ? 0
+                : t1 > t0
+                  ? 1
+                  : teamOfSeat(decl.find((d) => d.points === Math.max(t0, t1))!.seat);
+            return { winnerTeam, stake: round.envido.stake, declarations: decl };
+          })()
+        : null,
   };
 }

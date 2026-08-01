@@ -182,6 +182,41 @@ export function Mesa({
   const sonido = useSonido();
   const estampa = useEstampaCanto(vista, sonido.canto);
 
+  // Declamación del envido resuelto con quiero: se cantan los tantos en
+  // orden de mano, como en la mesa real ("¡32!" → "son buenas" / "¡33,
+  // son mejores!"). Los puntos ya los acreditó el motor; esto es el rito.
+  const [declama, setDeclama] = useState<string | null>(null);
+  const declamado = useRef(false);
+  useEffect(() => {
+    const r = vista.envidoResult;
+    if (!r) {
+      declamado.current = false;
+      return;
+    }
+    if (declamado.current) return;
+    declamado.current = true;
+    const nombreDe = (seat: number) =>
+      seat === vista.seat
+        ? 'Vos'
+        : (sala.participantes.find((p) => p.seat === seat)?.username ?? 'Rival');
+    const lineas: string[] = [];
+    let max = -1;
+    for (const d of r.declarations) {
+      if (d.points > max) {
+        lineas.push(`${nombreDe(d.seat)}: ¡${d.points}${max >= 0 ? ', son mejores' : ''}!`);
+        max = d.points;
+      } else {
+        lineas.push(`${nombreDe(d.seat)}: son buenas`);
+      }
+    }
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    lineas.forEach((l, i) => timers.push(setTimeout(() => setDeclama(l), 500 + i * 1250)));
+    timers.push(setTimeout(() => setDeclama(null), 500 + lineas.length * 1250));
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [vista.envidoResult, vista.seat, sala.participantes]);
+
   // Refs y estado de animaciones.
   const centroRef = useRef<HTMLElement>(null);
   const vueloRef = useRef<HTMLDivElement>(null);
@@ -678,6 +713,30 @@ export function Mesa({
                   }}
                 >
                   {estampa}
+                </span>
+              </div>
+            )}
+
+            {!estampa && declama && (
+              <div
+                key={declama}
+                className="pointer-events-none absolute inset-0 z-20 grid place-items-center"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="animar-estampa select-none rounded-2xl border-2 px-4 py-1 text-center font-bold"
+                  style={{
+                    fontFamily: "'Iowan Old Style', Palatino, Georgia, serif",
+                    fontSize: 'clamp(1.1rem, 4.5vw, 2.2rem)',
+                    maxWidth: '92vw',
+                    color: '#ffdca8',
+                    borderColor: 'rgba(255,220,168,.8)',
+                    background: 'rgba(6,20,15,.72)',
+                    textShadow: '0 2px 0 rgba(0,0,0,.4), 0 0 18px rgba(246,215,138,.4)',
+                  }}
+                >
+                  {declama}
                 </span>
               </div>
             )}
