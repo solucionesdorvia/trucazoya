@@ -107,6 +107,7 @@ function useSonido() {
   return {
     mudo,
     alternarMudo: () => setMudo((m) => !m),
+    tick: () => tono(1400, 0.02, 'sine', 0.02),
     slap: () => {
       tono(170, 0.07, 'triangle', 0.08);
       setTimeout(() => tono(90, 0.05, 'sine', 0.05), 20);
@@ -232,14 +233,13 @@ export function Mesa({
     }
   }, [vista.trickOutcomes, vista.team]);
 
-  // Vuelo de la carta desde la mano hasta SU lugar en la baza (Web Animations
-  // API). Aterriza exactamente sobre el slot de la baza actual y al mismo
-  // tamaño que la carta jugada, para que encastre sin doble movimiento.
+  // Vuelo de la carta: la mano ALZA el naipe (5%), viaja achicándose en
+  // pleno movimiento (donde no se nota) y se APOYA con un snap mínimo del
+  // 2%, rígido, sin rebote gomoso. El impacto (slap + vibración) suena al
+  // tocar el paño, no al soltar el dedo.
   useEffect(() => {
     if (!volando) return;
     const el = vueloRef.current;
-    // Destino: el slot propio de la baza donde cae la carta; si no está,
-    // el centro del paño como respaldo.
     const slot = document
       .querySelector(`[data-slot-mia="${volando.trick}"]`)
       ?.getBoundingClientRect();
@@ -249,37 +249,61 @@ export function Mesa({
       return;
     }
     const { from } = volando;
+    // Ancho REAL del naipe del overlay (el rect de origen puede venir
+    // inflado por el scale de hover/drag: no sirve para escalar).
+    const A = sizeMano === 'xl' ? 150 : 112;
     const dx = destino.left + destino.width / 2 - (from.left + from.width / 2);
     const dy = destino.top + destino.height / 2 - (from.top + from.height / 2);
-    const esc = slot ? Math.min(1, slot.width / from.width) : 0.62;
-    // Vuelo con overshoot y asentamiento: pasa un pelín de largo y rebota
-    // corto antes de quedar quieta, como un naipe tirado sobre el paño.
+    const esc = slot ? slot.width / A : 0.56;
+    const reducido =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const dur = reducido ? 1 : 320;
     const anim = el.animate(
       [
-        { transform: 'translate(0,0) scale(1) rotate(0deg)' },
         {
-          transform: `translate(${dx}px, ${dy}px) scale(${esc * 1.06}) rotate(8deg)`,
-          offset: 0.82,
+          offset: 0,
+          transform: 'translate(0,0) scale(1) rotate(0deg)',
+          easing: 'cubic-bezier(.3,.1,.5,1)',
         },
         {
-          transform: `translate(${dx}px, ${dy}px) scale(${esc * 0.97}) rotate(6.5deg)`,
-          offset: 0.92,
+          offset: 0.22,
+          transform: `translate(${dx * 0.22}px, ${dy * 0.3 - 12}px) scale(1.05) rotate(-5deg)`,
+          easing: 'cubic-bezier(.35,0,.25,1)',
         },
-        { transform: `translate(${dx}px, ${dy}px) scale(${esc}) rotate(0deg)` },
+        {
+          offset: 0.8,
+          transform: `translate(${dx * 0.96}px, ${dy * 0.99}px) scale(${esc * 1.02}) rotate(-1.5deg)`,
+          easing: 'cubic-bezier(.55,0,.85,.55)',
+        },
+        { offset: 1, transform: `translate(${dx}px, ${dy}px) scale(${esc}) rotate(0deg)` },
       ],
-      { duration: 360, easing: 'cubic-bezier(.34,1.4,.5,1)', fill: 'forwards' },
+      { duration: dur, fill: 'forwards' },
     );
-    // La sombra "cae" con la carta: arranca chica y difusa, aterriza marcada.
+    // La sombra converge con la carta al tocar el paño (touchdown legible).
     sombraVueloRef.current?.animate(
       [
-        { transform: `translate(0px, 0px) scale(.3)`, opacity: 0 },
-        { transform: `translate(${dx}px, ${dy}px) scale(${esc})`, opacity: 0.38, offset: 1 },
+        { transform: 'translate(10px, 10px) scale(.35)', opacity: 0 },
+        {
+          transform: `translate(${dx + 10}px, ${dy + 10}px) scale(${esc})`,
+          opacity: 0.3,
+          offset: 0.8,
+        },
+        { transform: `translate(${dx}px, ${dy}px) scale(${esc})`, opacity: 0.38 },
       ],
-      { duration: 360, easing: 'cubic-bezier(.34,1.1,.5,1)', fill: 'forwards' },
+      { duration: dur, easing: 'linear', fill: 'forwards' },
     );
-    const t = setTimeout(() => setVolando(null), 380);
+    const tImpacto = setTimeout(
+      () => {
+        sonido.slap();
+        vibrar(12);
+      },
+      reducido ? 0 : 300,
+    );
+    const t = setTimeout(() => setVolando(null), reducido ? 30 : 330);
     return () => {
       clearTimeout(t);
+      clearTimeout(tImpacto);
       try {
         anim.cancel();
       } catch {
@@ -330,8 +354,7 @@ export function Mesa({
 
   function jugar(c: Card, el: HTMLElement) {
     if (volando) return;
-    sonido.slap();
-    vibrar(12);
+    sonido.tick();
     // Tomamos el rect de la carta derecha (el <span> interno), no el del botón
     // rotado por el abanico: así el vuelo arranca justo donde está la carta.
     const origen = (el.querySelector('span') as HTMLElement | null) ?? el;
@@ -955,10 +978,12 @@ export function Mesa({
             ref={vueloRef}
             className="pointer-events-none fixed z-40"
             style={{
-              left: volando.from.left,
-              top: volando.from.top,
-              width: volando.from.width,
-              height: volando.from.height,
+              left:
+                volando.from.left + volando.from.width / 2 - (sizeMano === 'xl' ? 150 : 112) / 2,
+              top:
+                volando.from.top +
+                volando.from.height / 2 -
+                Math.round((sizeMano === 'xl' ? 150 : 112) * 1.541) / 2,
             }}
           >
             <CartaEspanola card={volando.card} size={sizeMano} />
