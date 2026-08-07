@@ -265,12 +265,18 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     socket.on('sala:revancha', async () => {
       if (!codeActual) return;
       const sala = registro.obtener(codeActual);
-      if (!sala || sala.estado !== 'TERMINADA') return;
+      // Al primer pedido la sala pasa a ESPERANDO, así que el segundo jugador
+      // también tiene que poder pedirla: se aceptan ambos estados.
+      if (!sala || (sala.estado !== 'TERMINADA' && sala.estado !== 'ESPERANDO')) return;
 
-      sala.estado = 'ESPERANDO';
-      sala.mesa = null;
-      sala.betId = null;
-      for (const p of sala.participantes) p.listo = p.userId === userId;
+      if (sala.estado === 'TERMINADA') {
+        sala.estado = 'ESPERANDO';
+        sala.mesa = null;
+        sala.betId = null;
+        for (const p of sala.participantes) p.listo = false;
+      }
+      const yo = sala.participantes.find((p) => p.userId === userId);
+      if (yo) yo.listo = true;
 
       io.to(`sala:${codeActual}`).emit('sala:revancha:pedida', { userId });
       io.to(`sala:${codeActual}`).emit('sala:estado', sala.snapshot());
@@ -372,6 +378,15 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     });
   });
 
+  // Un error de DB en un handler async tumbaba el proceso entero, y con él
+  // todas las partidas en memoria (dejando las apuestas reservadas colgadas).
+  process.on('unhandledRejection', (motivo) => {
+    console.error('[fatal] promesa sin catch:', motivo);
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('[fatal] excepción sin catch:', err);
+  });
+
   // ─── Ausencia: esperar al que se cayó, o cerrar por abandono ───────────────
 
   /** Milisegundos que se espera a un jugador desconectado en plena partida. */
@@ -420,6 +435,17 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   }
 
   // ─── Tick de matchmaking ────────────────────────────────────────────────────
+
+  // Barrido de salas terminadas: `eliminar()` existía pero no lo llamaba nadie,
+  // así que el Map crecía sin techo hasta el OOM (y el OOM congela apuestas).
+  const tickLimpieza = setInterval(() => {
+    for (const code of registro.codigos()) {
+      const sala = registro.obtener(code);
+      if (!sala || sala.estado !== 'TERMINADA') continue;
+      const sockets = io.sockets.adapter.rooms.get(`sala:${code}`);
+      if (!sockets || sockets.size === 0) registro.eliminar(code);
+    }
+  }, 60_000);
 
   const tickMatchmaking = setInterval(() => {
     void procesarMatchmaking();
@@ -652,6 +678,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     },
     async cerrar() {
       clearInterval(tickMatchmaking);
+      clearInterval(tickLimpieza);
       io.close();
       await app.close();
       await Promise.all([redisPub?.quit(), redisSub?.quit()].filter(Boolean));

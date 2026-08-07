@@ -4,7 +4,7 @@ Plataforma web de **Truco Argentino online**: partidas en tiempo real (1v1 y 2v2
 
 La carga y el retiro de monedas se hacen mediante **cajeros** — usuarios con rol especial que operan por **WhatsApp**. **Sin pasarela de pagos.**
 
-> ⚠️ **Aviso legal.** Trucazo modela una economía de **monedas virtuales** con ledger auditable, límites y herramientas de juego responsable. Si un operador canjea esas monedas por dinero real vía cajeros, opera de hecho un juego por dinero real, regulado en Argentina a nivel provincial (Lotería / IPLyC según jurisdicción). El cumplimiento regulatorio es responsabilidad del operador. El dinero real está deshabilitado por diseño (`FEATURE_REAL_MONEY=false`).
+> ⚠️ **Aviso legal.** Trucazo modela una economía de **monedas virtuales** con ledger auditable, límites y herramientas de juego responsable. Si un operador canjea esas monedas por dinero real vía cajeros, opera de hecho un juego por dinero real, regulado en Argentina a nivel provincial (Lotería / IPLyC según jurisdicción). El cumplimiento regulatorio es responsabilidad del operador. El circuito de dinero real (cargas y retiros por cajero) sólo funciona con `FEATURE_REAL_MONEY="true"`; con cualquier otro valor las cargas y retiros se rechazan. **Operar con dinero real requiere licencia provincial: ver `docs/LANZAMIENTO.md`.**
 
 ## Stack
 

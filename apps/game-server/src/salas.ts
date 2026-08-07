@@ -192,6 +192,11 @@ export class RegistroSalas {
     return sala;
   }
 
+  /** Códigos de todas las salas vivas (para barridos periódicos). */
+  codigos(): string[] {
+    return [...this.salas.keys()];
+  }
+
   eliminar(code: string): void {
     const sala = this.salas.get(code.toUpperCase());
     sala?.mesa?.destruir();

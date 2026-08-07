@@ -69,6 +69,18 @@ export interface ResultadoCajero {
  * El cajero acredita monedas a un jugador (después de cobrarle por fuera).
  * Valida rol, límites y deja auditoría. Idempotente por `idempotencyKey`.
  */
+/**
+ * Interruptor de emergencia del circuito de dinero real. El README anunciaba
+ * `FEATURE_REAL_MONEY=false` como protección, pero la variable no se leía en
+ * ninguna línea de código: cargas y retiros funcionaban igual. Ahora sí corta.
+ */
+export function dineroRealHabilitado(): boolean {
+  return process.env.FEATURE_REAL_MONEY === 'true';
+}
+
+const CIRCUITO_CERRADO =
+  'Las cargas y retiros están deshabilitados en este momento. Escribinos si tenés saldo pendiente.';
+
 export async function acreditarPorCajero(input: {
   cajeroUserId: string;
   targetUserId: string;
@@ -77,6 +89,7 @@ export async function acreditarPorCajero(input: {
   referencia?: string;
   nota?: string;
 }): Promise<ResultadoCajero> {
+  if (!dineroRealHabilitado()) return { ok: false, error: CIRCUITO_CERRADO };
   if (!Number.isInteger(input.monto) || input.monto <= 0) {
     return { ok: false, error: 'El monto debe ser un entero positivo' };
   }
@@ -164,6 +177,7 @@ export async function solicitarRetiro(input: {
   cajeroUserId: string;
   monto: number;
 }): Promise<{ ok: boolean; error?: string; requestId?: string }> {
+  if (!dineroRealHabilitado()) return { ok: false, error: CIRCUITO_CERRADO };
   if (!Number.isInteger(input.monto) || input.monto <= 0) {
     return { ok: false, error: 'El monto debe ser un entero positivo' };
   }

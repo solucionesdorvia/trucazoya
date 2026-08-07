@@ -375,7 +375,7 @@ model Room {
   updatedAt       DateTime  @updatedAt
 
   participants RoomParticipant[]
-  match        Match?
+  matches      Match[]
 
   @@index([state, isPrivate])
   @@index([mode])
@@ -409,7 +409,7 @@ enum MatchState {
 
 model Match {
   id          String     @id @default(cuid())
-  roomId      String     @unique
+  roomId      String
   mode        GameMode
   pointsToWin Int
   florEnabled Boolean
