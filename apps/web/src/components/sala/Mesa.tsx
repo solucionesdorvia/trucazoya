@@ -491,7 +491,9 @@ export function Mesa({
   }
 
   return (
-    <div className="relative flex h-dvh flex-col overflow-hidden">
+    // `data-mesa` le avisa al body que NO reserve el alto de la barra de
+    // navegación de mobile: esos 56px de más metían scroll en la mesa.
+    <div data-mesa="" className="relative flex h-dvh flex-col overflow-hidden">
       {/* ─── Fondo: la sala de la peña, de noche. La mesa (oval) vive en el
           paño central; el fondo es más oscuro para que la mesa "salte". ── */}
       <div
