@@ -30,7 +30,17 @@ export interface PlayerView {
   dealerSeat: number | null;
   envido: { pending: string[]; resolved: boolean; accepted: boolean };
   truco: { level: number; accepted: boolean };
-  flor: { active: boolean; resolved: boolean; iHaveFlor: boolean };
+  /**
+   * `called`/`contested` describen el CANTO de flor (público). `iHaveFlor` es
+   * sólo la tenencia propia: publicar la ajena delataba que el rival tiene
+   * flor antes de que la cante.
+   */
+  flor: {
+    called: boolean;
+    contested: string | null;
+    resolved: boolean;
+    iHaveFlor: boolean;
+  };
   /** Declaración pública del envido resuelto con quiero: tantos por asiento
    *  en orden de mano (info pública, como cantarlos en la mesa). */
   envidoResult: {
@@ -60,7 +70,7 @@ export function redactStateFor(state: MatchState, seat: number): PlayerView {
     dealerSeat: null,
     envido: { pending: [], resolved: false, accepted: false },
     truco: { level: 0, accepted: false },
-    flor: { active: false, resolved: true, iHaveFlor: false },
+    flor: { called: false, contested: null, resolved: true, iHaveFlor: false },
     envidoResult: null,
   };
   if (!round) return base;
@@ -84,7 +94,8 @@ export function redactStateFor(state: MatchState, seat: number): PlayerView {
     },
     truco: { level: round.truco.level, accepted: round.truco.accepted },
     flor: {
-      active: round.flor.seatsWithFlor.length > 0,
+      called: round.flor.contested !== null,
+      contested: round.flor.contested,
       resolved: round.flor.resolved,
       iHaveFlor: round.flor.seatsWithFlor.includes(seat),
     },

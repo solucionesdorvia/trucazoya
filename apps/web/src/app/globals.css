@@ -119,6 +119,17 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* Estas animaciones TERMINAN en opacity 0: colapsadas a 0.01ms dejaban el
+     contenido invisible (no se veía qué te cantaron ni el resultado de la
+     baza). Se desactivan y el elemento queda visible. */
+  .animar-estampa,
+  .animar-mas,
+  .animar-barrer-abajo,
+  .animar-barrer-arriba {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
 
 /* ─── Utilidades propias ────────────────────────────────────────────────── */

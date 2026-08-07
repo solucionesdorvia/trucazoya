@@ -97,7 +97,7 @@ function estadoInicial(): VistaJugador {
     dealerSeat: 1,
     envido: { pending: [], resolved: false, accepted: false },
     truco: { level: 0, accepted: false },
-    flor: { active: false, resolved: true, iHaveFlor: false },
+    flor: { called: false, contested: null, resolved: true, iHaveFlor: false },
     legales: legalesDe(MANO_INICIAL, 0, false, true),
   } as unknown as VistaJugador;
 }
@@ -191,7 +191,7 @@ export default function DemoMesa() {
         v.envido = { ...v.envido, pending: [...v.envido.pending, variant] };
         v.legales = legalesDe(v.myHand, v.truco.level, true, v.currentTrick === 0);
       } else if (a.type === 'CALL_FLOR') {
-        v.flor = { ...v.flor, active: true };
+        v.flor = { ...v.flor, called: true, contested: 'FLOR' };
       }
 
       return v as unknown as VistaJugador;

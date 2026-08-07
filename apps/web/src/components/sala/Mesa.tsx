@@ -126,7 +126,7 @@ function useEstampaCanto(vista: VistaJugador, onCanto: () => void) {
   const prev = useRef({
     truco: vista.truco.level,
     envido: vista.envido.pending.length,
-    flor: vista.flor.active,
+    flor: vista.flor.contested,
   });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -137,12 +137,13 @@ function useEstampaCanto(vista: VistaJugador, onCanto: () => void) {
     else if (vista.envido.pending.length > prev.current.envido) {
       const ult = vista.envido.pending[vista.envido.pending.length - 1] ?? 'ENVIDO';
       texto = `¡${(ETIQUETA_CANTO[ult] ?? 'Envido').toUpperCase()}!`;
-    } else if (vista.flor.active && !prev.current.flor) texto = '¡FLOR!';
+    } else if (vista.flor.contested && vista.flor.contested !== prev.current.flor)
+      texto = `¡${(ETIQUETA_CANTO[vista.flor.contested] ?? 'Flor').toUpperCase()}!`;
 
     prev.current = {
       truco: vista.truco.level,
       envido: vista.envido.pending.length,
-      flor: vista.flor.active,
+      flor: vista.flor.contested,
     };
 
     if (texto) {
@@ -152,7 +153,7 @@ function useEstampaCanto(vista: VistaJugador, onCanto: () => void) {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => setEstampa(null), 1300);
     }
-  }, [vista.truco.level, vista.envido.pending.length, vista.flor.active, onCanto]);
+  }, [vista.truco.level, vista.envido.pending.length, vista.flor.contested, onCanto]);
 
   return estampa;
 }
@@ -192,19 +193,25 @@ export function Mesa({
   // orden de mano, como en la mesa real ("¡32!" → "son buenas" / "¡33,
   // son mejores!"). Los puntos ya los acreditó el motor; esto es el rito.
   const [declama, setDeclama] = useState<string | null>(null);
-  const declamado = useRef(false);
+  // `vista.envidoResult` es un objeto NUEVO en cada broadcast, así que
+  // depender de su identidad re-ejecutaba el efecto a media declamación: el
+  // cleanup mataba los timers y la línea quedaba PEGADA el resto de la
+  // partida. Se depende del contenido, que sí es estable.
+  const claveEnvido = vista.envidoResult
+    ? vista.envidoResult.declarations.map((d) => `${d.seat}:${d.points}`).join('|')
+    : null;
+  const ctxDeclama = useRef({ seat: vista.seat, participantes: sala.participantes });
+  ctxDeclama.current = { seat: vista.seat, participantes: sala.participantes };
   useEffect(() => {
     const r = vista.envidoResult;
-    if (!r) {
-      declamado.current = false;
+    if (!claveEnvido || !r) {
+      setDeclama(null);
       return;
     }
-    if (declamado.current) return;
-    declamado.current = true;
     const nombreDe = (seat: number) =>
-      seat === vista.seat
+      seat === ctxDeclama.current.seat
         ? 'Vos'
-        : (sala.participantes.find((p) => p.seat === seat)?.username ?? 'Rival');
+        : (ctxDeclama.current.participantes.find((p) => p.seat === seat)?.username ?? 'Rival');
     const lineas: string[] = [];
     let max = -1;
     for (const d of r.declarations) {
@@ -220,8 +227,9 @@ export function Mesa({
     timers.push(setTimeout(() => setDeclama(null), 500 + lineas.length * 1250));
     return () => {
       timers.forEach(clearTimeout);
+      setDeclama(null);
     };
-  }, [vista.envidoResult, vista.seat, sala.participantes]);
+  }, [claveEnvido]);
 
   // Cuenta atrás de la espera al jugador que se cayó.
   const [restante, setRestante] = useState(0);
@@ -391,7 +399,9 @@ export function Mesa({
   const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0;
   const terminada = vista.phase === 'MATCH_FINISHED';
 
-  const rivales = sala.participantes.filter((p) => p.seat !== null && p.seat !== vista.seat);
+  // Sólo el equipo contrario: antes incluía al compañero, que aparecía como
+  // rival y además hacía desbordar la fila en 2v2.
+  const rivales = sala.participantes.filter((p) => p.seat !== null && p.seat % 2 !== vista.team);
   const cartasJugables = new Set(
     vista.legales.filter((a) => a.type === 'PLAY_CARD').map((a) => claveCarta(a.card)),
   );
@@ -455,6 +465,12 @@ export function Mesa({
     if (tirar) jugar(a.card, a.el); // lee el rect actual (donde quedó la carta)
     setArrastre(null);
   }
+  /** El navegador puede cancelar el gesto sin emitir pointerup: hay que soltar. */
+  function cartaCancel() {
+    arrastreRef.current = null;
+    setArrastre(null);
+  }
+
   // Accesibilidad: tirar la carta con teclado (Enter/Espacio).
   function cartaKey(e: ReactKeyboardEvent<HTMLButtonElement>, c: Card, jugable: boolean) {
     if (!jugable || volando) return;
@@ -475,9 +491,7 @@ export function Mesa({
   }
 
   return (
-    <div
-      className={`relative flex h-dvh flex-col overflow-hidden ${sacudir ? 'animar-sacudida' : ''}`}
-    >
+    <div className="relative flex h-dvh flex-col overflow-hidden">
       {/* ─── Fondo: la sala de la peña, de noche. La mesa (oval) vive en el
           paño central; el fondo es más oscuro para que la mesa "salte". ── */}
       <div
@@ -517,7 +531,11 @@ export function Mesa({
       />
 
       {/* ─── Contenido ────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex h-dvh min-h-0 flex-col lg:flex-row">
+      <div
+        className={`relative z-10 flex h-dvh min-h-0 flex-col lg:flex-row ${
+          sacudir ? 'animar-sacudida' : ''
+        }`}
+      >
         {/* Columna central: la mesa (se centra y limita el ancho en desktop) */}
         <div className="flex h-dvh min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-3xl">
           {/* Marcador (en desktop el score vive en el riel; acá se oculta) */}
@@ -566,7 +584,7 @@ export function Mesa({
 
           {/* Rivales: sentados al borde de la mesa (pisan el óvalo) */}
           <section
-            className="relative z-10 -mb-5 flex justify-center gap-8 px-4 pt-4 sm:-mb-7"
+            className="relative z-10 -mb-5 flex flex-wrap justify-center gap-x-4 gap-y-2 px-2 pt-4 sm:-mb-7 sm:gap-x-8"
             aria-label="Rivales"
           >
             {rivales.map((r) => {
@@ -602,8 +620,8 @@ export function Mesa({
                       ))}
                     </div>
                   </div>
-                  <span className="flex items-center gap-1.5 rounded-full border border-oro-500/25 bg-black/55 px-2.5 py-0.5 text-sm font-medium text-emerald-50 backdrop-blur-sm">
-                    {r.username}
+                  <span className="flex max-w-[46vw] items-center gap-1.5 rounded-full border border-oro-500/25 bg-black/55 px-2.5 py-0.5 text-sm font-medium text-emerald-50 backdrop-blur-sm sm:max-w-none">
+                    <span className="min-w-0 truncate">{r.username}</span>
                     {vista.manoSeat === r.seat && (
                       <span className="rounded bg-oro-500/20 px-1.5 text-xs font-semibold text-oro-300">
                         mano
@@ -693,7 +711,7 @@ export function Mesa({
 
             {/* Estado de la mano (truco/flor): antes vivía en el header y lo
                 desbordaba en mobile; ahora va sobre el borde de la mesa. */}
-            {!terminada && (vista.truco.level > 0 || vista.flor.iHaveFlor) && (
+            {!terminada && (vista.truco.level > 0 || vista.flor.called) && (
               <div className="absolute left-1/2 top-1 z-20 flex -translate-x-1/2 gap-2">
                 {vista.truco.level > 0 && (
                   <span className="rounded-full border border-canto-500/50 bg-canto-500/25 px-2.5 py-0.5 text-xs font-semibold text-canto-300 backdrop-blur-sm">
@@ -701,7 +719,7 @@ export function Mesa({
                     {vista.truco.accepted ? ' querido' : ''}
                   </span>
                 )}
-                {vista.flor.iHaveFlor && (
+                {vista.flor.called && (
                   <span className="rounded-full border border-oro-500/50 bg-oro-500/20 px-2.5 py-0.5 text-xs font-semibold text-oro-300 backdrop-blur-sm">
                     Flor
                   </span>
@@ -840,7 +858,7 @@ export function Mesa({
                       style={
                         {
                           animationDelay: `${i * 95}ms`,
-                          opacity: volandoEsta ? 0 : 1,
+                          opacity: volandoEsta || clave === ultimaMia ? 0 : 1,
                           zIndex: arrastrando ? 50 : undefined,
                           // Sigue al dedo mientras arrastro; al soltar sin llegar,
                           // vuelve deslizándose (transición) en vez de saltar.
@@ -859,10 +877,12 @@ export function Mesa({
                     >
                       <button
                         data-carta={clave}
-                        disabled={!jugable}
+                        disabled={!jugable || clave === ultimaMia}
                         onPointerDown={(e) => cartaDown(e, c, jugable)}
                         onPointerMove={cartaMove}
                         onPointerUp={cartaUp}
+                        onPointerCancel={cartaCancel}
+                        onLostPointerCapture={cartaCancel}
                         onKeyDown={(e) => cartaKey(e, c, jugable)}
                         className="group touch-none rounded-lg transition-transform duration-150 enabled:cursor-grab enabled:hover:z-10 enabled:active:cursor-grabbing disabled:cursor-not-allowed"
                         style={{
@@ -926,13 +946,20 @@ export function Mesa({
               <>
                 {respuestas.length > 0 &&
                   (() => {
+                    // `envido.pending` NO se vacía al resolverse el envido: si
+                    // sólo se mirara que tiene contenido, un truco cantado
+                    // después se anunciaría como "Envido". Se nombra el canto
+                    // que de verdad está esperando respuesta.
+                    // La FASE es la única fuente autoritativa de qué canto
+                    // está esperando respuesta: los campos de estado no se
+                    // limpian y delataban cantos viejos (o inexistentes).
                     let nombre = 'un canto';
-                    if (vista.envido.pending.length > 0) {
+                    if (vista.phase === 'ENVIDO_PENDING') {
                       const v = vista.envido.pending[vista.envido.pending.length - 1] ?? 'ENVIDO';
                       nombre = ETIQUETA_CANTO[v] ?? 'Envido';
-                    } else if (vista.flor.active) {
-                      nombre = 'Flor';
-                    } else if (vista.truco.level > 0) {
+                    } else if (vista.phase === 'FLOR_PENDING') {
+                      nombre = ETIQUETA_CANTO[vista.flor.contested ?? 'FLOR'] ?? 'Flor';
+                    } else if (vista.phase === 'TRUCO_PENDING') {
                       nombre = NIVEL_TRUCO[vista.truco.level - 1] ?? 'Truco';
                     }
                     return (
@@ -1403,8 +1430,8 @@ function BotonMesa({
 function Cuadro({ n, color }: { n: number; color: string }) {
   return (
     <svg
-      width="20"
-      height="24"
+      width="13"
+      height="16"
       viewBox="0 0 22 24"
       aria-hidden="true"
       style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,.4))' }}
@@ -1431,7 +1458,7 @@ function Fosforos({ valor, color }: { valor: number; color: string }) {
   }
   if (resto > 0) cuadros.push(resto);
   return (
-    <div className="mx-auto mt-0.5 flex max-w-[86px] flex-wrap justify-center gap-x-[3px] gap-y-0.5">
+    <div className="mx-auto mt-0.5 flex max-w-[58px] flex-wrap justify-center gap-x-[2px] gap-y-0.5">
       {cuadros.map((n, i) => (
         <Cuadro key={i} n={n} color={color} />
       ))}
