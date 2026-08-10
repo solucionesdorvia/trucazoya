@@ -657,6 +657,36 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   // del nodo que la arrancó, así que para multi-nodo real hay que rutear a los
   // jugadores de una sala al mismo nodo (sticky por sala) o mover el estado a
   // Redis; el adapter resuelve el fan-out de eventos, no la afinidad de partida.
+  /**
+   * Barrido de arranque: el estado de las partidas vive en memoria, así que
+   * todo Match que quedó IN_PROGRESS es de un proceso anterior que se cayó.
+   * Su apuesta quedó RESERVED —debitada de los dos jugadores y acreditada a
+   * nadie—, o sea plata congelada que nadie puede reclamar. Se cancela la
+   * partida y se devuelve lo apostado.
+   */
+  async function barrerPartidasHuerfanas() {
+    try {
+      const colgadas = await prisma.match.findMany({
+        where: { state: 'IN_PROGRESS' },
+        select: { id: true, bet: { select: { id: true, state: true } } },
+      });
+      if (colgadas.length === 0) return;
+      console.log(`▸ barriendo ${colgadas.length} partida(s) huérfana(s) de un proceso anterior`);
+      for (const m of colgadas) {
+        if (m.bet && m.bet.state === 'RESERVED') {
+          const r = await reembolsarApuesta(m.bet.id, 'Reinicio del servidor');
+          if (!r.ok) console.error(`[barrido] no se pudo reembolsar ${m.bet.id}:`, r.error);
+        }
+        await prisma.match.update({
+          where: { id: m.id },
+          data: { state: 'CANCELLED', finishedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      console.error('[barrido] falló el barrido de partidas huérfanas', e);
+    }
+  }
+
   const REDIS_URL = process.env.REDIS_URL;
   let redisPub: ReturnType<typeof createClient> | null = null;
   let redisSub: ReturnType<typeof createClient> | null = null;
@@ -674,6 +704,9 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
           console.error('[redis] no se pudo conectar; sigo en modo single-node', e);
         }
       }
+      // Antes de aceptar tráfico: liberar la plata que dejó colgada un
+      // proceso anterior.
+      await barrerPartidasHuerfanas();
       await app.listen({ port: PORT, host: '0.0.0.0' });
       const dir = app.server.address();
       const puerto = typeof dir === 'object' && dir ? dir.port : PORT;
