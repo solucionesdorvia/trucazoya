@@ -23,6 +23,7 @@ import {
   reservarApuesta,
 } from '@trucazo/economia';
 import { cryptoRandomInt, type Action } from '@trucazo/engine';
+import { alerta, log, señalesDeSalud, vigilar } from './observabilidad.js';
 import { RegistroSalas, type ConfigSala, type Sala } from './salas.js';
 import { Matchmaker } from './matchmaking.js';
 import type { GameMode } from '@trucazo/db';
@@ -59,15 +60,20 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     desconexiones: 0,
   };
 
-  app.get('/salud', async () => ({
-    ok: true,
-    salas: registro.cantidad,
-    uptime: Math.round(process.uptime()),
-  }));
+  app.get('/salud', async (_req, reply) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch (e) {
+      log('critico', 'salud.base_caida', { causa: String(e) });
+      return reply.code(503).send({ ok: false, motivo: 'base de datos inaccesible' });
+    }
+    return { ok: true, salas: registro.cantidad, uptime: Math.round(process.uptime()) };
+  });
 
   // Métricas operativas en JSON (scrapeable por un dashboard o un cron).
   app.get('/metricas', async () => ({
     uptime: Math.round(process.uptime()),
+    señales: await señalesDeSalud(),
     salasActivas: registro.cantidad,
     socketsConectados: io.engine.clientsCount,
     usuariosConectados: socketsPorUsuario.size,
@@ -167,7 +173,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
           skipDuplicates: true,
         });
       } catch (e) {
-        console.error('[persistencia] no se pudieron guardar eventos', e);
+        void alerta('persistencia.eventos_perdidos', { matchId, causa: String(e) });
       }
     }
 
@@ -187,7 +193,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
           skipDuplicates: true,
         });
       } catch (e) {
-        console.error('[persistencia] no se pudieron guardar compromisos de barajado', e);
+        void alerta('persistencia.commit_barajado_perdido', { matchId, causa: String(e) });
       }
     }
   }
@@ -384,10 +390,10 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   // Un error de DB en un handler async tumbaba el proceso entero, y con él
   // todas las partidas en memoria (dejando las apuestas reservadas colgadas).
   process.on('unhandledRejection', (motivo) => {
-    console.error('[fatal] promesa sin catch:', motivo);
+    void alerta('proceso.promesa_sin_catch', { causa: String(motivo) });
   });
   process.on('uncaughtException', (err) => {
-    console.error('[fatal] excepción sin catch:', err);
+    void alerta('proceso.excepcion_sin_catch', { causa: String(err) });
   });
 
   // ─── Ausencia: esperar al que se cayó, o cerrar por abandono ───────────────
@@ -607,7 +613,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         prisma.room.update({ where: { id: sala.config.roomId }, data: { state: 'FINISHED' } }),
       ]);
     } catch (e) {
-      console.error('[partida] no se pudo cerrar en la base', e);
+      void alerta('partida.cierre_fallido', { matchId: mesa.id, code, causa: String(e) });
     }
 
     // Ranking: sólo mueve en modos competitivos y sólo cuenta a los humanos.
@@ -639,7 +645,13 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       const resultado = ganadores.length
         ? await liquidarApuesta({ betId: sala.betId, ganadoresUserIds: ganadores })
         : await reembolsarApuesta(sala.betId, 'Sin ganadores humanos');
-      if (!resultado.ok) console.error('[apuesta] liquidación falló', resultado.error);
+      if (!resultado.ok)
+        void alerta('apuesta.liquidacion_fallida', {
+          matchId: mesa.id,
+          betId: sala.betId,
+          code,
+          error: resultado.error,
+        });
       sala.betId = null;
     }
 
@@ -671,11 +683,14 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         select: { id: true, bet: { select: { id: true, state: true } } },
       });
       if (colgadas.length === 0) return;
-      console.log(`▸ barriendo ${colgadas.length} partida(s) huérfana(s) de un proceso anterior`);
+      void alerta('arranque.partidas_huerfanas', {
+        cantidad: colgadas.length,
+        conApuesta: colgadas.filter((m) => m.bet?.state === 'RESERVED').length,
+      });
       for (const m of colgadas) {
         if (m.bet && m.bet.state === 'RESERVED') {
           const r = await reembolsarApuesta(m.bet.id, 'Reinicio del servidor');
-          if (!r.ok) console.error(`[barrido] no se pudo reembolsar ${m.bet.id}:`, r.error);
+          if (!r.ok) void alerta('arranque.reembolso_fallido', { betId: m.bet.id, error: r.error });
         }
         await prisma.match.update({
           where: { id: m.id },
@@ -683,10 +698,11 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         });
       }
     } catch (e) {
-      console.error('[barrido] falló el barrido de partidas huérfanas', e);
+      void alerta('arranque.barrido_fallido', { causa: String(e) });
     }
   }
 
+  let detenerVigilancia: (() => void) | null = null;
   const REDIS_URL = process.env.REDIS_URL;
   let redisPub: ReturnType<typeof createClient> | null = null;
   let redisSub: ReturnType<typeof createClient> | null = null;
@@ -707,6 +723,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       // Antes de aceptar tráfico: liberar la plata que dejó colgada un
       // proceso anterior.
       await barrerPartidasHuerfanas();
+      detenerVigilancia = vigilar();
       await app.listen({ port: PORT, host: '0.0.0.0' });
       const dir = app.server.address();
       const puerto = typeof dir === 'object' && dir ? dir.port : PORT;
@@ -715,6 +732,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     async cerrar() {
       clearInterval(tickMatchmaking);
       clearInterval(tickLimpieza);
+      detenerVigilancia?.();
       io.close();
       await app.close();
       await Promise.all([redisPub?.quit(), redisSub?.quit()].filter(Boolean));
