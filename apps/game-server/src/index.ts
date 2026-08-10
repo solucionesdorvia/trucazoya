@@ -220,8 +220,11 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
 
       sala.entrar(userId, username);
       sala.mesa?.marcarConexion(userId, true);
-      cancelarEsperaAusencia(codeActual ?? '', userId);
       codeActual = sala.config.code;
+      // Al reconectar el socket es NUEVO, así que `codeActual` todavía no
+      // estaba asignado: se cancelaba con '' y el rival seguía viendo el
+      // contador de ausencia de alguien que ya había vuelto.
+      cancelarEsperaAusencia(codeActual, userId);
       socket.join(`sala:${codeActual}`);
 
       io.to(`sala:${codeActual}`).emit('sala:estado', sala.snapshot());
@@ -390,7 +393,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   // ─── Ausencia: esperar al que se cayó, o cerrar por abandono ───────────────
 
   /** Milisegundos que se espera a un jugador desconectado en plena partida. */
-  const ESPERA_AUSENCIA_MS = 180_000;
+  const ESPERA_AUSENCIA_MS = Number(process.env.ESPERA_AUSENCIA_MS ?? 180_000);
   const ausencias = new Map<string, ReturnType<typeof setTimeout>>();
   const claveAusencia = (code: string, userId: string) => `${code}:${userId}`;
 
