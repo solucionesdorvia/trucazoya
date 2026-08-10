@@ -33,6 +33,8 @@ interface Vista {
   team: number;
   players: number;
   myHand: Array<{ suit: string; rank: number }>;
+  tricks: Array<Array<{ seat: number; card: { suit: string; rank: number } }>>;
+  trickOutcomes: string[];
   handCounts: Record<number, number>;
   scores: [number, number];
   pointsToWin: number;
@@ -128,6 +130,25 @@ describe('auditoría de partida 2v2', () => {
         const clavesPropias = new Set(v.myHand.map((c) => `${c.suit}-${c.rank}`));
         if (clavesPropias.size !== v.myHand.length) fallas.push('cartas repetidas en la mano');
 
+        // 3b. Integridad de cartas: nada puede estar en mi mano y en la mesa,
+        //     ni duplicarse, ni un asiento jugar dos veces en la misma baza.
+        const enMesa = v.tricks.flat().map((j) => `${j.card.suit}-${j.card.rank}`);
+        for (const c of v.myHand)
+          if (enMesa.includes(`${c.suit}-${c.rank}`))
+            fallas.push(`la carta ${c.suit}-${c.rank} está en mi mano Y en la mesa`);
+        if (new Set(enMesa).size !== enMesa.length) fallas.push('carta duplicada en la mesa');
+        for (const [idx, baza] of v.tricks.entries()) {
+          const seats = baza.map((j) => j.seat);
+          if (new Set(seats).size !== seats.length)
+            fallas.push(`un asiento jugó dos veces en la baza ${idx + 1}`);
+          if (baza.length > 4)
+            fallas.push(`la baza ${idx + 1} tiene ${baza.length} cartas (máx 4)`);
+        }
+        // En 2v2 una baza sólo se resuelve con las CUATRO cartas.
+        for (const [idx, res] of v.trickOutcomes.entries())
+          if (res && (v.tricks[idx]?.length ?? 0) < 4)
+            fallas.push(`la baza ${idx + 1} se resolvió con ${v.tricks[idx]?.length} de 4 cartas`);
+
         // 4. Toda acción legal ofrecida tiene que ser para MI asiento.
         for (const a of v.legales) {
           const seatDe = (a as { seat?: number }).seat;
@@ -140,7 +161,8 @@ describe('auditoría de partida 2v2', () => {
         const rivalesSegunMesa = [0, 1, 2, 3].filter((s2) => s2 % 2 !== v.team);
         if (rivalesSegunMesa.length !== 2)
           fallas.push(`la mesa vería ${rivalesSegunMesa.length} rivales en vez de 2`);
-        if (rivalesSegunMesa.includes(v.seat)) fallas.push('la mesa me contaría como mi propio rival');
+        if (rivalesSegunMesa.includes(v.seat))
+          fallas.push('la mesa me contaría como mi propio rival');
         const companero = [0, 1, 2, 3].find((s2) => s2 !== v.seat && s2 % 2 === v.team);
         if (companero === undefined) fallas.push('no se encuentra el compañero de equipo');
         if (companero !== undefined && rivalesSegunMesa.includes(companero))
@@ -158,7 +180,7 @@ describe('auditoría de partida 2v2', () => {
     expect(vistas.size, 'la partida 2v2 tiene que haber arrancado con 4').toBe(4);
 
     let semilla = Number(process.env.SEMILLA_AUDITORIA ?? 24680);
-    const azar = () => ((semilla = (semilla * 1103515245 + 12345) % 2147483648) / 2147483648);
+    const azar = () => (semilla = (semilla * 1103515245 + 12345) % 2147483648) / 2147483648;
 
     let terminada = false;
     for (let paso = 0; paso < 900 && !terminada; paso++) {

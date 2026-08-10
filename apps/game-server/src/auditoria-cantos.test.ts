@@ -43,7 +43,7 @@ interface Vista {
   legales: Action[];
   truco: { level: number; accepted: boolean };
   envido: { pending: string[]; resolved: boolean; accepted: boolean };
-  flor: { active: boolean; resolved: boolean; iHaveFlor: boolean };
+  flor: { called: boolean; contested: string | null; resolved: boolean; iHaveFlor: boolean };
 }
 
 function conectar(userId: string, username: string): Promise<Socket> {
@@ -61,12 +61,12 @@ function conectar(userId: string, username: string): Promise<Socket> {
 
 /** Réplica del banner "El rival cantó X" del dock (Mesa.tsx). */
 function bannerQueMostraria(v: Vista): string {
-  if (v.envido.pending.length > 0 && !v.envido.resolved) {
+  if (v.phase === 'ENVIDO_PENDING') {
     const ult = v.envido.pending[v.envido.pending.length - 1] ?? 'ENVIDO';
     return ETIQUETA_CANTO[ult] ?? 'Envido';
   }
-  if (v.flor.active && !v.flor.resolved) return 'Flor';
-  if (v.truco.level > 0 && !v.truco.accepted) return NIVEL_TRUCO[v.truco.level - 1] ?? 'Truco';
+  if (v.phase === 'FLOR_PENDING') return ETIQUETA_CANTO[v.flor.contested ?? 'FLOR'] ?? 'Flor';
+  if (v.phase === 'TRUCO_PENDING') return NIVEL_TRUCO[v.truco.level - 1] ?? 'Truco';
   return 'un canto';
 }
 
@@ -78,7 +78,8 @@ function estampaQueMostraria(prev: Vista, ahora: Vista): string | null {
     const ult = ahora.envido.pending[ahora.envido.pending.length - 1] ?? 'ENVIDO';
     return `¡${(ETIQUETA_CANTO[ult] ?? 'Envido').toUpperCase()}!`;
   }
-  if (ahora.flor.active && !prev.flor.active) return '¡FLOR!';
+  if (ahora.flor.contested && ahora.flor.contested !== prev.flor.contested)
+    return `¡${(ETIQUETA_CANTO[ahora.flor.contested] ?? 'Flor').toUpperCase()}!`;
   return null;
 }
 
@@ -236,7 +237,9 @@ describe('auditoría de cantos: lo que se canta es lo que se muestra', () => {
     console.log('═══ BANNER "EL RIVAL CANTÓ" ═══');
     for (const b of banners) {
       const ok = b.banner === b.trucoPendiente;
-      console.log(`  ${ok ? '✓' : '✗'} pendiente: ${b.trucoPendiente.padEnd(12)} → dice: "${b.banner}"`);
+      console.log(
+        `  ${ok ? '✓' : '✗'} pendiente: ${b.trucoPendiente.padEnd(12)} → dice: "${b.banner}"`,
+      );
     }
     const bannersMal = banners.filter((b) => b.banner !== b.trucoPendiente);
     console.log('');

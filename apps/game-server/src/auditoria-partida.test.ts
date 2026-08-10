@@ -40,6 +40,7 @@ interface Vista {
   phase: string;
   seat: number;
   team: number;
+  players: number;
   myHand: Array<{ suit: string; rank: number }>;
   handCounts: Record<number, number>;
   tricks: Array<Array<{ seat: number; card: { suit: string; rank: number } }>>;
@@ -159,6 +160,34 @@ describe('auditoría de partida completa', () => {
           fallas.push(`anuncia Truco con nivel ${v.truco.level}`);
         if (canto === 'Vale cuatro' && v.truco.level !== 3)
           fallas.push(`anuncia Vale cuatro con nivel ${v.truco.level}`);
+
+        // 3b. Ninguna carta puede estar a la vez en mi mano y en la mesa.
+        const enMesa = v.tricks.flat().map((j) => `${j.card.suit}-${j.card.rank}`);
+        for (const c of v.myHand) {
+          if (enMesa.includes(`${c.suit}-${c.rank}`))
+            fallas.push(`la carta ${c.suit}-${c.rank} está en mi mano Y en la mesa`);
+        }
+
+        // 3c. Una carta jugada no puede aparecer dos veces en la mesa.
+        if (new Set(enMesa).size !== enMesa.length)
+          fallas.push(`carta duplicada en la mesa: ${enMesa.join(',')}`);
+
+        // 3d. Nadie puede tirar dos cartas en la misma baza.
+        for (const [idx, baza] of v.tricks.entries()) {
+          const asientos = baza.map((j) => j.seat);
+          if (new Set(asientos).size !== asientos.length)
+            fallas.push(`un asiento jugó dos veces en la baza ${idx + 1}`);
+          if (baza.length > v.players)
+            fallas.push(
+              `la baza ${idx + 1} tiene ${baza.length} cartas para ${v.players} jugadores`,
+            );
+        }
+
+        // 3e. Sólo se puede haber resuelto una baza que esté completa.
+        for (const [idx, res] of v.trickOutcomes.entries()) {
+          if (res && (v.tricks[idx]?.length ?? 0) < v.players)
+            fallas.push(`la baza ${idx + 1} se resolvió con ${v.tricks[idx]?.length} cartas`);
+        }
 
         // 4. Coherencia de bazas.
         if (v.currentTrick > 2) fallas.push(`currentTrick fuera de rango: ${v.currentTrick}`);
