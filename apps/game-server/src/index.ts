@@ -529,10 +529,32 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
 
   // ─── Arranque y cierre de partida ───────────────────────────────────────────
 
+  /** Salas que ya están arrancando: el candado tiene que ser SÍNCRONO. */
+  const arrancando = new Set<string>();
+
   async function arrancarPartida(
     sala: NonNullable<ReturnType<RegistroSalas['obtener']>>,
     code: string,
   ) {
+    // `arrancarPartida` hace awaits antes de que la sala pase a EN_PARTIDA, y
+    // ahora se la puede invocar desde `sala:entrar` Y desde `sala:listo`. Sin
+    // este candado, dos llamadas casi simultáneas pasaban las dos el chequeo
+    // y RESERVABAN LA APUESTA DOS VECES (al jugador le salía el doble).
+    if (arrancando.has(code)) return;
+    arrancando.add(code);
+    try {
+      await arrancarPartidaInterno(sala, code);
+    } finally {
+      arrancando.delete(code);
+    }
+  }
+
+  async function arrancarPartidaInterno(
+    sala: NonNullable<ReturnType<RegistroSalas['obtener']>>,
+    code: string,
+  ) {
+    // Puede haber arrancado mientras esperábamos el candado.
+    if (sala.estado !== 'ESPERANDO') return;
     const matchId = randomUUID();
     const humanos = sala.participantes.filter((p) => !p.isBot && p.seat !== null);
 
