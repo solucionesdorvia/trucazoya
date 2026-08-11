@@ -4,7 +4,6 @@
  */
 
 import { prisma } from '@trucazo/db';
-import { registrarMovimiento } from './ledger.js';
 
 /** XP necesaria para pasar del nivel n al n+1. Curva suave. */
 export function xpParaNivel(nivel: number): number {
@@ -50,7 +49,8 @@ export async function otorgarRecompensas(input: {
 }): Promise<RecompensaPartida> {
   const xpGanada = input.gano ? 25 : 10;
   const logrosDesbloqueados: string[] = [];
-  let monedasBonus = 0;
+  // Se mantiene en 0: la progresión ya no emite fichas.
+  const monedasBonus = 0;
 
   const profile = await prisma.profile.findUnique({ where: { userId: input.userId } });
   const xpAntes = profile?.xp ?? 0;
@@ -64,17 +64,10 @@ export async function otorgarRecompensas(input: {
     data: { xp: xpDespues, level: nivelDespues },
   });
 
-  // Subir de nivel da monedas.
-  if (subioNivel) {
-    monedasBonus = nivelDespues * 20;
-    await registrarMovimiento({
-      userId: input.userId,
-      type: 'LEVEL_REWARD',
-      amount: BigInt(monedasBonus),
-      idempotencyKey: `level:${input.userId}:${nivelDespues}`,
-      reason: `Subiste al nivel ${nivelDespues}`,
-    }).catch(() => undefined); // idempotente: si ya cobró ese nivel, no pasa nada
-  }
+  // Subir de nivel NO da fichas. Las fichas se cargan y se retiran con plata
+  // real: regalarlas por progresión es emitir dinero de la nada. Un tester lo
+  // detectó porque en una tanda de revanchas el total del sistema creció
+  // (500+500 al empezar, 1130 al terminar). El nivel queda como estatus.
 
   // Misión diaria: "jugá 3 partidas".
   const periodKey = claveHoy(input.fecha);
@@ -89,16 +82,7 @@ export async function otorgarRecompensas(input: {
     });
     if (um.progress >= mision.target && !um.completed) {
       await prisma.userMission.update({ where: { id: um.id }, data: { completed: true } });
-      if (mision.rewardCoins > 0) {
-        monedasBonus += mision.rewardCoins;
-        await registrarMovimiento({
-          userId: input.userId,
-          type: 'DAILY_BONUS',
-          amount: BigInt(mision.rewardCoins),
-          idempotencyKey: `mission:${mision.id}:${input.userId}:${periodKey}`,
-          reason: 'Misión diaria completada',
-        }).catch(() => undefined);
-      }
+      // Igual que el nivel: la misión se marca cumplida, pero no paga fichas.
     }
   }
 

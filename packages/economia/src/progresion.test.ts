@@ -75,7 +75,7 @@ describe('recompensas de partida', () => {
     expect(logros).toBe(1);
   });
 
-  it('completar la misión diaria acredita monedas una vez', async () => {
+  it('la progresión NUNCA emite fichas: ni por nivel ni por misión', async () => {
     const dia = new Date('2026-08-01');
     const nuevo = await prisma.user.create({
       data: {
@@ -85,17 +85,27 @@ describe('recompensas de partida', () => {
       },
     });
 
-    // 3 partidas: en la 3ª se completa la misión.
-    for (let i = 0; i < 3; i++) {
-      await otorgarRecompensas({ userId: nuevo.id, gano: false, fecha: dia });
+    // Se juegan varias partidas: se sube de nivel y se completa la misión.
+    // Antes esto acreditaba fichas, y por eso el total del sistema crecía
+    // solo (un tester lo vio jugando revanchas: 1000 → 1130). Las fichas se
+    // cargan y retiran con plata real, así que regalarlas es emitir dinero.
+    for (let i = 0; i < 6; i++) {
+      await otorgarRecompensas({ userId: nuevo.id, gano: true, fecha: dia });
     }
-    const saldo1 = (await saldoDe(nuevo.id)).balance;
-    expect(saldo1).toBeGreaterThanOrEqual(50n); // recompensa de la misión
 
-    // Una 4ª partida no vuelve a pagar la misión de hoy.
-    await otorgarRecompensas({ userId: nuevo.id, gano: false, fecha: dia });
-    const saldo2 = (await saldoDe(nuevo.id)).balance;
-    expect(saldo2).toBe(saldo1);
+    const saldo = (await saldoDe(nuevo.id)).balance;
+    expect(saldo, 'jugar no puede aumentar el saldo: sólo lo hacen las apuestas').toBe(0n);
+
+    // La progresión SÍ tiene que seguir funcionando, sin premio en fichas.
+    const perfil = await prisma.profile.findUnique({ where: { userId: nuevo.id } });
+    expect(perfil!.xp, 'la XP tiene que sumar igual').toBeGreaterThan(0);
+    const mision = await prisma.mission.findFirst({ where: { code: 'daily_play_3' } });
+    if (mision) {
+      const um = await prisma.userMission.findFirst({
+        where: { userId: nuevo.id, missionId: mision.id },
+      });
+      expect(um?.completed, 'la misión igual se marca cumplida').toBe(true);
+    }
 
     await prisma.userMission.deleteMany({ where: { userId: nuevo.id } });
     await prisma.ledgerEntry.deleteMany({ where: { userId: nuevo.id } });

@@ -166,7 +166,6 @@ export default async function Billetera() {
                   <Panel className="flex items-center justify-between gap-3 !p-4">
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-tinta-50">{c.nombre}</span>
-                      <span className="block text-xs text-tinta-400">Cajero verificado</span>
                     </span>
                     <a
                       href={c.linkWhatsapp}

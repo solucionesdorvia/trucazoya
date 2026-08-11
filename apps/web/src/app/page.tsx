@@ -52,9 +52,7 @@ export default async function Landing() {
               </Link>
             </div>
 
-            <p className="mt-4 text-sm text-tinta-600">
-              Gratis. Fichas de bienvenida al registrarte.
-            </p>
+            <p className="mt-4 text-sm text-tinta-600">Gratis. Creás tu cuenta y jugás.</p>
           </div>
 
           {/* Mano de truco desplegada */}

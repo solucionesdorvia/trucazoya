@@ -39,30 +39,10 @@ export function Encabezado({ user }: { user: SessionUser }) {
               Torneos
             </Link>
             <Link
-              href="/tienda"
-              className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
-            >
-              Tienda
-            </Link>
-            <Link
               href="/amigos"
               className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
             >
               Amigos
-            </Link>
-            <Link
-              href="/reparto"
-              className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
-              title="Cómo comprobás que el reparto es limpio"
-            >
-              Juego limpio
-            </Link>
-            <Link
-              href="/juego-responsable"
-              className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
-              title="Juego responsable"
-            >
-              +18
             </Link>
             <div className="hidden items-center gap-2 sm:flex">
               <Link
