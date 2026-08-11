@@ -43,6 +43,22 @@ export interface MensajeChat {
 
 type Conexion = 'conectando' | 'conectado' | 'reconectando' | 'error';
 
+/**
+ * Traduce el motivo técnico del motor a algo que entienda un jugador. El
+ * servidor decía cosas como "Acción ilegal PLAY_CARD (asiento 0) en fase
+ * PLAYING", que no le dice nada a nadie.
+ */
+function enCriollo(motivo: string): string {
+  if (/PLAY_CARD/.test(motivo)) return 'Esa carta ya no se puede tirar: esperá tu turno.';
+  if (/RESPOND/.test(motivo)) return 'Ese canto ya se resolvió.';
+  if (/CALL_(TRUCO|ENVIDO|FLOR)/.test(motivo)) return 'Ese canto ya no corresponde.';
+  if (/GO_TO_MAZO/.test(motivo)) return 'Ya no podés irte al mazo en este momento.';
+  if (/Asiento inválido|No sos jugador/i.test(motivo))
+    return 'Hubo un problema con tu lugar en la mesa. Recargá la página.';
+  if (/Acción ilegal/i.test(motivo)) return 'Esa jugada ya no es válida. Se actualizó la mesa.';
+  return motivo;
+}
+
 export function SalaVivo({ code, userId }: { code: string; userId: string }) {
   const [conexion, setConexion] = useState<Conexion>('conectando');
   const [sala, setSala] = useState<SnapshotSala | null>(null);
@@ -83,7 +99,7 @@ export function SalaVivo({ code, userId }: { code: string; userId: string }) {
       socket.on('partida:estado', (d: { vista: VistaJugador }) => setVista(d.vista));
 
       socket.on('accion:rechazada', (d: { motivo: string }) => {
-        setAviso(d.motivo);
+        setAviso(enCriollo(d.motivo));
         // El servidor rechazó: pedimos el estado real para no quedar desfasados.
         socket?.emit('partida:sync');
         setTimeout(() => setAviso(null), 3000);

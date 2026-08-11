@@ -260,6 +260,11 @@ export function Mesa({
   const [dealKey, setDealKey] = useState(0);
   const prevLen = useRef(vista.myHand.length);
 
+  // Cualquier estado nuevo del servidor confirma (o descarta) la jugada.
+  useEffect(() => {
+    setEnviando(false);
+  }, [vista.turnSeat, vista.myHand.length, vista.phase, vista.currentTrick]);
+
   // Reparto animado: cuando vuelve a haber 3 cartas, es una mano nueva.
   useEffect(() => {
     if (vista.myHand.length === 3 && prevLen.current < 3) {
@@ -398,7 +403,12 @@ export function Mesa({
     el: HTMLElement;
   } | null>(null);
 
-  const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0;
+  // Jugada enviada y todavía sin confirmar. Sin esto, cuando el servidor
+  // tardaba más que la animación de la carta, la mano volvía a habilitarse y
+  // un segundo toque mandaba un PLAY_CARD que el servidor rechazaba con
+  // "Acción ilegal ... en fase PLAYING".
+  const [enviando, setEnviando] = useState(false);
+  const miTurno = vista.turnSeat === vista.seat && vista.legales.length > 0 && !enviando;
   const terminada = vista.phase === 'MATCH_FINISHED';
 
   // Sólo el equipo contrario: antes incluía al compañero, que aparecía como
@@ -419,7 +429,8 @@ export function Mesa({
   const puntosRival = vista.scores[miEquipo === 0 ? 1 : 0];
 
   function jugar(c: Card, el: HTMLElement) {
-    if (volando) return;
+    if (volando || enviando) return;
+    setEnviando(true);
     sonido.tick();
     // Tomamos el rect de la carta derecha (el <span> interno), no el del botón
     // rotado por el abanico: así el vuelo arranca justo donde está la carta.
