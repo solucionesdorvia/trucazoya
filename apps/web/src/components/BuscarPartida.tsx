@@ -25,6 +25,9 @@ export function BuscarPartida() {
   const [conectado, setConectado] = useState(false);
   const [buscando, setBuscando] = useState<Modo | null>(null);
   const [segundos, setSegundos] = useState(0);
+  /** Fichas que se ponen en la partida rápida. Antes SIEMPRE era 0: no había
+   *  forma de jugar por fichas sin crear una sala a mano. */
+  const [apuesta, setApuesta] = useState(0);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -56,7 +59,7 @@ export function BuscarPartida() {
   }, [buscando]);
 
   const buscar = (modo: Modo) => {
-    socketRef.current?.emit('mm:buscar', { mode: modo });
+    socketRef.current?.emit('mm:buscar', { mode: modo, apuesta });
     setBuscando(modo);
   };
 
@@ -94,6 +97,37 @@ export function BuscarPartida() {
           {!conectado && (
             <Panel className="text-center text-sm text-tinta-400">Conectando al servidor…</Panel>
           )}
+          <div className="mb-4">
+            <p className="font-medium text-tinta-50">Se juega por</p>
+            <p className="mt-0.5 text-sm text-tinta-400">
+              Sólo te empareja con alguien que ponga lo mismo.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[0, 100, 500, 1000, 5000].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setApuesta(v)}
+                  aria-pressed={apuesta === v}
+                  className={`min-h-[44px] rounded-xl border px-4 text-sm font-semibold transition-colors ${
+                    apuesta === v
+                      ? 'border-oro-500 bg-oro-500/20 text-oro-300'
+                      : 'border-noche-600 text-tinta-300 hover:text-tinta-50'
+                  }`}
+                >
+                  {v === 0 ? 'Sin fichas' : `${v.toLocaleString('es-AR')}`}
+                </button>
+              ))}
+            </div>
+            {apuesta > 0 && (
+              <p className="mt-2 rounded-lg bg-oro-500/10 px-3 py-2 text-sm text-oro-200">
+                Ponés <strong>{apuesta.toLocaleString('es-AR')}</strong> fichas. Si ganás te llevás{' '}
+                <strong>{Math.round(apuesta * 2 * 0.95).toLocaleString('es-AR')}</strong> (5% de
+                comisión).
+              </p>
+            )}
+          </div>
+
           {MODOS.map((m) => (
             <button
               key={m.v}

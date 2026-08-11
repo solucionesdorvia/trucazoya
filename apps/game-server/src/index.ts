@@ -151,6 +151,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       pointsToWin: room.pointsToWin === 15 ? 15 : 30,
       florEnabled: room.florEnabled,
       faltaEnvidoToGame: true,
+      turnTimeoutSec: room.turnTimeoutSec,
     };
     return registro.crear(config);
   }
@@ -245,6 +246,11 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
           eventos: [],
         });
       }
+
+      // Partida rápida: el matchmaking ya dejó a todos listos, pero la
+      // partida no puede arrancar hasta que los jugadores se conecten a la
+      // sala. Sin este chequeo quedaban mirando "Estoy listo" para siempre.
+      if (sala.puedeArrancar()) await arrancarPartida(sala, codeActual);
     });
 
     // ── Marcar listo ─────────────────────────────────────────────────────
@@ -329,19 +335,21 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     });
 
     // ── Matchmaking: buscar rival sin código ─────────────────────────────
-    socket.on('mm:buscar', async ({ mode }: { mode: string }) => {
+    socket.on('mm:buscar', async ({ mode, apuesta }: { mode: string; apuesta?: number }) => {
       const modo = normalizarModo(mode);
+      // Sólo montos de la escalera, y nunca negativos: el cliente no decide.
+      const montos = [0, 100, 500, 1000, 5000];
+      const fichas = montos.includes(Number(apuesta)) ? Number(apuesta) : 0;
       // Ranking real del jugador para emparejar por nivel.
       const rating = await prisma.rating.findUnique({
         where: { userId_mode: { userId, mode: modo } },
         select: { rating: true },
       });
-      matchmaker.entrar(modo, {
-        userId,
-        username,
-        rating: rating?.rating ?? 1500,
-        desde: Date.now(),
-      });
+      matchmaker.entrar(
+        modo,
+        { userId, username, rating: rating?.rating ?? 1500, desde: Date.now() },
+        fichas,
+      );
       const info = matchmaker.enCola(userId);
       socket.emit('mm:estado', { buscando: true, ...info });
     });
@@ -427,11 +435,13 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
   }
 
   /** Cierra la partida dando por ganador al equipo del que sí se quedó. */
-  async function cerrarPorAbandono(code: string, userIdAusente: string) {
+  async function cerrarPorAbandono(code: string, userIdAusente: string, porTiempo = false) {
     const sala = registro.obtener(code);
     if (!sala || sala.estado !== 'EN_PARTIDA' || !sala.mesa) return;
     // Si volvió a conectarse mientras tanto, no se cierra nada.
-    if (socketsPorUsuario.has(userIdAusente)) return;
+    // Si volvió a conectarse no se cierra nada... salvo que lo estemos
+    // sacando por no jugar: en ese caso está conectado pero no actúa.
+    if (!porTiempo && socketsPorUsuario.has(userIdAusente)) return;
 
     const ausente = sala.participantes.find((p) => p.userId === userIdAusente);
     if (ausente?.seat == null) return;
@@ -475,6 +485,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
             pointsToWin: 30,
             florEnabled: true,
             allowBots: false,
+            betAmount: BigInt(grupo.apuesta),
             participants: {
               create: grupo.jugadores.map((j, i) => ({ userId: j.userId, seat: i, team: i % 2 })),
             },
@@ -486,13 +497,14 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
           code: room.code,
           roomId: room.id,
           hostUserId: room.hostUserId,
-          apuesta: 0,
+          apuesta: grupo.apuesta,
           permiteBots: false,
           modo: grupo.mode,
           players: grupo.mode.includes('2V2') ? 4 : 2,
           pointsToWin: 30,
           florEnabled: true,
           faltaEnvidoToGame: true,
+          turnTimeoutSec: 40,
         });
         for (const j of grupo.jugadores) {
           sala.entrar(j.userId, j.username);
@@ -575,7 +587,14 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       sala.betId = reserva.betId ?? null;
     }
 
-    const mesa = sala.arrancar(matchId, emitirAUsuario);
+    const mesa = sala.arrancar(matchId, emitirAUsuario, (seat) => {
+      // Segundo vencimiento del reloj: se lo saca de la partida, igual que si
+      // se hubiera desconectado y no volviera.
+      const p = sala.participantes.find((x) => x.seat === seat);
+      if (!p) return;
+      log('aviso', 'partida.expulsado_por_tiempo', { code, matchId, userId: p.userId, seat });
+      void cerrarPorAbandono(code, p.userId, true);
+    });
     metricas.partidasArrancadas++;
     io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
     io.to(`sala:${code}`).emit('partida:arrancada', { matchId });

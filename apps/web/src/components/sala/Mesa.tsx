@@ -162,6 +162,8 @@ interface Confirmable {
   action: Action;
   titulo: string;
   detalle: string;
+  /** Si viene, se ejecuta esto en vez de despachar la acción. */
+  alConfirmar?: () => void;
 }
 
 // ─── Mesa ────────────────────────────────────────────────────────────────────
@@ -931,11 +933,29 @@ export function Mesa({
           >
             {terminada ? (
               <div className="flex flex-col gap-2">
-                {onRevancha && (
-                  <Boton tamaño="lg" className="w-full" onClick={onRevancha}>
-                    Revancha
-                  </Boton>
-                )}
+                {onRevancha &&
+                  (sala.config.apuesta > 0 ? (
+                    // Con fichas en juego la revancha vuelve a cobrar: hay que
+                    // decirlo ANTES, no después de que se descuenten.
+                    <Boton
+                      tamaño="lg"
+                      className="w-full"
+                      onClick={() =>
+                        setConfirmando({
+                          action: { type: 'GO_TO_MAZO', seat: vista.seat } as Action,
+                          titulo: '¿Revancha?',
+                          detalle: `Se juega otra por ${sala.config.apuesta.toLocaleString('es-AR')} fichas. Se te descuentan al repartir.`,
+                          alConfirmar: onRevancha,
+                        })
+                      }
+                    >
+                      Revancha · {sala.config.apuesta.toLocaleString('es-AR')} fichas
+                    </Boton>
+                  ) : (
+                    <Boton tamaño="lg" className="w-full" onClick={onRevancha}>
+                      Revancha
+                    </Boton>
+                  ))}
                 <a href="/inicio" className="block">
                   <Boton variante="fantasma" className="w-full">
                     Volver al inicio
@@ -1127,7 +1147,8 @@ export function Mesa({
           onCancelar={() => setConfirmando(null)}
           onConfirmar={() => {
             vibrar(20);
-            onAccion(confirmando.action);
+            if (confirmando.alConfirmar) confirmando.alConfirmar();
+            else onAccion(confirmando.action);
             setConfirmando(null);
           }}
         />

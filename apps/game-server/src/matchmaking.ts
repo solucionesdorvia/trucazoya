@@ -18,8 +18,21 @@ export interface EnCola {
 
 export interface Emparejamiento {
   mode: GameMode;
+  /** Fichas que pone cada jugador (0 = partida sin fichas). */
+  apuesta: number;
   jugadores: EnCola[];
 }
+
+/**
+ * Las colas se separan por modo Y por apuesta: sólo se empareja gente que
+ * juega por lo mismo. Antes todas las partidas rápidas eran de 0 fichas.
+ */
+type ClaveCola = string;
+const claveDe = (mode: GameMode, apuesta: number): ClaveCola => `${mode}|${apuesta}`;
+const parseClave = (c: ClaveCola): { mode: GameMode; apuesta: number } => {
+  const [mode, apuesta] = c.split('|');
+  return { mode: mode as GameMode, apuesta: Number(apuesta) };
+};
 
 /** Cuántos jugadores necesita cada modo. */
 function cupo(mode: GameMode): number {
@@ -36,20 +49,21 @@ export function ventanaRating(esperaMs: number): number {
 }
 
 export class Matchmaker {
-  private readonly colas = new Map<GameMode, EnCola[]>();
+  private readonly colas = new Map<ClaveCola, EnCola[]>();
 
-  entrar(mode: GameMode, jugador: EnCola): void {
-    const cola = this.colas.get(mode) ?? [];
+  entrar(mode: GameMode, jugador: EnCola, apuesta = 0): void {
+    const clave = claveDe(mode, apuesta);
+    const cola = this.colas.get(clave) ?? [];
     // Evita duplicados (misma persona en dos pestañas).
     if (cola.some((j) => j.userId === jugador.userId)) return;
     cola.push(jugador);
-    this.colas.set(mode, cola);
+    this.colas.set(clave, cola);
   }
 
   salir(userId: string): void {
-    for (const [mode, cola] of this.colas) {
+    for (const [clave, cola] of this.colas) {
       this.colas.set(
-        mode,
+        clave,
         cola.filter((j) => j.userId !== userId),
       );
     }
@@ -62,12 +76,15 @@ export class Matchmaker {
     return total;
   }
 
-  enCola(userId: string): { mode: GameMode; posicion: number; espera: number } | null {
-    for (const [mode, cola] of this.colas) {
+  enCola(
+    userId: string,
+  ): { mode: GameMode; apuesta: number; posicion: number; espera: number } | null {
+    for (const [clave, cola] of this.colas) {
       const idx = cola.findIndex((j) => j.userId === userId);
       if (idx >= 0) {
         const j = cola[idx] as EnCola;
-        return { mode, posicion: idx + 1, espera: Date.now() - j.desde };
+        const { mode, apuesta } = parseClave(clave);
+        return { mode, apuesta, posicion: idx + 1, espera: Date.now() - j.desde };
       }
     }
     return null;
@@ -86,7 +103,8 @@ export class Matchmaker {
   emparejar(ahora: number): Emparejamiento[] {
     const salida: Emparejamiento[] = [];
 
-    for (const [mode, cola] of this.colas) {
+    for (const [clave, cola] of this.colas) {
+      const { mode, apuesta } = parseClave(clave);
       const necesarios = cupo(mode);
       if (cola.length < necesarios) continue;
 
@@ -109,13 +127,13 @@ export class Matchmaker {
         if (compatibles.length >= necesarios - 1) {
           const grupo = [semilla, ...compatibles.slice(0, necesarios - 1)];
           for (const j of grupo) usados.add(j.userId);
-          salida.push({ mode, jugadores: grupo });
+          salida.push({ mode, apuesta, jugadores: grupo });
         }
       }
 
       if (usados.size > 0) {
         this.colas.set(
-          mode,
+          clave,
           cola.filter((j) => !usados.has(j.userId)),
         );
       }

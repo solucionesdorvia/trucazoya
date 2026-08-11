@@ -63,12 +63,21 @@ export class Mesa {
   /** Compromisos de barajado (commit-reveal) pendientes de volcar a la base. */
   private readonly repartosPendientes: RepartoAuditable[] = [];
   private timerBot: NodeJS.Timeout | null = null;
+  /** Reloj de turno: si el jugador no actúa, primero se juega por él y a la
+   *  segunda se lo saca de la partida (regla pedida por los jugadores). */
+  private timerTurno: NodeJS.Timeout | null = null;
+  /** Cuántas veces se le venció el reloj a cada asiento en esta partida. */
+  private readonly vencimientos = new Map<number, number>();
 
   constructor(
     readonly id: string,
     config: RuleConfig,
     jugadores: JugadorMesa[],
     private readonly emitir: Emisor,
+    /** Se llama cuando a un jugador se le vence el reloj por segunda vez. */
+    private readonly onAbandonoPorTiempo?: (seat: number) => void,
+    /** Segundos por turno (0 = sin reloj). Viene de la config de la sala. */
+    private readonly turnTimeoutSec = 0,
   ) {
     this.jugadores = jugadores;
     this.state = createMatch(config);
@@ -163,7 +172,11 @@ export class Mesa {
     const seatEnTurno = this.asientoEnTurno();
     if (seatEnTurno === null) return;
     const jugador = this.jugadores.find((j) => j.seat === seatEnTurno);
-    if (!jugador?.isBot) return;
+    if (!jugador?.isBot) {
+      // Humano: se le da cuerda al reloj de turno.
+      this.armarRelojDeTurno(seatEnTurno);
+      return;
+    }
 
     this.programar(700 + cryptoRandomInt(600), () => {
       const accion = chooseAction(jugador.botLevel ?? 'intermedio', {
@@ -173,6 +186,44 @@ export class Mesa {
       });
       this.aplicar(jugador.userId, accion, `bot:${this.state.seq}:${jugador.seat}`);
     });
+  }
+
+  /**
+   * Reloj de turno. Si el jugador no juega dentro del plazo:
+   *  - la 1ª vez se juega por él una acción conservadora (tira una carta o
+   *    responde que no quiere), para que la partida no se frene,
+   *  - la 2ª vez se lo saca de la partida.
+   */
+  private armarRelojDeTurno(seat: number): void {
+    if (this.timerTurno) clearTimeout(this.timerTurno);
+    const segundos = this.turnTimeoutSec;
+    if (segundos <= 0) return;
+    this.timerTurno = setTimeout(() => {
+      this.timerTurno = null;
+      if (this.asientoEnTurno() !== seat) return;
+      const veces = (this.vencimientos.get(seat) ?? 0) + 1;
+      this.vencimientos.set(seat, veces);
+      const jugador = this.jugadores.find((j) => j.seat === seat);
+      if (!jugador) return;
+
+      if (veces >= 2) {
+        this.emitir(jugador.userId, 'partida:tiempo', { seat, veces, expulsado: true });
+        this.onAbandonoPorTiempo?.(seat);
+        return;
+      }
+      this.emitir(jugador.userId, 'partida:tiempo', { seat, veces, expulsado: false });
+      const accion = this.accionPorDefecto(seat);
+      if (accion) this.aplicar(jugador.userId, accion, `tiempo:${this.state.seq}:${seat}`);
+    }, segundos * 1000);
+  }
+
+  /** La jugada más conservadora disponible: no quiero, o la primera carta. */
+  private accionPorDefecto(seat: number): Action | null {
+    const legales = legalActions(this.state).filter((a) => a.seat === seat);
+    const noQuiero = legales.find((a) => a.type === 'RESPOND' && a.response === 'NO_QUIERO');
+    if (noQuiero) return noQuiero;
+    const carta = legales.find((a) => a.type === 'PLAY_CARD');
+    return carta ?? legales[0] ?? null;
   }
 
   /** Asiento que debe actuar ahora (según las acciones legales del motor). */
@@ -235,6 +286,7 @@ export class Mesa {
   }
 
   destruir(): void {
+    if (this.timerTurno) clearTimeout(this.timerTurno);
     if (this.timerBot) clearTimeout(this.timerBot);
     this.timerBot = null;
   }

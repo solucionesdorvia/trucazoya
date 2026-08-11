@@ -90,6 +90,24 @@ describe('matchmaking end-to-end', () => {
     expect(room).toBeTruthy();
     expect(room!.participants).toHaveLength(2);
 
+    // Reportado por un tester: "me encontró partida pero no arranca". El
+    // matchmaking dejaba a todos listos, pero la partida sólo arrancaba al
+    // tocar "Estoy listo" — el ready-check que la partida rápida ya evitó.
+    const arrancoPara = new Set<number>();
+    s0.on('partida:estado', () => arrancoPara.add(0));
+    s1.on('partida:estado', () => arrancoPara.add(1));
+    s0.emit('sala:entrar', { code });
+    s1.emit('sala:entrar', { code });
+
+    const limite2 = Date.now() + 6000;
+    while (arrancoPara.size < 2 && Date.now() < limite2) {
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    expect(
+      arrancoPara.size,
+      'la partida rápida tiene que arrancar sola al conectarse, sin ready-check',
+    ).toBe(2);
+
     s0.disconnect();
     s1.disconnect();
     await new Promise((r) => setTimeout(r, 200));

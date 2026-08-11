@@ -30,6 +30,8 @@ export interface ConfigSala extends RuleConfig {
   permiteBots: boolean;
   /** Modo real de la sala: define si la partida mueve el ranking. */
   modo: ModoJuego;
+  /** Segundos por turno antes de jugar por el ausente (0 = sin reloj). */
+  turnTimeoutSec?: number;
 }
 
 export class Sala {
@@ -121,6 +123,7 @@ export class Sala {
   arrancar(
     matchId: string,
     emitir: (userId: string, evento: string, datos: unknown) => void,
+    onAbandonoPorTiempo?: (seat: number) => void,
   ): Mesa {
     const jugadores: JugadorMesa[] = this.participantes
       .filter((p) => p.seat !== null)
@@ -134,7 +137,14 @@ export class Sala {
       }))
       .sort((a, b) => a.seat - b.seat);
 
-    this.mesa = new Mesa(matchId, this.config, jugadores, emitir);
+    this.mesa = new Mesa(
+      matchId,
+      this.config,
+      jugadores,
+      emitir,
+      onAbandonoPorTiempo,
+      this.config.turnTimeoutSec ?? 0,
+    );
     this.estado = 'EN_PARTIDA';
     return this.mesa;
   }
