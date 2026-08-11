@@ -13,12 +13,13 @@ import { Boton, Panel } from '@/components/ui';
 
 type Modo = 'CASUAL_1V1' | 'RANKED_1V1' | 'CASUAL_2V2' | 'RANKED_2V2';
 
-const MODOS: Array<{ v: Modo; t: string; d: string }> = [
-  { v: 'CASUAL_1V1', t: '1 vs 1 casual', d: 'Sin presión, no mueve el ranking' },
-  { v: 'RANKED_1V1', t: '1 vs 1 competitivo', d: 'Sube o baja tu clasificación' },
-  { v: 'CASUAL_2V2', t: '2 vs 2 casual', d: 'Con un compañero al azar' },
-  { v: 'RANKED_2V2', t: '2 vs 2 competitivo', d: 'Ranking por equipos' },
+const MODOS: Array<{ v: Modo; t: string; d: string; minimo: number }> = [
+  { v: 'CASUAL_1V1', t: '1 vs 1', d: 'Mano a mano', minimo: 2500 },
+  { v: 'CASUAL_2V2', t: '2 vs 2', d: 'Con un compañero al azar', minimo: 4000 },
 ];
+
+/** Mínimo de fichas para entrar, según el formato. */
+const MINIMO: Record<string, number> = { CASUAL_1V1: 2500, CASUAL_2V2: 4000 };
 
 export function BuscarPartida() {
   const router = useRouter();
@@ -27,7 +28,8 @@ export function BuscarPartida() {
   const [segundos, setSegundos] = useState(0);
   /** Fichas que se ponen en la partida rápida. Antes SIEMPRE era 0: no había
    *  forma de jugar por fichas sin crear una sala a mano. */
-  const [apuesta, setApuesta] = useState(0);
+  const [apuesta, setApuesta] = useState(2500);
+  const [modoElegido, setModoElegido] = useState<Modo>('CASUAL_1V1');
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export function BuscarPartida() {
   }, [buscando]);
 
   const buscar = (modo: Modo) => {
+    if (apuesta < (MINIMO[modo] ?? 0)) return;
     socketRef.current?.emit('mm:buscar', { mode: modo, apuesta });
     setBuscando(modo);
   };
@@ -100,26 +103,43 @@ export function BuscarPartida() {
           <div className="mb-4">
             <p className="font-medium text-tinta-50">Se juega por</p>
             <p className="mt-0.5 text-sm text-tinta-400">
-              Sólo te empareja con alguien que ponga lo mismo.
+              Poné el monto que quieras. Sólo te empareja con alguien que ponga lo mismo.
             </p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-lg font-semibold text-oro-400">$</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={apuesta}
+                min={MINIMO[modoElegido]}
+                step={100}
+                onChange={(e) => setApuesta(Math.max(0, Number(e.target.value)))}
+                className="h-12 w-40 rounded-xl border border-noche-600 bg-noche-850 px-3 text-lg font-semibold text-tinta-50"
+                aria-label="Fichas que ponés"
+              />
+              <span className="text-sm text-tinta-400">fichas</span>
+            </div>
+
+            {/* Atajos, pero el monto es libre: 1200, 1138, lo que sea. */}
             <div className="mt-2 flex flex-wrap gap-2">
-              {[0, 100, 500, 1000, 5000].map((v) => (
+              {[2500, 4000, 5000, 10000].map((v) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setApuesta(v)}
-                  aria-pressed={apuesta === v}
-                  className={`min-h-[44px] rounded-xl border px-4 text-sm font-semibold transition-colors ${
-                    apuesta === v
-                      ? 'border-oro-500 bg-oro-500/20 text-oro-300'
-                      : 'border-noche-600 text-tinta-300 hover:text-tinta-50'
-                  }`}
+                  className="min-h-[36px] rounded-lg border border-noche-600 px-3 text-sm text-tinta-300 hover:text-tinta-50"
                 >
-                  {v === 0 ? 'Sin fichas' : `${v.toLocaleString('es-AR')}`}
+                  {v.toLocaleString('es-AR')}
                 </button>
               ))}
             </div>
-            {apuesta > 0 && (
+
+            {apuesta < MINIMO[modoElegido]! ? (
+              <p className="mt-2 rounded-lg bg-canto-500/15 px-3 py-2 text-sm text-canto-300">
+                El mínimo para {modoElegido === 'CASUAL_2V2' ? '2 vs 2' : '1 vs 1'} es{' '}
+                <strong>{MINIMO[modoElegido]!.toLocaleString('es-AR')}</strong> fichas.
+              </p>
+            ) : (
               <p className="mt-2 rounded-lg bg-oro-500/10 px-3 py-2 text-sm text-oro-200">
                 Ponés <strong>{apuesta.toLocaleString('es-AR')}</strong> fichas. Si ganás te llevás{' '}
                 <strong>{Math.round(apuesta * 2 * 0.95).toLocaleString('es-AR')}</strong> (5% de
@@ -131,13 +151,17 @@ export function BuscarPartida() {
           {MODOS.map((m) => (
             <button
               key={m.v}
-              disabled={!conectado}
+              disabled={!conectado || apuesta < m.minimo}
+              onMouseEnter={() => setModoElegido(m.v)}
+              onFocus={() => setModoElegido(m.v)}
               onClick={() => buscar(m.v)}
               className="panel flex w-full items-center justify-between gap-3 p-4 text-left transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-50"
             >
               <span>
                 <span className="block font-semibold text-tinta-50">{m.t}</span>
-                <span className="block text-sm text-tinta-400">{m.d}</span>
+                <span className="block text-sm text-tinta-400">
+                  {m.d} · mínimo {m.minimo.toLocaleString('es-AR')} fichas
+                </span>
               </span>
               <span className="text-oro-400" aria-hidden="true">
                 →

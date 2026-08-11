@@ -337,9 +337,17 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
     // ── Matchmaking: buscar rival sin código ─────────────────────────────
     socket.on('mm:buscar', async ({ mode, apuesta }: { mode: string; apuesta?: number }) => {
       const modo = normalizarModo(mode);
-      // Sólo montos de la escalera, y nunca negativos: el cliente no decide.
-      const montos = [0, 100, 500, 1000, 5000];
-      const fichas = montos.includes(Number(apuesta)) ? Number(apuesta) : 0;
+      // El monto es libre, pero el mínimo lo decide el servidor: el cliente
+      // no puede mandar una apuesta por debajo del piso de cada formato.
+      const MINIMO_POR_MODO: Record<string, number> = { CASUAL_2V2: 4000, RANKED_2V2: 4000 };
+      const minimo = MINIMO_POR_MODO[modo] ?? 2500;
+      const pedido = Math.floor(Number(apuesta) || 0);
+      if (!Number.isFinite(pedido) || pedido < minimo) {
+        return socket.emit('error:app', {
+          mensaje: `El mínimo para este modo es ${minimo.toLocaleString('es-AR')} fichas.`,
+        });
+      }
+      const fichas = pedido;
       // Ranking real del jugador para emparejar por nivel.
       const rating = await prisma.rating.findUnique({
         where: { userId_mode: { userId, mode: modo } },
