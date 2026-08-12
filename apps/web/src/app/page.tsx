@@ -123,51 +123,6 @@ export default async function Landing() {
             </div>
           ))}
         </section>
-
-        {/* ─── Cargar fichas (cajeros) ──────────────────────────────── */}
-        <section className="panel my-10 overflow-hidden p-0">
-          <div className="grid gap-0 md:grid-cols-[1.2fr_1fr]">
-            <div className="p-7 md:p-9">
-              <Pildora tono="verde">💬 Cargá por WhatsApp</Pildora>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">Cajeros de confianza</h2>
-              <p className="mt-3 max-w-md leading-relaxed text-tinta-400">
-                Sin tarjetas ni pasarelas. Elegís un cajero de la lista, arreglás por WhatsApp y en
-                el momento te aparecen las fichas en la billetera. Para retirar, es igual de simple.
-              </p>
-              <ul className="mt-5 space-y-2.5 text-sm text-tinta-200">
-                {[
-                  'Cada movimiento queda registrado en tu billetera',
-                  'Cargas y retiros con historial auditable',
-                  'Límites y controles antifraude en cada operación',
-                ].map((li) => (
-                  <li key={li} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 text-oro-500">✓</span>
-                    {li}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex items-center justify-center bg-gradient-to-br from-pano-800 to-pano-900 p-8">
-              <div className="w-full max-w-[240px] rounded-2xl border border-pano-600/40 bg-noche-900/70 p-4 backdrop-blur">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-tinta-400">Tu billetera</span>
-                  <Pildora tono="oro">Fichas</Pildora>
-                </div>
-                <div className="mt-2 font-mono text-3xl font-bold text-oro-400">1.250</div>
-                <div className="mt-4 space-y-2 border-t border-noche-700 pt-3 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-tinta-400">Carga · Cajero Uno</span>
-                    <span className="text-emerald-400">+1.000</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-tinta-400">Apuesta ganada</span>
-                    <span className="text-emerald-400">+250</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="mx-auto max-w-6xl px-5 py-10 text-sm text-tinta-600">

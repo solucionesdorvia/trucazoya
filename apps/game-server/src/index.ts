@@ -347,6 +347,18 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
           mensaje: `El mínimo para este modo es ${minimo.toLocaleString('es-AR')} fichas.`,
         });
       }
+      // Y no se puede buscar partida por más fichas de las que hay en la
+      // cuenta: si no, se empareja, se reserva la apuesta y falla al repartir.
+      const wallet = await prisma.wallet.findUnique({
+        where: { userId },
+        select: { balance: true },
+      });
+      const saldo = Number(wallet?.balance ?? 0n);
+      if (pedido > saldo) {
+        return socket.emit('error:app', {
+          mensaje: `No te alcanza: tenés ${saldo.toLocaleString('es-AR')} fichas.`,
+        });
+      }
       const fichas = pedido;
       // Ranking real del jugador para emparejar por nivel.
       const rating = await prisma.rating.findUnique({

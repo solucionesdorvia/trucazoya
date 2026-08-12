@@ -39,7 +39,7 @@ packages/db       Prisma schema + cliente + migraciones + seed
 
 - **El servidor es la única fuente de verdad.** El cliente sólo envía
   intenciones; nunca recibe información oculta. La vista de cada jugador se
-  proyecta con `redactStateFor(seat)`: recibe *sus* cartas y sólo la *cantidad*
+  proyecta con `redactStateFor(seat)`: recibe _sus_ cartas y sólo la _cantidad_
   de cartas de los rivales.
 - **Motor determinista y puro:** `applyAction(state, action) → {state, events}`.
   No hay aleatoriedad adentro (el mazo entra ya barajado). Esto habilita tests,
@@ -72,15 +72,15 @@ certificable por un auditor externo.
 
 ## 4. Cumplimiento regulatorio
 
-| Área | Qué hace | Dónde |
-|---|---|---|
-| **+18** | Fecha de nacimiento obligatoria (validada en servidor); edad verificada exigida para retirar | Registro, `birthdateSchema` |
-| **KYC** | Verificación de identidad documental; cola de revisión del admin; retirar exige KYC aprobado | `/kyc`, `/admin`, `KycSubmission` |
-| **Juego responsable** | Límites de carga (día/semana) y de pérdida diaria + autoexclusión temporal/permanente, aplicados por el servidor | `/juego-responsable` |
-| **Jurisdicción** | Provincia obligatoria; el operador bloquea provincias donde no tiene habilitación | `SystemSetting 'jurisdiction'` |
-| **Términos y privacidad** | Aceptación obligatoria en el alta; documentos base | `/terminos`, `/privacidad` |
-| **Antifraude cajeros** | Reconciliación contador-vs-ledger; auditoría de cada operación; límites por cajero | `/admin` → Reconciliación |
-| **Trazabilidad** | Toda acción sensible (admin, cajero, KYC, autoexclusión) queda en `AuditLog` | — |
+| Área                      | Qué hace                                                                                                         | Dónde                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **+18**                   | Fecha de nacimiento obligatoria (validada en servidor); edad verificada exigida para retirar                     | Registro, `birthdateSchema`       |
+| **KYC**                   | Verificación de identidad documental; cola de revisión del admin; retirar exige KYC aprobado                     | `/kyc`, `/admin`, `KycSubmission` |
+| **Juego responsable**     | Límites de carga (día/semana) y de pérdida diaria + autoexclusión temporal/permanente, aplicados por el servidor | `/juego-responsable`              |
+| **Jurisdicción**          | Provincia obligatoria; el operador bloquea provincias donde no tiene habilitación                                | `SystemSetting 'jurisdiction'`    |
+| **Términos y privacidad** | Aceptación obligatoria en el alta; documentos base                                                               | `/terminos`, `/privacidad`        |
+| **Antifraude cajeros**    | Reconciliación contador-vs-ledger; auditoría de cada operación; límites por cajero                               | `/admin` → Reconciliación         |
+| **Trazabilidad**          | Toda acción sensible (admin, cajero, KYC, autoexclusión) queda en `AuditLog`                                     | —                                 |
 
 Configuración operable sin redeploy (vía `SystemSetting`):
 `jurisdiction.bloqueadas` (provincias) y `responsibleGaming.defaultDailyDepositMax`
@@ -125,7 +125,7 @@ Ver `docs/MANUAL-CAJERO.md` y `docs/MANUAL-ADMIN.md`.
 - **Observabilidad:** `/salud` y `/metricas` en el game-server (uptime, salas,
   sockets, cola de matchmaking, contadores, memoria).
 - **Escala:** adapter de Redis para Socket.IO (activo con `REDIS_URL`).
-  *Limitación conocida:* el estado de cada partida vive en el nodo que la
+  _Limitación conocida:_ el estado de cada partida vive en el nodo que la
   arrancó; para multi-nodo pleno hace falta afinidad por sala o mover el estado
   a Redis. El adapter ya resuelve el fan-out de eventos.
 - **Prueba de carga:** `apps/game-server/scripts/carga.mts`.

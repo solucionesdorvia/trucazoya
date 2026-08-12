@@ -28,25 +28,25 @@ agrega exposición por lavado, evasión y datos personales.
 
 ## 1. Bloqueantes legales
 
-| # | Bloqueante | Estado hoy |
-|---|---|---|
-| L1 | **Sin licencia provincial** para operar juego por dinero real | Reconocido en prosa (README, T&C), no implementado |
-| L2 | **Cajeros = cash-in/cash-out no registrado** (AML, BCRA, fiscal) | `packages/economia/src/cajeros.ts`; el sistema registra fichas, **nunca pesos** |
-| L3 | **KYC simbólico**: la foto del documento es un campo de texto donde el usuario pega una URL, y es opcional | `FormKyc.tsx:51` |
-| L4 | **Edad autodeclarada**: `ageVerifiedAt` se setea en el registro con la fecha que tipeó el usuario | `cuentas.ts:69` |
-| L5 | **Límites aflojables al instante** (sin período de enfriamiento); `sessionMinutesMax` no se aplica | `juego-responsable.ts:46` |
-| L6 | **Datos de KYC** sin storage propio, sin retención, sin ARCO, sin AAIP | `schema.prisma:301` |
-| L7 | **T&C sin operador identificado** ni resolución de disputas; una cláusula probablemente abusiva | `terminos/page.tsx` |
-| L8 | **Fiscal: cero**. El rake del 5% no se factura ni se declara | Sin una sola mención a ARCA/IIBB en el repo |
+| #   | Bloqueante                                                                                                 | Estado hoy                                                                      |
+| --- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| L1  | **Sin licencia provincial** para operar juego por dinero real                                              | Reconocido en prosa (README, T&C), no implementado                              |
+| L2  | **Cajeros = cash-in/cash-out no registrado** (AML, BCRA, fiscal)                                           | `packages/economia/src/cajeros.ts`; el sistema registra fichas, **nunca pesos** |
+| L3  | **KYC simbólico**: la foto del documento es un campo de texto donde el usuario pega una URL, y es opcional | `FormKyc.tsx:51`                                                                |
+| L4  | **Edad autodeclarada**: `ageVerifiedAt` se setea en el registro con la fecha que tipeó el usuario          | `cuentas.ts:69`                                                                 |
+| L5  | **Límites aflojables al instante** (sin período de enfriamiento); `sessionMinutesMax` no se aplica         | `juego-responsable.ts:46`                                                       |
+| L6  | **Datos de KYC** sin storage propio, sin retención, sin ARCO, sin AAIP                                     | `schema.prisma:301`                                                             |
+| L7  | **T&C sin operador identificado** ni resolución de disputas; una cláusula probablemente abusiva            | `terminos/page.tsx`                                                             |
+| L8  | **Fiscal: cero**. El rake del 5% no se factura ni se declara                                               | Sin una sola mención a ARCA/IIBB en el repo                                     |
 
 ### Los cuatro caminos
 
-| Camino | Tiempo | Veredicto |
-|---|---|---|
-| **A · Fichas sin canje** (social gaming) | 2-4 semanas | ✅ **Único lanzable ya.** Se elimina el canje por dinero; se monetiza con cosméticos, pase y suscripción. Conserva ~90% del código |
-| **B · Vender la plataforma a un operador licenciado** (B2B) | 3-9 meses | ✅ **El más realista para monetizar lo construido.** Requiere borrar el módulo de cajeros y certificar el RNG |
-| **C · Licencia propia** | 12-36 meses | ❌ Fuera de alcance: capital alto y licitaciones cerradas |
-| **D · Offshore apuntando a Argentina** | 4-8 semanas | ❌ No protege: si se organiza desde Argentina, la licencia extranjera no es defensa |
+| Camino                                                      | Tiempo      | Veredicto                                                                                                                          |
+| ----------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **A · Fichas sin canje** (social gaming)                    | 2-4 semanas | ✅ **Único lanzable ya.** Se elimina el canje por dinero; se monetiza con cosméticos, pase y suscripción. Conserva ~90% del código |
+| **B · Vender la plataforma a un operador licenciado** (B2B) | 3-9 meses   | ✅ **El más realista para monetizar lo construido.** Requiere borrar el módulo de cajeros y certificar el RNG                      |
+| **C · Licencia propia**                                     | 12-36 meses | ❌ Fuera de alcance: capital alto y licitaciones cerradas                                                                          |
+| **D · Offshore apuntando a Argentina**                      | 4-8 semanas | ❌ No protege: si se organiza desde Argentina, la licencia extranjera no es defensa                                                |
 
 **Recomendación: A ahora, B en paralelo.** A pone el producto en manos de
 usuarios y valida la retención; B es donde el trabajo hecho vale dinero.
@@ -70,18 +70,18 @@ usuarios y valida la retención; B es donde el trabajo hecho vale dinero.
 
 ### Pendientes, por orden
 
-| # | Bloqueante | Esfuerzo |
-|---|---|---|
-| T1 | **Sin recuperación de partidas.** Un reinicio con partidas en curso deja el `Match` IN_PROGRESS y la `Bet` RESERVED para siempre. Mínimo: barrido al arrancar que reembolse apuestas huérfanas | Medio |
-| T2 | **Sin job de reconciliación de apuestas colgadas** ni alerta. La plata se congela y nadie se entera | Medio |
-| T3 | **Sin timeout de turno.** `turnTimeoutSec` está en el schema y no se usa: un jugador puede congelar la apuesta del rival indefinidamente | Medio |
-| T4 | **Observabilidad nula.** Sin Sentry, sin logs estructurados, sin alertas. Si alguien pierde plata a las 3am, nadie se entera | Medio |
-| T5 | **Sin rate limiting** en ningún punto: login sin lockout, `mm:buscar` hace query por evento | Medio |
-| T6 | **Sin staging ni config de deploy versionada**; `/salud` no toca la base | Medio |
-| T7 | **Payloads de socket sin validar** con zod; sala privada sin chequear contraseña | Chico |
-| T8 | **18 dependencias vulnerables**, sin `audit` en CI | Chico |
-| T9 | **Transacción anidada en torneos**: se puede cobrar la entrada sin inscribir | Chico |
-| T10 | **Redis da falsa sensación de multi-nodo**: el estado sigue siendo per-node. Fijar réplicas=1 | Chico |
+| #   | Bloqueante                                                                                                                                                                                     | Esfuerzo |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| T1  | **Sin recuperación de partidas.** Un reinicio con partidas en curso deja el `Match` IN_PROGRESS y la `Bet` RESERVED para siempre. Mínimo: barrido al arrancar que reembolse apuestas huérfanas | Medio    |
+| T2  | **Sin job de reconciliación de apuestas colgadas** ni alerta. La plata se congela y nadie se entera                                                                                            | Medio    |
+| T3  | **Sin timeout de turno.** `turnTimeoutSec` está en el schema y no se usa: un jugador puede congelar la apuesta del rival indefinidamente                                                       | Medio    |
+| T4  | **Observabilidad nula.** Sin Sentry, sin logs estructurados, sin alertas. Si alguien pierde plata a las 3am, nadie se entera                                                                   | Medio    |
+| T5  | **Sin rate limiting** en ningún punto: login sin lockout, `mm:buscar` hace query por evento                                                                                                    | Medio    |
+| T6  | **Sin staging ni config de deploy versionada**; `/salud` no toca la base                                                                                                                       | Medio    |
+| T7  | **Payloads de socket sin validar** con zod; sala privada sin chequear contraseña                                                                                                               | Chico    |
+| T8  | **18 dependencias vulnerables**, sin `audit` en CI                                                                                                                                             | Chico    |
+| T9  | **Transacción anidada en torneos**: se puede cobrar la entrada sin inscribir                                                                                                                   | Chico    |
+| T10 | **Redis da falsa sensación de multi-nodo**: el estado sigue siendo per-node. Fijar réplicas=1                                                                                                  | Chico    |
 
 ---
 
@@ -109,6 +109,7 @@ todo lo demás depende de ella. Una consulta con un abogado de juego cuesta
 menos que una semana de desarrollo.
 
 **Si es A (fichas sin canje):**
+
 1. Quitar `/cajero`, retiros y `MANUAL-CAJERO.md`; cambiar "apuesta" por
    "entrada".
 2. Resolver T1-T4 (el dinero deja de ser real, pero un reinicio que borra
@@ -117,6 +118,7 @@ menos que una semana de desarrollo.
    global del análisis de TrucoX.
 
 **Si es B (B2B):**
+
 1. Borrar el módulo de cajeros **antes** de mostrar el producto.
 2. Resolver T1-T6 (un comité de compliance los va a pedir).
 3. Presupuestar certificación de RNG con laboratorio (GLI/BMM/eCOGRA).

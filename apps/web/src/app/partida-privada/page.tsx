@@ -48,7 +48,9 @@ export default async function PartidaPrivadaPage() {
         {/* Unirse con código */}
         <div className="panel mt-6 p-5">
           <h2 className="font-semibold text-tinta-50">Tenés un código</h2>
-          <p className="mt-1 text-sm text-tinta-400">Ingresá el código que te mandaron y entrás directo a la sala.</p>
+          <p className="mt-1 text-sm text-tinta-400">
+            Ingresá el código que te mandaron y entrás directo a la sala.
+          </p>
           <UnirseConCodigo />
         </div>
 
@@ -92,12 +94,16 @@ export default async function PartidaPrivadaPage() {
                 );
               })}
             </ol>
-            <p className="mt-3 text-xs text-tinta-600">Pedile el código al creador de la sala para poder unirte.</p>
+            <p className="mt-3 text-xs text-tinta-600">
+              Pedile el código al creador de la sala para poder unirte.
+            </p>
           </div>
         )}
 
         <p className="mt-6 text-right text-xs text-tinta-600">
-          <Link href="/inicio" className="hover:text-tinta-400">← Volver al inicio</Link>
+          <Link href="/inicio" className="hover:text-tinta-400">
+            ← Volver al inicio
+          </Link>
         </p>
       </main>
     </div>

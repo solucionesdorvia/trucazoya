@@ -122,9 +122,10 @@ describe('reloj de turno', () => {
     // Segunda vez: se lo saca de la partida.
     const expulsion = avisos.find((a) => a.expulsado);
     expect(expulsion, 'al segundo vencimiento tiene que expulsarlo').toBeDefined();
-    expect(expulsion!.veces, 'la expulsión ocurre en el segundo vencimiento').toBeGreaterThanOrEqual(
-      2,
-    );
+    expect(
+      expulsion!.veces,
+      'la expulsión ocurre en el segundo vencimiento',
+    ).toBeGreaterThanOrEqual(2);
     expect(abandono, 'la partida tiene que cerrarse cuando se lo saca').toBe(true);
 
     s0.disconnect();

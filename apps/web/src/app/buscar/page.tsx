@@ -18,6 +18,10 @@ export default async function BuscarPage() {
   const user = await getSessionUser();
   if (!user) redirect('/ingresar');
 
+  // El saldo real: no se puede buscar partida por más fichas de las que hay.
+  const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+  const saldo = Number(wallet?.balance ?? 0n);
+
   const salas = await prisma.room.findMany({
     where: { isPrivate: false, state: 'WAITING' },
     orderBy: { createdAt: 'desc' },
@@ -49,7 +53,7 @@ export default async function BuscarPage() {
 
         {/* Matchmaking: el camino principal para jugar (1 toque). */}
         <div className="mt-6">
-          <BuscarPartida />
+          <BuscarPartida saldo={saldo} />
         </div>
 
         <h2 className="mt-10 text-lg font-semibold text-tinta-200">

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, type Socket } from 'socket.io-client';
 import { Boton, Panel } from '@/components/ui';
+import { limpiarMonto } from '@/lib/monto';
 
 type Modo = 'CASUAL_1V1' | 'RANKED_1V1' | 'CASUAL_2V2' | 'RANKED_2V2';
 
@@ -21,14 +22,15 @@ const MODOS: Array<{ v: Modo; t: string; d: string; minimo: number }> = [
 /** Mínimo de fichas para entrar, según el formato. */
 const MINIMO: Record<string, number> = { CASUAL_1V1: 2500, CASUAL_2V2: 4000 };
 
-export function BuscarPartida() {
+export function BuscarPartida({ saldo }: { saldo: number }) {
   const router = useRouter();
   const [conectado, setConectado] = useState(false);
   const [buscando, setBuscando] = useState<Modo | null>(null);
   const [segundos, setSegundos] = useState(0);
   /** Fichas que se ponen en la partida rápida. Antes SIEMPRE era 0: no había
    *  forma de jugar por fichas sin crear una sala a mano. */
-  const [apuesta, setApuesta] = useState(2500);
+  const [montoTexto, setMontoTexto] = useState('2500');
+  const apuesta = Number(montoTexto) || 0;
   const [modoElegido, setModoElegido] = useState<Modo>('CASUAL_1V1');
   const socketRef = useRef<Socket | null>(null);
 
@@ -60,8 +62,21 @@ export function BuscarPartida() {
     return () => clearInterval(t);
   }, [buscando]);
 
+  /** Por qué no se puede buscar con este monto, o null si está todo bien. */
+  const problema = (modo: Modo): string | null => {
+    const min = MINIMO[modo] ?? 0;
+    if (apuesta < min) {
+      const nombre = modo === 'CASUAL_2V2' ? '2 vs 2' : '1 vs 1';
+      return `El mínimo para ${nombre} es ${min.toLocaleString('es-AR')} fichas.`;
+    }
+    if (apuesta > saldo) {
+      return `No te alcanza: tenés ${saldo.toLocaleString('es-AR')} fichas.`;
+    }
+    return null;
+  };
+
   const buscar = (modo: Modo) => {
-    if (apuesta < (MINIMO[modo] ?? 0)) return;
+    if (problema(modo)) return;
     socketRef.current?.emit('mm:buscar', { mode: modo, apuesta });
     setBuscando(modo);
   };
@@ -108,17 +123,20 @@ export function BuscarPartida() {
             <div className="mt-2 flex items-center gap-2">
               <span className="text-lg font-semibold text-oro-400">$</span>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
-                value={apuesta}
-                min={MINIMO[modoElegido]}
-                step={100}
-                onChange={(e) => setApuesta(Math.max(0, Number(e.target.value)))}
+                value={montoTexto}
+                placeholder="2500"
+                onChange={(e) => setMontoTexto(limpiarMonto(e.target.value))}
                 className="h-12 w-40 rounded-xl border border-noche-600 bg-noche-850 px-3 text-lg font-semibold text-tinta-50"
                 aria-label="Fichas que ponés"
               />
               <span className="text-sm text-tinta-400">fichas</span>
             </div>
+            <p className="mt-1.5 text-sm text-tinta-500">
+              Tenés <strong className="text-tinta-300">{saldo.toLocaleString('es-AR')}</strong>{' '}
+              fichas
+            </p>
 
             {/* Atajos, pero el monto es libre: 1200, 1138, lo que sea. */}
             <div className="mt-2 flex flex-wrap gap-2">
@@ -126,7 +144,7 @@ export function BuscarPartida() {
                 <button
                   key={v}
                   type="button"
-                  onClick={() => setApuesta(v)}
+                  onClick={() => setMontoTexto(String(v))}
                   className="min-h-[36px] rounded-lg border border-noche-600 px-3 text-sm text-tinta-300 hover:text-tinta-50"
                 >
                   {v.toLocaleString('es-AR')}
@@ -134,10 +152,17 @@ export function BuscarPartida() {
               ))}
             </div>
 
-            {apuesta < MINIMO[modoElegido]! ? (
+            {problema(modoElegido) ? (
               <p className="mt-2 rounded-lg bg-canto-500/15 px-3 py-2 text-sm text-canto-300">
-                El mínimo para {modoElegido === 'CASUAL_2V2' ? '2 vs 2' : '1 vs 1'} es{' '}
-                <strong>{MINIMO[modoElegido]!.toLocaleString('es-AR')}</strong> fichas.
+                {problema(modoElegido)}
+                {apuesta > saldo && (
+                  <>
+                    {' '}
+                    <a href="/billetera" className="underline">
+                      Cargar fichas
+                    </a>
+                  </>
+                )}
               </p>
             ) : (
               <p className="mt-2 rounded-lg bg-oro-500/10 px-3 py-2 text-sm text-oro-200">
@@ -151,7 +176,7 @@ export function BuscarPartida() {
           {MODOS.map((m) => (
             <button
               key={m.v}
-              disabled={!conectado || apuesta < m.minimo}
+              disabled={!conectado || problema(m.v) !== null}
               onMouseEnter={() => setModoElegido(m.v)}
               onFocus={() => setModoElegido(m.v)}
               onClick={() => buscar(m.v)}
