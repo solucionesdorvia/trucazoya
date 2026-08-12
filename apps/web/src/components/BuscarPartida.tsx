@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { io, type Socket } from 'socket.io-client';
 import { Boton, Panel } from '@/components/ui';
@@ -81,6 +82,9 @@ export function BuscarPartida({ saldo }: { saldo: number }) {
     setBuscando(modo);
   };
 
+  /** No le alcanza ni para la partida rápida más barata. */
+  const sinFichas = saldo < Math.min(...MODOS.map((m) => m.minimo));
+
   const cancelar = () => {
     socketRef.current?.emit('mm:cancelar');
     setBuscando(null);
@@ -114,6 +118,33 @@ export function BuscarPartida({ saldo }: { saldo: number }) {
         <div className="mt-6 space-y-2.5">
           {!conectado && (
             <Panel className="text-center text-sm text-tinta-400">Conectando al servidor…</Panel>
+          )}
+
+          {sinFichas && (
+            <Panel className="!border-oro-500/30 !bg-oro-500/[0.07]">
+              <p className="font-medium text-tinta-50">
+                Te faltan fichas para las partidas rápidas
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-tinta-400">
+                Tenés <strong className="text-tinta-200">{saldo.toLocaleString('es-AR')}</strong> y
+                la más barata arranca en{' '}
+                <strong className="text-tinta-200">
+                  {Math.min(...MODOS.map((m) => m.minimo)).toLocaleString('es-AR')}
+                </strong>
+                . Podés cargar con un cajero, o jugar gratis armando una sala sin fichas y pasando
+                el código.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link href="/salas/crear">
+                  <Boton tamaño="sm">Jugar gratis con amigos</Boton>
+                </Link>
+                <Link href="/billetera">
+                  <Boton variante="secundario" tamaño="sm">
+                    Cargar fichas
+                  </Boton>
+                </Link>
+              </div>
+            </Panel>
           )}
           <div className="mb-4">
             <p className="font-medium text-tinta-50">Se juega por</p>
@@ -158,9 +189,14 @@ export function BuscarPartida({ saldo }: { saldo: number }) {
                 {apuesta > saldo && (
                   <>
                     {' '}
-                    <a href="/billetera" className="underline">
+                    <Link href="/billetera" className="underline">
                       Cargar fichas
-                    </a>
+                    </Link>{' '}
+                    o{' '}
+                    <Link href="/salas/crear" className="underline">
+                      jugá gratis sin fichas
+                    </Link>
+                    .
                   </>
                 )}
               </p>

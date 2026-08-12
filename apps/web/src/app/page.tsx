@@ -38,7 +38,7 @@ export default async function Landing() {
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-tinta-400">
               Envido, flor y vale cuatro con las reglas de verdad. Armá una sala, pasá el código y
-              jugá con tus amigos en segundos — o buscá rival y subí en el ranking.
+              jugá con tus amigos en segundos — o buscá rival por fichas y subí en el ranking.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -52,7 +52,12 @@ export default async function Landing() {
               </Link>
             </div>
 
-            <p className="mt-4 text-sm text-tinta-600">Gratis. Creás tu cuenta y jugás.</p>
+            <p className="mt-4 max-w-lg text-sm leading-relaxed text-tinta-500">
+              Crear la cuenta es gratis. Para jugar{' '}
+              <strong className="text-tinta-300">gratis</strong> armás una sala sin fichas y pasás
+              el código. Para jugar <strong className="text-tinta-300">por fichas</strong> las
+              cargás con un cajero.
+            </p>
           </div>
 
           {/* Mano de truco desplegada */}
