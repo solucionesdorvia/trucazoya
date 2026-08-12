@@ -111,8 +111,8 @@ export default function CrearSala() {
         <Panel>
           <p className="font-medium text-tinta-50">Se juega por</p>
           <p className="mt-0.5 text-sm text-tinta-400">
-            Las fichas se descuentan al repartir la primera mano. El que gana se lleva las dos
-            partes.
+            Las fichas se descuentan al repartir la primera mano. El que gana se lleva el pozo menos
+            el 5% de comisión.
           </p>
           <input type="hidden" name="betAmount" value={apuesta} />
           <div className="mt-3 flex flex-wrap gap-2">
@@ -135,7 +135,8 @@ export default function CrearSala() {
           {apuesta > 0 && (
             <p className="mt-3 rounded-lg bg-oro-500/10 px-3 py-2 text-sm text-oro-200">
               Ponés <strong>{apuesta.toLocaleString('es-AR')}</strong> fichas. Si ganás te llevás{' '}
-              <strong>{(apuesta * 2).toLocaleString('es-AR')}</strong>.
+              <strong>{Math.round(apuesta * 2 * 0.95).toLocaleString('es-AR')}</strong> (5% de
+              comisión).
             </p>
           )}
         </Panel>

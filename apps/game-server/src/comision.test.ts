@@ -18,7 +18,7 @@ import { crearServidor } from './index.js';
 
 const SECRET = 'secreto-de-test-suficientemente-largo-1234';
 const sufijo = `cm${Date.now().toString(36)}`;
-const APUESTA = 1000;
+const APUESTA = 2500; // el piso de 1v1
 const SALDO_INICIAL = 8000n;
 const RAKE_BPS = 500; // 5%
 
