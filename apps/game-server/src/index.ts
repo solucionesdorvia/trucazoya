@@ -261,6 +261,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       if (sala.mesa && jugador) {
         socket.emit('partida:estado', {
           matchId: sala.mesa.id,
+          code: sala.config.code,
           seq: sala.mesa.state.seq,
           vista: sala.mesa.vistaPara(jugador.seat),
           eventos: [],
@@ -348,6 +349,7 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       if (!mesa || !jugador) return;
       socket.emit('partida:estado', {
         matchId: mesa.id,
+        code: codeActual,
         seq: mesa.state.seq,
         vista: mesa.vistaPara(jugador.seat),
         eventos: [],
@@ -663,14 +665,23 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
       sala.betId = reserva.betId ?? null;
     }
 
-    const mesa = sala.arrancar(matchId, emitirAUsuario, (seat) => {
-      // Segundo vencimiento del reloj: se lo saca de la partida, igual que si
-      // se hubiera desconectado y no volviera.
-      const p = sala.participantes.find((x) => x.seat === seat);
-      if (!p) return;
-      log('aviso', 'partida.expulsado_por_tiempo', { code, matchId, userId: p.userId, seat });
-      void cerrarPorAbandono(code, p.userId, true);
-    });
+    const mesa = sala.arrancar(
+      matchId,
+      (destinatario, evento, datos) =>
+        emitirAUsuario(
+          destinatario,
+          evento,
+          datos && typeof datos === 'object' ? { ...datos, code } : datos,
+        ),
+      (seat) => {
+        // Segundo vencimiento del reloj: se lo saca de la partida, igual que si
+        // se hubiera desconectado y no volviera.
+        const p = sala.participantes.find((x) => x.seat === seat);
+        if (!p) return;
+        log('aviso', 'partida.expulsado_por_tiempo', { code, matchId, userId: p.userId, seat });
+        void cerrarPorAbandono(code, p.userId, true);
+      },
+    );
     metricas.partidasArrancadas++;
     io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
     io.to(`sala:${code}`).emit('partida:arrancada', { matchId });

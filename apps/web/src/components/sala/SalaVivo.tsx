@@ -96,7 +96,12 @@ export function SalaVivo({ code, userId }: { code: string; userId: string }) {
 
       socket.on('sala:estado', (s: SnapshotSala) => setSala(s));
 
-      socket.on('partida:estado', (d: { vista: VistaJugador }) => setVista(d.vista));
+      // Con dos pestañas abiertas en salas distintas, el servidor le manda a
+      // las DOS el estado de cada partida: se descarta el que no es de acá.
+      socket.on('partida:estado', (d: { vista: VistaJugador; code?: string }) => {
+        if (d.code && d.code !== code) return;
+        setVista(d.vista);
+      });
 
       socket.on('accion:rechazada', (d: { motivo: string }) => {
         setAviso(enCriollo(d.motivo));
