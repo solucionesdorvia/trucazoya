@@ -110,9 +110,15 @@ export async function liquidarApuesta(input: {
     return { ok: false, error: 'No hay ganadores' };
   }
 
-  const comision = (bet.pot * BigInt(bet.rakeBps)) / 10000n;
-  const aRepartir = bet.pot - comision;
-  const porGanador = aRepartir / BigInt(input.ganadoresUserIds.length);
+  const ganadores = BigInt(input.ganadoresUserIds.length);
+  const aRepartir = bet.pot - (bet.pot * BigInt(bet.rakeBps)) / 10000n;
+  const porGanador = aRepartir / ganadores;
+  // Las dos divisiones son enteras, así que puede sobrar. Ese resto NO puede
+  // quedar en la nada: en 2v2 con un monto no redondo (4005 c/u) el pozo daba
+  // 16020 y se repartían 16019 — una ficha destruida por partida. Se lo suma a
+  // la comisión, que es la única cuenta que puede absorberlo sin que los dos
+  // compañeros cobren distinto.
+  const comision = bet.pot - porGanador * ganadores;
   const idPlataforma = await cuentaPlataforma();
 
   try {
