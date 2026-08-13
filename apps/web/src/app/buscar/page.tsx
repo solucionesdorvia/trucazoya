@@ -82,6 +82,9 @@ export default async function BuscarPage() {
               const formato = formatMode(sala.mode);
               const jugadores = sala._count.participants;
               const capacidad = sala.mode.endsWith('2V2') ? 4 : 2;
+              // El servidor rechaza entrar a una mesa que no se puede pagar;
+              // se avisa acá para que no lo descubra tocando el botón.
+              const noAlcanza = fichas > saldo;
 
               return (
                 <li key={sala.id}>
@@ -102,12 +105,21 @@ export default async function BuscarPage() {
                         {jugadores}/{capacidad} jugadores
                       </p>
                     </div>
-                    <Link
-                      href={`/sala/${sala.code}`}
-                      className="shrink-0 rounded-xl bg-oro-500 px-5 py-2.5 text-sm font-bold text-noche-950 shadow-[0_4px_14px_-4px_rgba(232,176,75,.5)] transition-opacity hover:opacity-90"
-                    >
-                      Jugar →
-                    </Link>
+                    {noAlcanza ? (
+                      <span
+                        className="shrink-0 rounded-xl border border-noche-600 px-4 py-2.5 text-center text-xs font-medium text-tinta-500"
+                        title={`Necesitás ${fichas.toLocaleString('es-AR')} fichas y tenés ${saldo.toLocaleString('es-AR')}`}
+                      >
+                        Te faltan fichas
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/sala/${sala.code}`}
+                        className="shrink-0 rounded-xl bg-oro-500 px-5 py-2.5 text-sm font-bold text-noche-950 shadow-[0_4px_14px_-4px_rgba(232,176,75,.5)] transition-opacity hover:opacity-90"
+                      >
+                        Jugar →
+                      </Link>
+                    )}
                   </div>
                 </li>
               );

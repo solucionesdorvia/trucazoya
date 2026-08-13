@@ -225,6 +225,26 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         return socket.emit('error:app', { mensaje: 'La sala está llena' });
       }
 
+      // No se entra a una mesa que no se puede pagar. Antes se dejaba entrar,
+      // los dos tocaban "listo", y recién al repartir fallaba la reserva con un
+      // "alguien no tiene saldo" que no decía ni quién ni cuánto faltaba.
+      // (Al que ya está jugando ahí no se lo echa: esto es sólo para entrar.)
+      const apuestaSala = sala.config.apuesta;
+      if (apuestaSala > 0 && !sala.participantes.some((p) => p.userId === userId)) {
+        const wallet = await prisma.wallet.findUnique({
+          where: { userId },
+          select: { balance: true },
+        });
+        const saldo = Number(wallet?.balance ?? 0n);
+        if (saldo < apuestaSala) {
+          return socket.emit('error:app', {
+            mensaje:
+              `Esta mesa se juega por ${apuestaSala.toLocaleString('es-AR')} fichas y tenés ` +
+              `${saldo.toLocaleString('es-AR')}. Cargá fichas o entrá a una sala sin fichas.`,
+          });
+        }
+      }
+
       sala.entrar(userId, username);
       sala.mesa?.marcarConexion(userId, true);
       codeActual = sala.config.code;
@@ -615,13 +635,27 @@ export function crearServidor(opciones: OpcionesServidor = {}) {
         jugadores: humanos.map((p) => ({ userId: p.userId, seat: p.seat as number })),
       });
       if (!reserva.ok) {
+        // El mensaje del ledger es genérico ("alguien no tiene saldo"). Se mira
+        // quién fue para que el aviso sirva de algo.
+        const saldos = await prisma.wallet.findMany({
+          where: { userId: { in: humanos.map((p) => p.userId) } },
+          select: { userId: true, balance: true },
+        });
+        const cortos = saldos.filter((w) => Number(w.balance) < sala.config.apuesta);
+        const nombres = cortos
+          .map((w) => sala.participantes.find((p) => p.userId === w.userId)?.username)
+          .filter(Boolean);
         await prisma.match.delete({ where: { id: matchId } }).catch(() => undefined);
         await prisma.room
           .update({ where: { id: sala.config.roomId }, data: { state: 'WAITING' } })
           .catch(() => undefined);
         for (const p of sala.participantes) p.listo = false;
         io.to(`sala:${code}`).emit('error:app', {
-          mensaje: reserva.error ?? 'No se pudo reservar la apuesta',
+          mensaje:
+            nombres.length > 0
+              ? `No arrancó: a ${nombres.join(' y ')} no le alcanzan las fichas para esta mesa ` +
+                `(${sala.config.apuesta.toLocaleString('es-AR')}).`
+              : (reserva.error ?? 'No se pudo reservar la apuesta'),
         });
         io.to(`sala:${code}`).emit('sala:estado', sala.snapshot());
         return;
