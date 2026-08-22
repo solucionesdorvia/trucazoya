@@ -16,7 +16,7 @@ export type ResultadoCuenta =
       campo?: 'username' | 'email' | 'password' | 'birthdate' | 'province';
     };
 
-const MONEDAS_BIENVENIDA = BigInt(process.env.NEW_USER_COINS ?? '500');
+const MONEDAS_BIENVENIDA = BigInt(process.env.NEW_USER_COINS ?? '0');
 
 /**
  * Crea una cuenta con sus monedas de bienvenida. El alta del saldo se registra
@@ -80,17 +80,21 @@ export async function crearCuenta(input: {
       },
     });
 
-    await tx.ledgerEntry.create({
-      data: {
-        userId: creado.id,
-        type: 'LEVEL_REWARD',
-        amount: MONEDAS_BIENVENIDA,
-        balanceBefore: 0n,
-        balanceAfter: MONEDAS_BIENVENIDA,
-        idempotencyKey: `welcome:${creado.id}`,
-        reason: 'Monedas de bienvenida',
-      },
-    });
+    // Sin fichas de regalo no hay movimiento que registrar: un asiento en 0
+    // ensuciaría el ledger de todas las cuentas nuevas.
+    if (MONEDAS_BIENVENIDA > 0n) {
+      await tx.ledgerEntry.create({
+        data: {
+          userId: creado.id,
+          type: 'LEVEL_REWARD',
+          amount: MONEDAS_BIENVENIDA,
+          balanceBefore: 0n,
+          balanceAfter: MONEDAS_BIENVENIDA,
+          idempotencyKey: `welcome:${creado.id}`,
+          reason: 'Monedas de bienvenida',
+        },
+      });
+    }
 
     return creado;
   });

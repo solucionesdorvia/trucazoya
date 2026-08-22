@@ -57,17 +57,12 @@ describe('crearCuenta', () => {
     });
 
     expect(user?.profile?.displayName).toBe(usuario);
-    expect(user?.wallet?.balance).toBe(500n);
     expect(user?.ratings).toHaveLength(2);
 
-    // El saldo tiene respaldo contable: hay un asiento por las monedas de bienvenida.
-    expect(user?.ledgerEntries).toHaveLength(1);
-    const asiento = user!.ledgerEntries[0]!;
-    expect(asiento.amount).toBe(500n);
-    expect(asiento.balanceBefore).toBe(0n);
-    expect(asiento.balanceAfter).toBe(500n);
-    // Invariante del ledger: after = before + amount
-    expect(asiento.balanceAfter).toBe(asiento.balanceBefore + asiento.amount);
+    // NO se regalan fichas al registrarse: son plata real que se carga con un
+    // cajero, así que darlas de arranque sería emitir moneda de la nada.
+    expect(user?.wallet?.balance, 'la cuenta nueva arranca sin fichas').toBe(0n);
+    expect(user?.ledgerEntries, 'sin regalo no hay asiento que registrar').toHaveLength(0);
   });
 
   it('rechaza username duplicado', async () => {
