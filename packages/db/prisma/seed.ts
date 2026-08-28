@@ -76,6 +76,10 @@ async function main() {
     },
   });
 
+  // Fichas de las cuentas demo, para poder probar sin depender de un cajero.
+  // Suficiente para varias partidas del mínimo de 2500.
+  const FICHAS_DEMO = BigInt(process.env.SEED_DEMO_COINS ?? '20000');
+
   // Cuentas demo: sólo se crean fuera de producción.
   if (!esProd) {
     for (const name of ['pepe', 'juana', 'toto', 'mica']) {
@@ -93,13 +97,36 @@ async function main() {
           province: 'CABA',
           kycVerifiedAt: edadVerificada,
           profile: { create: { displayName: name[0]!.toUpperCase() + name.slice(1) } },
-          wallet: { create: { balance: 500n } }, // monedas de bienvenida
+          wallet: { create: { balance: FICHAS_DEMO } },
           ratings: {
             create: [
               { mode: 'RANKED_1V1', rating: 1500 },
               { mode: 'RANKED_2V2', rating: 1500 },
             ],
           },
+        },
+      });
+    }
+  }
+
+  // Las fichas de las cuentas demo necesitan respaldo contable: sin el asiento
+  // la billetera dice una cosa y el ledger otra, y auditarUsuario las marca
+  // rotas. Se hace acá y no arriba porque necesita el id ya creado.
+  if (!esProd && FICHAS_DEMO > 0n) {
+    for (const name of ['pepe', 'juana', 'toto', 'mica']) {
+      const u = await prisma.user.findUnique({ where: { username: name } });
+      if (!u) continue;
+      await prisma.ledgerEntry.upsert({
+        where: { userId_idempotencyKey: { userId: u.id, idempotencyKey: `seed-fichas:${u.id}` } },
+        update: {},
+        create: {
+          userId: u.id,
+          type: 'ADMIN_ADJUSTMENT',
+          amount: FICHAS_DEMO,
+          balanceBefore: 0n,
+          balanceAfter: FICHAS_DEMO,
+          idempotencyKey: `seed-fichas:${u.id}`,
+          reason: 'Fichas para probar (cuenta demo)',
         },
       });
     }

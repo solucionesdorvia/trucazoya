@@ -21,7 +21,8 @@
     "db:generate": "pnpm --filter @trucazo/db generate",
     "db:migrate": "pnpm --filter @trucazo/db migrate",
     "db:seed": "pnpm --filter @trucazo/db seed",
-    "db:studio": "pnpm --filter @trucazo/db studio"
+    "db:studio": "pnpm --filter @trucazo/db studio",
+    "fichas": "pnpm --filter @trucazo/db exec tsx ../../scripts/fichas.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
