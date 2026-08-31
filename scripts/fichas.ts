@@ -21,6 +21,13 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // Con railway run esto apunta a PRODUCCIÓN. Se dice en voz alta a qué base
+  // se está escribiendo: cargar fichas en la base equivocada pasa desapercibido.
+  const url = process.env.DATABASE_URL ?? '';
+  const host = url.replace(/^.*@/, '').replace(/\/.*$/, '') || '(sin DATABASE_URL)';
+  const esProd = !/localhost|127\.0\.0\.1/.test(host);
+  console.log(`base: ${host}${esProd ? '  ← PRODUCCIÓN' : '  (local)'}`);
+
   const user = await prisma.user.findUnique({
     where: { username: usuario },
     include: { wallet: true },
