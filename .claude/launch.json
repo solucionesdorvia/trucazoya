@@ -2,13 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "web",
+      "name": "trucazo-web",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@trucazo/web", "exec", "next", "dev", "-p", "3017"],
       "port": 3017
     },
     {
-      "name": "game-server",
+      "name": "trucazo-game-server",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@trucazo/game-server", "dev"],
       "port": 4010,
