@@ -65,9 +65,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       <Encabezado user={user} />
 
       <main id="contenido" className="mx-auto max-w-4xl px-5 py-8">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold tracking-tight">Administración</h1>
-          <Pildora tono="rojo">Admin</Pildora>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">Administración</h1>
+            <Pildora tono="rojo">Admin</Pildora>
+          </div>
+          {/* Cargar fichas es lo que más se usa: va a mano, no enterrado. */}
+          <Link
+            href="/admin/fichas"
+            className="rounded-xl bg-oro-500 px-5 py-2.5 text-sm font-bold text-noche-950 shadow-[0_4px_14px_-4px_rgba(232,176,75,.5)] transition-opacity hover:opacity-90"
+          >
+            Cargar fichas
+          </Link>
         </div>
 
         {/* ─── Métricas ──────────────────────────────────────────────── */}

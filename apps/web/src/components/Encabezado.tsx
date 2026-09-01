@@ -47,9 +47,14 @@ export function Encabezado({ user }: { user: SessionUser }) {
               </Link>
               {user.isGuest && <Pildora>Invitado</Pildora>}
               {user.role === 'ADMIN' && (
-                <Link href="/admin" aria-label="Panel de administración">
-                  <Pildora tono="rojo">Admin</Pildora>
-                </Link>
+                <>
+                  <Link href="/admin/fichas" aria-label="Cargar fichas a un jugador">
+                    <Pildora tono="oro">Fichas</Pildora>
+                  </Link>
+                  <Link href="/admin" aria-label="Panel de administración">
+                    <Pildora tono="rojo">Admin</Pildora>
+                  </Link>
+                </>
               )}
               {user.role === 'CASHIER' && (
                 <Link href="/cajero" aria-label="Panel de cajero">
