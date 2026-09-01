@@ -106,11 +106,6 @@ export default async function Landing() {
               i: '🏆',
             },
             {
-              t: 'Torneos',
-              d: 'Eliminación simple, doble o grupos. Con premios en fichas y llaves en vivo.',
-              i: '⚔️',
-            },
-            {
               t: 'Anti-trampas',
               d: 'El servidor reparte y valida todo. Nadie puede ver tus cartas ni forzar un resultado.',
               i: '🛡️',

@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { crearSala, type EstadoSala } from '../acciones';
 import { Boton, Panel } from '@/components/ui';
+import { limpiarMonto } from '@/lib/monto';
 
 const inicial: EstadoSala = {};
 
@@ -11,7 +12,10 @@ export default function CrearSala() {
   const [estado, accion, pendiente] = useActionState(crearSala, inicial);
   const [modo, setModo] = useState('CASUAL_1V1');
   const [puntos, setPuntos] = useState(30);
-  const [apuesta, setApuesta] = useState(0);
+  // Texto, no número: con un número el campo queda con un 0 imborrable pegado
+  // adelante. Mismo problema que ya se arregló en la pantalla de Jugar.
+  const [montoTexto, setMontoTexto] = useState('0');
+  const apuesta = Number(montoTexto) || 0;
 
   return (
     <div className="mx-auto max-w-lg px-5 py-8">
@@ -115,20 +119,36 @@ export default function CrearSala() {
             el 5% de comisión.
           </p>
           <input type="hidden" name="betAmount" value={apuesta} />
-          <div className="mt-3 flex flex-wrap gap-2">
-            {[0, 100, 500, 1000, 5000].map((v) => (
+
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-lg font-semibold text-oro-400">$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={montoTexto}
+              placeholder="0"
+              onChange={(e) => setMontoTexto(limpiarMonto(e.target.value))}
+              className="h-12 w-40 rounded-xl border border-noche-600 bg-noche-850 px-3 text-lg font-semibold text-tinta-50"
+              aria-label="Fichas de la mesa"
+            />
+            <span className="text-sm text-tinta-400">fichas</span>
+          </div>
+
+          {/* Atajos, pero el monto es libre: 1200, 1138, lo que sea. */}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[0, 500, 1000, 2500, 5000].map((v) => (
               <button
                 key={v}
                 type="button"
-                onClick={() => setApuesta(v)}
+                onClick={() => setMontoTexto(String(v))}
                 aria-pressed={apuesta === v}
-                className={`min-h-[44px] rounded-xl border px-4 text-sm font-semibold transition-colors ${
+                className={`min-h-[36px] rounded-lg border px-3 text-sm transition-colors ${
                   apuesta === v
                     ? 'border-oro-500 bg-oro-500/20 text-oro-300'
-                    : 'border-noche-600 text-tinta-300 hover:border-noche-600 hover:text-tinta-50'
+                    : 'border-noche-600 text-tinta-300 hover:text-tinta-50'
                 }`}
               >
-                {v === 0 ? 'Sin fichas' : `${v.toLocaleString('es-AR')} fichas`}
+                {v === 0 ? 'Sin fichas' : v.toLocaleString('es-AR')}
               </button>
             ))}
           </div>

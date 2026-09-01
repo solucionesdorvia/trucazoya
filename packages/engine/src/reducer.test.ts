@@ -120,13 +120,26 @@ describe('truco', () => {
 
 describe('mazo', () => {
   it('irse al mazo entrega la ronda al rival con el valor vigente del truco', () => {
+    // Antes de jugar carta en la primera también se deja sin jugar el envido,
+    // así que son 2: uno del juego y uno del envido. Este test afirmaba 1, que
+    // es justo lo que un jugador reportó como bug (ver reglas-reportadas).
     let s = setup([
       [c('oro', 4), c('copa', 4), c('basto', 4)],
       [c('espada', 1), c('basto', 1), c('espada', 7)],
     ]);
     s = apply(s, { type: 'GO_TO_MAZO', seat: 1 });
-    expect(s.scores).toEqual([1, 0]); // team0 gana 1
+    expect(s.scores).toEqual([2, 0]);
     expect(s.phase).toBe('ROUND_FINISHED');
+  });
+
+  it('con una carta ya jugada, el mazo paga sólo el punto del juego', () => {
+    let s = setup([
+      [c('oro', 4), c('copa', 4), c('basto', 4)],
+      [c('espada', 1), c('basto', 1), c('espada', 7)],
+    ]);
+    s = apply(s, { type: 'PLAY_CARD', seat: 1, card: c('espada', 1) });
+    s = apply(s, { type: 'GO_TO_MAZO', seat: 0 });
+    expect(s.scores).toEqual([0, 1]);
   });
 });
 

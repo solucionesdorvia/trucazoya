@@ -31,6 +31,18 @@ export default async function BuscarPage() {
     },
   });
 
+  // Room guarda hostUserId suelto, sin relación, así que los nombres de quienes
+  // crearon las mesas se traen aparte. Sin esto la tarjeta no dice contra quién
+  // vas a jugar, que es lo primero que uno quiere saber.
+  const anfitriones = new Map<string, string>();
+  if (salas.length > 0) {
+    const hosts = await prisma.user.findMany({
+      where: { id: { in: [...new Set(salas.map((s) => s.hostUserId))] } },
+      select: { id: true, username: true, profile: { select: { displayName: true } } },
+    });
+    for (const h of hosts) anfitriones.set(h.id, h.profile?.displayName ?? h.username);
+  }
+
   return (
     <div className="min-h-dvh">
       <Encabezado user={user} />
@@ -51,23 +63,20 @@ export default async function BuscarPage() {
           </Link>
         </div>
 
-        {/* Matchmaking: el camino principal para jugar (1 toque). */}
-        <div className="mt-6">
-          <BuscarPartida saldo={saldo} />
-        </div>
-
-        <h2 className="mt-10 text-lg font-semibold text-tinta-200">
+        <h2 className="mt-8 text-lg font-semibold text-tinta-200">
           Salas abiertas{salas.length > 0 ? ` (${salas.length})` : ''}
         </h2>
         <p className="mt-0.5 text-sm text-tinta-400">
-          Si preferís elegir la mesa vos mismo, entrá a una de acá.
+          Alguien ya está esperando rival. Tocá para entrar.
         </p>
 
         {salas.length === 0 ? (
           <div className="panel mt-6 py-12 text-center">
             <p className="text-2xl">🃏</p>
             <p className="mt-3 font-medium text-tinta-200">Nadie jugando todavía</p>
-            <p className="mt-1 text-sm text-tinta-400">Creá la primera sala y esperá rivales</p>
+            <p className="mt-1 text-sm text-tinta-400">
+              Creá la primera mesa, o buscá rival automáticamente acá abajo
+            </p>
             <Link
               href="/salas/crear"
               className="mt-5 inline-block rounded-xl bg-oro-500 px-6 py-2.5 text-sm font-semibold text-noche-950"
@@ -85,25 +94,39 @@ export default async function BuscarPage() {
               // El servidor rechaza entrar a una mesa que no se puede pagar;
               // se avisa acá para que no lo descubra tocando el botón.
               const noAlcanza = fichas > saldo;
+              const desafia = anfitriones.get(sala.hostUserId) ?? 'Alguien';
+              // Lo que se lleva el ganador: el pozo menos la comisión del 5%.
+              const ganas = Math.round(fichas * 2 * 0.95);
 
               return (
                 <li key={sala.id}>
                   <div className="panel flex items-center gap-4 !p-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-tinta-50 truncate">{sala.name}</span>
+                        <span className="font-semibold text-tinta-50 truncate">{desafia}</span>
                         <span className="rounded-full border border-noche-600 px-2 py-0.5 text-xs font-mono text-tinta-300">
                           {formato}
                         </span>
-                        {fichas > 0 && (
-                          <span className="rounded-full bg-oro-500/15 px-2 py-0.5 text-xs font-semibold text-oro-400">
-                            {fichas.toLocaleString('es-AR')} fichas
-                          </span>
-                        )}
+                        <span className="text-xs text-tinta-500">
+                          {jugadores}/{capacidad}
+                        </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-tinta-500">
-                        {jugadores}/{capacidad} jugadores
-                      </p>
+
+                      {fichas > 0 ? (
+                        <p className="mt-1 text-sm text-tinta-300">
+                          Ponés{' '}
+                          <strong className="text-oro-400">{fichas.toLocaleString('es-AR')}</strong>{' '}
+                          · ganás{' '}
+                          <strong className="text-emerald-400">
+                            {ganas.toLocaleString('es-AR')}
+                          </strong>
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-tinta-400">
+                          Sin fichas · sólo por diversión
+                        </p>
+                      )}
+                      <p className="mt-0.5 truncate text-xs text-tinta-600">{sala.name}</p>
                     </div>
                     {noAlcanza ? (
                       <span
@@ -126,6 +149,12 @@ export default async function BuscarPage() {
             })}
           </ol>
         )}
+
+        {/* Buscar rival automático. Va DEBAJO de las mesas abiertas: si alguien
+            ya creó una mesa esperando, lo primero que hay que ver es esa mesa. */}
+        <div className="mt-6">
+          <BuscarPartida saldo={saldo} />
+        </div>
 
         <p className="mt-4 text-right text-xs text-tinta-600">
           <Link href="/inicio" className="hover:text-tinta-400">

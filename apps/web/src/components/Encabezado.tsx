@@ -33,12 +33,6 @@ export function Encabezado({ user }: { user: SessionUser }) {
               Ranking
             </Link>
             <Link
-              href="/torneos"
-              className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
-            >
-              Torneos
-            </Link>
-            <Link
               href="/amigos"
               className="hidden text-sm text-tinta-300 hover:text-tinta-50 sm:block"
             >

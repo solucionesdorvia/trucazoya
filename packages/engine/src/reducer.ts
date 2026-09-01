@@ -99,7 +99,11 @@ function nextEnvidoVariants(pending: EnvidoVariant[]): EnvidoVariant[] {
   if (pending.length === 0) return ['ENVIDO', 'REAL_ENVIDO', 'FALTA_ENVIDO'];
   if (pending.includes('FALTA_ENVIDO')) return [];
   if (pending.includes('REAL_ENVIDO')) return ['FALTA_ENVIDO'];
-  // Ya hay al menos un ENVIDO: se puede subir con envido/real/falta.
+  // En el truco sólo existe "envido, envido": el segundo cierra esa escalera.
+  // Después se puede subir, pero con real envido o falta envido, nunca con un
+  // tercer envido.
+  const envidos = pending.filter((v) => v === 'ENVIDO').length;
+  if (envidos >= 2) return ['REAL_ENVIDO', 'FALTA_ENVIDO'];
   return ['ENVIDO', 'REAL_ENVIDO', 'FALTA_ENVIDO'];
 }
 
@@ -281,7 +285,22 @@ function goToMazo(state: MatchState, round: RoundState, seat: number, events: En
   round.mazoSeat = seat;
   events.push({ type: 'WENT_TO_MAZO', seat });
   const winnerTeam: TeamIndex = teamOfSeat(seat) === 0 ? 1 : 0;
-  finishRound(state, round, winnerTeam, trucoPlayValue(round), events);
+  finishRound(state, round, winnerTeam, mazoValue(round), events);
+}
+
+/**
+ * Lo que paga irse al mazo.
+ *
+ * Si es la primera mano, todavía no se jugó ninguna carta y nadie cantó el
+ * envido, el que se va deja sin jugar también el envido: el rival se lleva 2
+ * (uno del juego y uno del envido). Con una carta ya jugada, o con el envido
+ * ya resuelto, paga sólo el punto del juego.
+ */
+function mazoValue(round: RoundState): number {
+  const valor = trucoPlayValue(round);
+  const primeraSinJugar = round.currentTrick === 0 && (round.tricks[0]?.length ?? 0) === 0;
+  const envidoSinJugar = round.envido.pending.length === 0 && !round.envido.resolved;
+  return primeraSinJugar && envidoSinJugar ? valor + 1 : valor;
 }
 
 function callTruco(
